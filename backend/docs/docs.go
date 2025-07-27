@@ -641,6 +641,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/availabilities/bulk": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Cria múltiplas disponibilidades para uma cadeira usando loops aninhados (apenas admins)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "availabilities"
+                ],
+                "summary": "Criar múltiplas disponibilidades",
+                "parameters": [
+                    {
+                        "description": "Dados para criar múltiplas disponibilidades",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateMultipleAvailabilitiesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Disponibilidades criadas com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateMultipleAvailabilitiesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Sem permissão",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/availabilities/{id}": {
             "get": {
                 "security": [
@@ -3673,6 +3739,32 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CreateAvailabilityResponse": {
+            "type": "object",
+            "properties": {
+                "chair_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "day_of_week": {
+                    "type": "integer"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "start_time": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.CreateChairRequest": {
             "type": "object",
             "required": [
@@ -3722,6 +3814,68 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CreateMultipleAvailabilitiesRequest": {
+            "type": "object",
+            "required": [
+                "chair_id",
+                "end_times",
+                "selected_days",
+                "start_times"
+            ],
+            "properties": {
+                "chair_id": {
+                    "type": "integer"
+                },
+                "end_times": {
+                    "description": "Array de horários de fim no formato \"HH:MM\"",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "selected_days": {
+                    "description": "Array de dias da semana (0-6)",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "start_times": {
+                    "description": "Array de horários de início no formato \"HH:MM\"",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "valid_to": {
+                    "description": "Data de validade (opcional)",
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CreateMultipleAvailabilitiesResponse": {
+            "type": "object",
+            "properties": {
+                "availabilities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.CreateAvailabilityResponse"
+                    }
+                },
+                "created_count": {
+                    "type": "integer"
+                },
+                "message": {
                     "type": "string"
                 }
             }

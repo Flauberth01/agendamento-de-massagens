@@ -1,9 +1,10 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
 	"agendamento-backend/internal/interfaces/http/handlers"
 	"agendamento-backend/internal/interfaces/http/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 // SetupAvailabilityRoutes configura as rotas de disponibilidade
@@ -23,6 +24,7 @@ func SetupAvailabilityRoutes(router *gin.RouterGroup, availabilityHandler *handl
 		{
 			// CRUD básico (apenas admin)
 			adminOnly.POST("", availabilityHandler.CreateAvailability)
+			adminOnly.POST("/bulk", availabilityHandler.CreateMultipleAvailabilities) // Nova rota para criação em lote
 			adminOnly.PUT("/:id", availabilityHandler.UpdateAvailability)
 			adminOnly.DELETE("/:id", availabilityHandler.DeleteAvailability)
 

@@ -28,6 +28,9 @@ import ChairCreatePage from './pages/chairs/ChairCreatePage'
 import ChairDetailPage from './pages/chairs/ChairDetailPage'
 import ChairEditPage from './pages/chairs/ChairEditPage'
 import { AvailabilityListPage } from './pages/availability/AvailabilityListPage'
+import { AvailabilityCreatePage } from './pages/availability/AvailabilityCreatePage'
+import { AvailabilityEditPage } from './pages/availability/AvailabilityEditPage'
+import { AvailabilityDetailPage } from './pages/availability/AvailabilityDetailPage'
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
@@ -237,6 +240,27 @@ function App() {
               <ProtectedRoute allowedRoles={['admin']}>
                 <DashboardLayout>
                   <AvailabilityListPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/availability/create" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <DashboardLayout>
+                  <AvailabilityCreatePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/availability/:id" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <DashboardLayout>
+                  <AvailabilityDetailPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/availability/:id/edit" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <DashboardLayout>
+                  <AvailabilityEditPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

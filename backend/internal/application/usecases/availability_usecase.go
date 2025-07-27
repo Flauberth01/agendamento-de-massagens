@@ -3,6 +3,7 @@ package usecases
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"agendamento-backend/internal/domain/entities"
@@ -302,4 +303,113 @@ func (uc *AvailabilityUseCase) validateTimeRange(startTime, endTime string) erro
 	}
 
 	return nil
+}
+
+// CreateMultipleAvailabilities cria múltiplas disponibilidades usando loops aninhados
+func (uc *AvailabilityUseCase) CreateMultipleAvailabilities(chairID uint, selectedDays []int, startTimes []string, endTimes []string, validTo *string, isActive bool, createdBy uint) ([]*entities.Availability, error) {
+	// Verificar se cadeira existe
+	chair, err := uc.chairRepo.GetByID(chairID)
+	if err != nil {
+		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
+	}
+
+	// Validar dias da semana
+	for _, day := range selectedDays {
+		if day < 0 || day > 6 {
+			return nil, errors.New("dia da semana inválido (deve ser entre 0 e 6)")
+		}
+	}
+
+	// Validar arrays de horários
+	if len(startTimes) != len(endTimes) {
+		return nil, errors.New("arrays de horários devem ter o mesmo tamanho")
+	}
+
+	// Validar horários
+	for i, startTime := range startTimes {
+		endTime := endTimes[i]
+		if err := uc.validateTimeRange(startTime, endTime); err != nil {
+			return nil, fmt.Errorf("horário inválido %s-%s: %w", startTime, endTime, err)
+		}
+	}
+
+	// Converter validTo de string para *time.Time se fornecido
+	var validToTime *time.Time
+	if validTo != nil && *validTo != "" {
+		parsedTime, err := time.Parse("2006-01-02", *validTo)
+		if err != nil {
+			return nil, fmt.Errorf("data de validade inválida: %w", err)
+		}
+		validToTime = &parsedTime
+	}
+
+	var createdAvailabilities []*entities.Availability
+	var errors []string
+
+	// Loop principal: para cada dia da semana
+	for _, dayOfWeek := range selectedDays {
+		// Loop aninhado: para cada horário
+		for i, startTime := range startTimes {
+			endTime := endTimes[i]
+
+			// Criar nova disponibilidade
+			availability := &entities.Availability{
+				ChairID:   chairID,
+				DayOfWeek: dayOfWeek,
+				StartTime: startTime,
+				EndTime:   endTime,
+				ValidTo:   validToTime,
+				IsActive:  isActive,
+			}
+
+			// Verificar conflitos de horário
+			hasConflict, err := uc.availabilityRepo.HasConflict(
+				availability.ChairID,
+				availability.DayOfWeek,
+				availability.StartTime,
+				availability.EndTime,
+				nil,
+			)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("erro ao verificar conflitos para %s - %s-%s: %v",
+					availability.GetDayOfWeekName(), startTime, endTime, err))
+				continue
+			}
+			if hasConflict {
+				errors = append(errors, fmt.Sprintf("já existe disponibilidade para %s - %s-%s",
+					availability.GetDayOfWeekName(), startTime, endTime))
+				continue
+			}
+
+			// Criar disponibilidade no banco
+			if err := uc.availabilityRepo.Create(availability); err != nil {
+				errors = append(errors, fmt.Sprintf("erro ao criar disponibilidade para %s - %s-%s: %v",
+					availability.GetDayOfWeekName(), startTime, endTime, err))
+				continue
+			}
+
+			// Buscar a disponibilidade criada para retornar
+			createdAvailability, err := uc.availabilityRepo.GetByID(availability.ID)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("erro ao buscar disponibilidade criada para %s - %s-%s: %v",
+					availability.GetDayOfWeekName(), startTime, endTime, err))
+				continue
+			}
+
+			createdAvailabilities = append(createdAvailabilities, createdAvailability)
+
+			// Log de auditoria
+			auditLog := entities.NewAuditLog(&createdBy, entities.ActionCreate, entities.ResourceAvailability, &availability.ID)
+			auditLog.SetDescription(fmt.Sprintf("Disponibilidade criada para cadeira %s - %s - %s-%s",
+				chair.Name, availability.GetDayOfWeekName(), startTime, endTime))
+			uc.auditRepo.Create(auditLog)
+		}
+	}
+
+	// Se houve erros, retornar junto com as disponibilidades criadas
+	if len(errors) > 0 {
+		return createdAvailabilities, fmt.Errorf("algumas disponibilidades não puderam ser criadas: %s", strings.Join(errors, "; "))
+	}
+
+	return createdAvailabilities, nil
 }

@@ -19,18 +19,34 @@ export interface Availability {
   updated_at: Date;
 }
 
+export interface PaginatedAvailabilitiesResponse {
+  data: Availability[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    page: number;
+  };
+}
+
 export interface CreateAvailabilityRequest {
   chair_id: number;
-  date: Date;
-  start_time: Date;
-  end_time: Date;
-  available: boolean;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  valid_from?: string;
+  valid_to?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateAvailabilityRequest {
-  available?: boolean;
-  start_time?: Date;
-  end_time?: Date;
+  chair_id?: number;
+  day_of_week?: number;
+  start_time?: string;
+  end_time?: string;
+  valid_from?: string;
+  valid_to?: string;
+  is_active?: boolean;
 }
 
 export interface AvailabilityFilters {

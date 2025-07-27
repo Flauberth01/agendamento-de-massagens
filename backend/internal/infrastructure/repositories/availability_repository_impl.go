@@ -5,6 +5,7 @@ import (
 
 	"agendamento-backend/internal/domain/entities"
 	"agendamento-backend/internal/domain/repositories"
+
 	"gorm.io/gorm"
 )
 

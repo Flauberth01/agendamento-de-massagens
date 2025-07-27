@@ -17,6 +17,23 @@ definitions:
       updated_at:
         type: string
     type: object
+  dtos.CreateAvailabilityResponse:
+    properties:
+      chair_id:
+        type: integer
+      created_at:
+        type: string
+      day_of_week:
+        type: integer
+      end_time:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      start_time:
+        type: string
+    type: object
   dtos.CreateChairRequest:
     properties:
       description:
@@ -52,6 +69,50 @@ definitions:
       name:
         type: string
       status:
+        type: string
+    type: object
+  dtos.CreateMultipleAvailabilitiesRequest:
+    properties:
+      chair_id:
+        type: integer
+      end_times:
+        description: Array de horários de fim no formato "HH:MM"
+        items:
+          type: string
+        minItems: 1
+        type: array
+      is_active:
+        type: boolean
+      selected_days:
+        description: Array de dias da semana (0-6)
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      start_times:
+        description: Array de horários de início no formato "HH:MM"
+        items:
+          type: string
+        minItems: 1
+        type: array
+      valid_to:
+        description: Data de validade (opcional)
+        type: string
+    required:
+    - chair_id
+    - end_times
+    - selected_days
+    - start_times
+    type: object
+  dtos.CreateMultipleAvailabilitiesResponse:
+    properties:
+      availabilities:
+        items:
+          $ref: '#/definitions/dtos.CreateAvailabilityResponse'
+        type: array
+      created_count:
+        type: integer
+      message:
         type: string
     type: object
   dtos.CreateUserRequest:
@@ -1022,6 +1083,49 @@ paths:
       security:
       - Bearer: []
       summary: Atualizar disponibilidade
+      tags:
+      - availabilities
+  /availabilities/bulk:
+    post:
+      consumes:
+      - application/json
+      description: Cria múltiplas disponibilidades para uma cadeira usando loops aninhados
+        (apenas admins)
+      parameters:
+      - description: Dados para criar múltiplas disponibilidades
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateMultipleAvailabilitiesRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Disponibilidades criadas com sucesso
+          schema:
+            $ref: '#/definitions/dtos.CreateMultipleAvailabilitiesResponse'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Criar múltiplas disponibilidades
       tags:
       - availabilities
   /bookings:

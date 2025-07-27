@@ -205,25 +205,7 @@ func (d *Database) SeedData(userUseCase *usecases.UserUseCase) error {
 		createdChairs = append(createdChairs, chair)
 	}
 
-	// Criar disponibilidades padrão (Segunda a Sexta, 8h às 18h)
-	for _, chair := range createdChairs {
-		for dayOfWeek := 1; dayOfWeek <= 5; dayOfWeek++ { // Segunda a Sexta
-			validFrom := time.Now()
-			validTo := time.Now().AddDate(1, 0, 0)
-			availability := entities.Availability{
-				ChairID:   chair.ID,
-				DayOfWeek: dayOfWeek,
-				StartTime: "08:00",
-				EndTime:   "18:00",
-				ValidFrom: &validFrom,
-				ValidTo:   &validTo, // Válido por 1 ano
-				IsActive:  true,
-			}
-			if err := d.DB.Create(&availability).Error; err != nil {
-				return fmt.Errorf("erro ao criar disponibilidade para cadeira %s: %w", chair.Name, err)
-			}
-		}
-	}
+
 
 	log.Println("Dados iniciais inseridos com sucesso")
 	return nil

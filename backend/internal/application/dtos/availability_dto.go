@@ -11,6 +11,16 @@ type CreateAvailabilityRequest struct {
 	IsActive  bool   `json:"is_active"`
 }
 
+// CreateMultipleAvailabilitiesRequest representa os dados para criar múltiplas disponibilidades
+type CreateMultipleAvailabilitiesRequest struct {
+	ChairID      uint     `json:"chair_id" validate:"required"`
+	SelectedDays []int    `json:"selected_days" validate:"required,min=1"` // Array de dias da semana (0-6)
+	StartTimes   []string `json:"start_times" validate:"required,min=1"`   // Array de horários de início no formato "HH:MM"
+	EndTimes     []string `json:"end_times" validate:"required,min=1"`     // Array de horários de fim no formato "HH:MM"
+	ValidTo      *string  `json:"valid_to"`                                // Data de validade (opcional)
+	IsActive     bool     `json:"is_active"`
+}
+
 // CreateAvailabilityResponse representa a resposta da criação de disponibilidade
 type CreateAvailabilityResponse struct {
 	ID        uint      `json:"id"`
@@ -20,6 +30,13 @@ type CreateAvailabilityResponse struct {
 	EndTime   string    `json:"end_time"`
 	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// CreateMultipleAvailabilitiesResponse representa a resposta da criação de múltiplas disponibilidades
+type CreateMultipleAvailabilitiesResponse struct {
+	Message        string                       `json:"message"`
+	CreatedCount   int                          `json:"created_count"`
+	Availabilities []CreateAvailabilityResponse `json:"availabilities"`
 }
 
 // UpdateAvailabilityRequest representa os dados para atualizar uma disponibilidade

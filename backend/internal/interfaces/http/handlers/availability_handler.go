@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"agendamento-backend/internal/application/dtos"
 	"agendamento-backend/internal/application/usecases"
 	"agendamento-backend/internal/domain/entities"
 	"agendamento-backend/internal/interfaces/http/middleware"
@@ -66,6 +68,95 @@ func (h *AvailabilityHandler) CreateAvailability(c *gin.Context) {
 		"message": "Disponibilidade criada com sucesso",
 		"data":    createdAvailability,
 	})
+}
+
+// CreateMultipleAvailabilities cria múltiplas disponibilidades usando loops aninhados
+// @Summary Criar múltiplas disponibilidades
+// @Description Cria múltiplas disponibilidades para uma cadeira usando loops aninhados (apenas admins)
+// @Tags availabilities
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body dtos.CreateMultipleAvailabilitiesRequest true "Dados para criar múltiplas disponibilidades"
+// @Success 201 {object} dtos.CreateMultipleAvailabilitiesResponse "Disponibilidades criadas com sucesso"
+// @Failure 400 {object} map[string]string "Dados inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Router /availabilities/bulk [post]
+func (h *AvailabilityHandler) CreateMultipleAvailabilities(c *gin.Context) {
+	var request dtos.CreateMultipleAvailabilitiesRequest
+	if bindErr := c.ShouldBindJSON(&request); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + bindErr.Error()})
+		return
+	}
+
+	// Obter userID do contexto de autenticação
+	userID, exists := middleware.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
+
+	// Criar múltiplas disponibilidades
+	createdAvailabilities, err := h.availabilityUseCase.CreateMultipleAvailabilities(
+		request.ChairID,
+		request.SelectedDays,
+		request.StartTimes,
+		request.EndTimes,
+		request.ValidTo,
+		request.IsActive,
+		userID,
+	)
+
+	if err != nil {
+		// Se houve erro mas algumas disponibilidades foram criadas, retornar parcial
+		if len(createdAvailabilities) > 0 {
+			response := dtos.CreateMultipleAvailabilitiesResponse{
+				Message:        fmt.Sprintf("Algumas disponibilidades foram criadas com sucesso. %s", err.Error()),
+				CreatedCount:   len(createdAvailabilities),
+				Availabilities: make([]dtos.CreateAvailabilityResponse, len(createdAvailabilities)),
+			}
+
+			for i, availability := range createdAvailabilities {
+				response.Availabilities[i] = dtos.CreateAvailabilityResponse{
+					ID:        availability.ID,
+					ChairID:   availability.ChairID,
+					DayOfWeek: availability.DayOfWeek,
+					StartTime: availability.StartTime,
+					EndTime:   availability.EndTime,
+					IsActive:  availability.IsActive,
+					CreatedAt: availability.CreatedAt,
+				}
+			}
+
+			c.JSON(http.StatusPartialContent, response)
+			return
+		}
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Criar resposta de sucesso
+	response := dtos.CreateMultipleAvailabilitiesResponse{
+		Message:        "Todas as disponibilidades foram criadas com sucesso",
+		CreatedCount:   len(createdAvailabilities),
+		Availabilities: make([]dtos.CreateAvailabilityResponse, len(createdAvailabilities)),
+	}
+
+	for i, availability := range createdAvailabilities {
+		response.Availabilities[i] = dtos.CreateAvailabilityResponse{
+			ID:        availability.ID,
+			ChairID:   availability.ChairID,
+			DayOfWeek: availability.DayOfWeek,
+			StartTime: availability.StartTime,
+			EndTime:   availability.EndTime,
+			IsActive:  availability.IsActive,
+			CreatedAt: availability.CreatedAt,
+		}
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
 
 // GetAvailability busca disponibilidade por ID
@@ -240,6 +331,7 @@ func (h *AvailabilityHandler) ListAvailabilities(c *gin.Context) {
 			"total":  total,
 			"limit":  limit,
 			"offset": offset,
+			"page":   (offset / limit) + 1,
 		},
 	})
 }

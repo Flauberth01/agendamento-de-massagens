@@ -48,6 +48,10 @@ api.interceptors.request.use(
 // Interceptor para respostas
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    // Tratar 206 (Partial Content) como sucesso para criação em lote
+    if (response.status === 206) {
+      return response;
+    }
     return response;
   },
   async (error) => {

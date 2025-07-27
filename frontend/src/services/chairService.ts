@@ -11,7 +11,6 @@ export const chairService = {
   }): Promise<ChairListResponse> {
     try {
       const response = await api.get('/api/chairs', { params })
-      console.log('API response:', response.data);
       
       // Check if response.data.data exists and has the expected structure
       if (response.data && response.data.data && response.data.data.chairs) {
