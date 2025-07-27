@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, Power, PowerOff, Trash2, Calendar, Clock, User } from 'lucide-react';
+import { ArrowLeft, Edit, Power, PowerOff, Trash2, Calendar, Clock, User, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-
-interface Chair {
-  id: string;
-  name: string;
-  description: string;
-  status: 'ativo' | 'inativo';
-  created_at: string;
-  updated_at: string;
-}
+import { useChairs } from '../../hooks/useChairs';
+import type { Chair } from '../../types/chair';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 
 interface Booking {
   id: string;
@@ -25,21 +19,17 @@ interface Booking {
 export default function ChairDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [chair, setChair] = useState<Chair | null>(null);
+  const chairId = parseInt(id || '0');
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState(false);
 
+  const { useChairById, useToggleChairStatus, useDeleteChair } = useChairs();
+  const { data: chair, isLoading, error } = useChairById(chairId);
+  const toggleStatusMutation = useToggleChairStatus();
+  const deleteMutation = useDeleteChair();
+
+  // Simular agendamentos (em um sistema real, isso viria da API)
   useEffect(() => {
-    // Simular carregamento de dados
-    const mockChair: Chair = {
-      id: id || '1',
-      name: 'Cadeira Principal',
-      description: 'Cadeira principal do consultório, localizada na sala 1. Equipada com todos os instrumentos necessários para atendimento odontológico.',
-      status: 'ativo',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-20T14:30:00Z'
-    };
-
     const mockBookings: Booking[] = [
       {
         id: '1',
@@ -63,22 +53,17 @@ export default function ChairDetailPage() {
         status: 'confirmado'
       }
     ];
-
-    setTimeout(() => {
-      setChair(mockChair);
-      setBookings(mockBookings);
-      setIsLoading(false);
-    }, 1000);
-  }, [id]);
+    setBookings(mockBookings);
+  }, []);
 
   const getStatusBadge = (status: string) => {
-    return status === 'ativo' ? (
+    return status === 'ativa' ? (
       <Badge variant="default" className="bg-green-100 text-green-800">
-        Ativo
+        Ativa
       </Badge>
     ) : (
       <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-        Inativo
+        Inativa
       </Badge>
     );
   };
@@ -99,41 +84,65 @@ export default function ChairDetailPage() {
     );
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('pt-BR');
   };
-
-
 
   const handleBack = () => {
     navigate('/chairs');
   };
 
   const handleEdit = () => {
-    navigate(`/chairs/${id}/edit`);
+    navigate(`/chairs/${chairId}/edit`);
   };
 
-  const handleToggleStatus = () => {
-    if (chair) {
-      setChair(prev => prev ? {
-        ...prev,
-        status: prev.status === 'ativo' ? 'inativo' : 'ativo'
-      } : null);
+  const handleToggleStatus = async () => {
+    if (!chair) return;
+    
+    try {
+      const newStatus = chair.status === 'ativa' ? false : true;
+      await toggleStatusMutation.mutateAsync({ id: chairId, active: newStatus });
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
     }
   };
 
   const handleDelete = () => {
-    if (confirm('Tem certeza que deseja excluir esta cadeira?')) {
+    setDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!chair) return;
+    
+    try {
+      await deleteMutation.mutateAsync(chairId);
       navigate('/chairs');
+    } catch (error) {
+      console.error('Erro ao excluir cadeira:', error);
     }
   };
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600">Erro ao carregar cadeira</h1>
+          <p className="text-muted-foreground mt-2">A cadeira não foi encontrada ou ocorreu um erro.</p>
+          <Button onClick={() => navigate('/chairs')} className="mt-4">
+            Voltar à lista
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Carregando detalhes da cadeira...</p>
+          <p className="mt-2 text-muted-foreground">Carregando dados da cadeira...</p>
         </div>
       </div>
     );
@@ -144,7 +153,7 @@ export default function ChairDetailPage() {
       <div className="container mx-auto p-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600">Cadeira não encontrada</h1>
-          <Button onClick={handleBack} className="mt-4">
+          <Button onClick={() => navigate('/chairs')} className="mt-4">
             Voltar à lista
           </Button>
         </div>
@@ -154,22 +163,25 @@ export default function ChairDetailPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">{chair.name}</h1>
-          <p className="text-muted-foreground">
-            Detalhes da cadeira
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={handleBack}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">{chair.name}</h1>
+            <p className="text-muted-foreground">
+              Detalhes da cadeira
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             onClick={handleEdit}
@@ -178,12 +190,14 @@ export default function ChairDetailPage() {
             <Edit className="h-4 w-4" />
             Editar
           </Button>
+          
           <Button
             variant="outline"
             onClick={handleToggleStatus}
+            disabled={toggleStatusMutation.isPending}
             className="flex items-center gap-2"
           >
-            {chair.status === 'ativo' ? (
+            {chair.status === 'ativa' ? (
               <>
                 <PowerOff className="h-4 w-4" />
                 Desativar
@@ -195,10 +209,12 @@ export default function ChairDetailPage() {
               </>
             )}
           </Button>
+          
           <Button
-            variant="outline"
+            variant="destructive"
             onClick={handleDelete}
-            className="flex items-center gap-2 text-destructive hover:text-destructive"
+            disabled={deleteMutation.isPending}
+            className="flex items-center gap-2"
           >
             <Trash2 className="h-4 w-4" />
             Excluir
@@ -210,31 +226,37 @@ export default function ChairDetailPage() {
         {/* Informações da Cadeira */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Informações da Cadeira
-            </CardTitle>
+            <CardTitle>Informações da Cadeira</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg">{chair.name}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                {getStatusBadge(chair.status)}
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Status:</span>
+              {getStatusBadge(chair.status)}
             </div>
             
-            <div>
-              <h4 className="font-medium text-sm text-muted-foreground">Descrição</h4>
-              <p className="mt-1">{chair.description}</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span className="font-medium">Localização:</span>
+              </div>
+              <p className="pl-6">{chair.location}</p>
             </div>
-
+            
+            {chair.description && (
+              <div className="space-y-2">
+                <span className="font-medium text-sm">Descrição:</span>
+                <p className="text-sm text-muted-foreground">{chair.description}</p>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground">Criado em</h4>
-                <p className="mt-1">{formatDate(chair.created_at)}</p>
+                <p className="mt-1 text-sm">{formatDate(chair.created_at)}</p>
               </div>
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground">Última atualização</h4>
-                <p className="mt-1">{formatDate(chair.updated_at)}</p>
+                <p className="mt-1 text-sm">{formatDate(chair.updated_at)}</p>
               </div>
             </div>
           </CardContent>
@@ -259,19 +281,11 @@ export default function ChairDetailPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {bookings.filter(b => b.status === 'pendente').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Pendentes</div>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">
+                {bookings.filter(b => b.status === 'pendente').length}
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-600">
-                  {bookings.filter(b => b.status === 'concluido').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Concluídos</div>
-              </div>
+              <div className="text-sm text-muted-foreground">Pendentes</div>
             </div>
           </CardContent>
         </Card>
@@ -302,25 +316,36 @@ export default function ChairDetailPage() {
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{booking.user_name}</span>
                     </div>
+                    
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatDate(booking.date)}</span>
+                      <span className="text-sm">{formatDate(booking.date)}</span>
                     </div>
+                    
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{booking.time_slot}</span>
+                      <span className="text-sm">{booking.time_slot}</span>
                     </div>
                   </div>
                   
-                  <div>
-                    {getBookingStatusBadge(booking.status)}
-                  </div>
+                  {getBookingStatusBadge(booking.status)}
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        isOpen={deleteDialog}
+        onClose={() => setDeleteDialog(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message={`Tem certeza que deseja excluir a cadeira "${chair?.name}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </div>
   );
 } 

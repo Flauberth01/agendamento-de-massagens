@@ -16,15 +16,16 @@ func SetupBookingRoutes(router *gin.RouterGroup, bookingHandler *handlers.Bookin
 		bookings.GET("", bookingHandler.ListBookings)
 		bookings.GET("/today", bookingHandler.GetTodayBookings)
 		bookings.GET("/upcoming", bookingHandler.GetUpcomingBookings)
-		bookings.GET("/user/:user_id", bookingHandler.GetUserBookings)
+		bookings.GET("/user", bookingHandler.GetMyBookings)      // Rota específica primeiro
+		bookings.GET("/user-stats", bookingHandler.GetUserStats) // Rota específica primeiro
 
 		// Rotas de estatísticas (antes das rotas com :id)
 		bookings.GET("/system-stats", middleware.AdminOnlyMiddleware(), bookingHandler.GetSystemStats)
 		bookings.GET("/attendant-stats", middleware.AdminOrAttendantMiddleware(), bookingHandler.GetAttendantStats)
-		bookings.GET("/user-stats", bookingHandler.GetUserStats)
 		bookings.GET("/stats", middleware.AdminOrAttendantMiddleware(), bookingHandler.GetBookingStats)
 
 		// Rotas com parâmetros (depois das rotas específicas)
+		bookings.GET("/user/:user_id", bookingHandler.GetUserBookings) // Rota com parâmetro depois
 		bookings.GET("/:id", bookingHandler.GetBooking)
 		bookings.POST("/:id/cancel", bookingHandler.CancelBooking)
 

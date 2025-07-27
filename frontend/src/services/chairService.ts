@@ -9,32 +9,62 @@ export const chairService = {
     page?: number
     limit?: number
   }): Promise<ChairListResponse> {
-    const response = await api.get('/api/chairs', { params })
-    return response.data
+    try {
+      const response = await api.get('/api/chairs', { params })
+      console.log('API response:', response.data);
+      
+      // Check if response.data.data exists and has the expected structure
+      if (response.data && response.data.data && response.data.data.chairs) {
+        return response.data.data;
+      } else {
+        console.error('Unexpected API response structure:', response.data);
+        // Return empty response structure
+        return {
+          chairs: [],
+          total: 0,
+          limit: 10,
+          offset: 0
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching chairs:', error);
+      // Return empty response structure on error
+      return {
+        chairs: [],
+        total: 0,
+        limit: 10,
+        offset: 0
+      };
+    }
   },
 
   // Buscar cadeira por ID
   async getChairById(id: number): Promise<Chair> {
-    const response = await api.get(`/api/chairs/${id}`)
-    return response.data
+    try {
+      const response = await api.get(`/api/chairs/${id}`)
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching chair by ID:', error);
+      throw error;
+    }
   },
 
   // Criar nova cadeira (admin)
   async createChair(data: CreateChairRequest): Promise<Chair> {
     const response = await api.post('/api/chairs', data)
-    return response.data
+    return response.data.data
   },
 
   // Atualizar cadeira (admin)
   async updateChair(id: number, data: Partial<CreateChairRequest>): Promise<Chair> {
     const response = await api.put(`/api/chairs/${id}`, data)
-    return response.data
+    return response.data.data
   },
 
   // Ativar/desativar cadeira (admin)
   async toggleChairStatus(id: number, active: boolean): Promise<Chair> {
     const response = await api.patch(`/api/chairs/${id}/status`, { active })
-    return response.data
+    return response.data.data
   },
 
   // Deletar cadeira (admin)
@@ -49,7 +79,7 @@ export const chairService = {
     endTime: string
   }): Promise<Chair[]> {
     const response = await api.get('/api/chairs/available', { params })
-    return response.data
+    return response.data.data
   },
 
   // Buscar estatísticas de cadeiras
@@ -60,7 +90,7 @@ export const chairService = {
     utilizationRate: number
   }> {
     const response = await api.get('/api/chairs/stats')
-    return response.data
+    return response.data.data
   },
 
   // Buscar cadeiras com agendamentos para hoje
@@ -68,6 +98,6 @@ export const chairService = {
     todayBookings: number
   }>> {
     const response = await api.get('/api/chairs/today-bookings')
-    return response.data
+    return response.data.data
   }
 } 

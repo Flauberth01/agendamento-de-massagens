@@ -131,6 +131,8 @@ export const UserListPage: React.FC = () => {
   }
 
   const handleEditUser = (userId: number) => {
+    console.log('Tentando editar usuário:', userId)
+    console.log('URL de destino:', `/users/edit/${userId}`)
     navigate(`/users/edit/${userId}`)
   }
 

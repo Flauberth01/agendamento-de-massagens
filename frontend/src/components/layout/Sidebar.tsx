@@ -28,17 +28,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
       icon: Home,
       show: true
     },
+    // Usuário específico
+    {
+      label: 'Agendar Sessão',
+      href: '/users/booking',
+      icon: Calendar,
+      show: !isAttendant && !isAdmin
+    },
     {
       label: 'Meus Agendamentos',
       href: '/bookings',
       icon: Calendar,
-      show: true
+      show: isAttendant || isAdmin
     },
     {
       label: 'Novo Agendamento',
       href: '/bookings/create',
       icon: Plus,
-      show: true
+      show: isAttendant || isAdmin
     },
     // Admin/Atendente only
     {

@@ -9,10 +9,13 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
+import { useChairs } from '../../hooks/useChairs';
+import { toast } from 'sonner';
 
 const createChairSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
-  description: z.string().min(1, 'Descrição é obrigatória').max(500, 'Descrição deve ter no máximo 500 caracteres'),
+  description: z.string().optional(),
+  location: z.string().min(1, 'Localização é obrigatória').max(100, 'Localização deve ter no máximo 100 caracteres'),
   status: z.enum(['ativa', 'inativa'])
 });
 
@@ -20,7 +23,8 @@ type CreateChairFormData = z.infer<typeof createChairSchema>;
 
 export default function ChairCreatePage() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const { useCreateChair } = useChairs();
+  const createMutation = useCreateChair();
 
   const {
     register,
@@ -34,24 +38,11 @@ export default function ChairCreatePage() {
   });
 
   const onSubmit = async (data: CreateChairFormData) => {
-    setIsLoading(true);
-    
     try {
-      // Simular chamada da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Dados da cadeira:', data);
-      
-      // Aqui seria feita a chamada real para a API
-      // await chairService.createChair(data);
-      
-      alert('Cadeira criada com sucesso!');
+      await createMutation.mutateAsync(data);
       navigate('/chairs');
     } catch (error) {
       console.error('Erro ao criar cadeira:', error);
-      alert('Erro ao criar cadeira. Tente novamente.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -98,11 +89,24 @@ export default function ChairCreatePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
+              <Label htmlFor="location">Localização *</Label>
+              <Input
+                id="location"
+                {...register('location')}
+                placeholder="Ex: Térreo - Sala 1"
+                className={errors.location ? 'border-red-500' : ''}
+              />
+              {errors.location && (
+                <p className="text-sm text-red-500">{errors.location.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
               <Textarea
                 id="description"
                 {...register('description')}
-                placeholder="Descreva a cadeira, localização, características especiais..."
+                placeholder="Descreva a cadeira, características especiais, observações..."
                 rows={4}
                 className={errors.description ? 'border-red-500' : ''}
               />
@@ -131,16 +135,16 @@ export default function ChairCreatePage() {
                 type="button"
                 variant="outline"
                 onClick={handleBack}
-                disabled={isLoading}
+                disabled={createMutation.isPending}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={createMutation.isPending}
                 className="flex items-center gap-2"
               >
-                {isLoading ? (
+                {createMutation.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     Criando...

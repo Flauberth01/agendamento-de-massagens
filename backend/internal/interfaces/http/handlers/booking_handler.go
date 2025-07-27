@@ -346,6 +346,45 @@ func (h *BookingHandler) ListBookings(c *gin.Context) {
 	})
 }
 
+// GetMyBookings busca agendamentos do usuário logado
+func (h *BookingHandler) GetMyBookings(c *gin.Context) {
+	// Obter userID do contexto de autenticação
+	userID, exists := middleware.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
+
+	// Parâmetros de paginação
+	limitParam := c.DefaultQuery("limit", "10")
+	offsetParam := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitParam)
+	if err != nil {
+		limit = 10
+	}
+
+	offset, err := strconv.Atoi(offsetParam)
+	if err != nil {
+		offset = 0
+	}
+
+	bookings, total, err := h.bookingUseCase.GetUserBookings(userID, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": bookings,
+		"pagination": gin.H{
+			"total":  total,
+			"limit":  limit,
+			"offset": offset,
+		},
+	})
+}
+
 // GetUserBookings busca agendamentos de um usuário
 func (h *BookingHandler) GetUserBookings(c *gin.Context) {
 	userIDParam := c.Param("user_id")
@@ -666,7 +705,7 @@ func (h *BookingHandler) GetUserStats(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Acesso negado. Apenas administradores e atendentes podem ver estatísticas de outros usuários"})
 			return
 		}
-		
+
 		userID, err := strconv.ParseUint(userIDParam, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "ID do usuário inválido"})

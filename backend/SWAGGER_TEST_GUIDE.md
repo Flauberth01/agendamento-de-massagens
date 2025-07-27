@@ -1,17 +1,68 @@
 # 🧪 Guia Completo de Teste no Swagger UI
 
 ## 📋 Índice
-1. [Campos Obrigatórios para Registro](#campos-obrigatórios-para-registro)
-2. [Autenticação JWT](#autenticação-jwt)
-3. [Usuários de Teste Disponíveis](#usuários-de-teste-disponíveis)
-4. [Fluxo de Teste por Role](#fluxo-de-teste-por-role)
-5. [Testando Endpoints de Autenticação](#testando-endpoints-de-autenticação)
-6. [Testando Endpoints de Usuários](#testando-endpoints-de-usuários)
-7. [Testando Endpoints de Cadeiras](#testando-endpoints-de-cadeiras)
-8. [Testando Endpoints de Agendamentos](#testando-endpoints-de-agendamentos)
-9. [Testando Endpoints de Disponibilidade](#testando-endpoints-de-disponibilidade)
-10. [Testando Dashboard](#testando-dashboard)
-11. [Validação de Erros](#validação-de-erros)
+1. [Status Atual do Sistema](#status-atual-do-sistema)
+2. [Configuração de Ambiente](#configuração-de-ambiente)
+3. [Campos Obrigatórios para Registro](#campos-obrigatórios-para-registro)
+4. [Autenticação JWT](#autenticação-jwt)
+5. [Usuários de Teste Disponíveis](#usuários-de-teste-disponíveis)
+6. [Fluxo de Teste por Role](#fluxo-de-teste-por-role)
+7. [Testando Endpoints de Autenticação](#testando-endpoints-de-autenticação)
+8. [Testando Endpoints de Usuários](#testando-endpoints-de-usuários)
+9. [Testando Endpoints de Cadeiras](#testando-endpoints-de-cadeiras)
+10. [Testando Endpoints de Agendamentos](#testando-endpoints-de-agendamentos)
+11. [Testando Endpoints de Disponibilidade](#testando-endpoints-de-disponibilidade)
+12. [Testando Dashboard](#testando-dashboard)
+13. [Validação de Erros](#validação-de-erros)
+14. [Solução de Problemas](#solução-de-problemas)
+
+## ✅ Status Atual do Sistema
+
+### 🎯 **Funcionalidades Operacionais:**
+- ✅ **CORS configurado** - Frontend e backend comunicando corretamente
+- ✅ **Autenticação JWT** - Sistema de login funcionando
+- ✅ **CRUD de Cadeiras** - Criação, listagem, edição e exclusão
+- ✅ **CRUD de Usuários** - Gerenciamento completo de usuários
+- ✅ **Sistema de Agendamentos** - Criação e cancelamento
+- ✅ **Dashboard** - Estatísticas e relatórios
+- ✅ **Validação de Dados** - Todos os endpoints validados
+- ✅ **Logs de Auditoria** - Rastreamento de ações
+
+### 🔧 **Configurações de Segurança:**
+- ✅ **Headers de Segurança** - XSS, CSRF, Clickjacking protegidos
+- ✅ **CORS Inteligente** - Configuração baseada em ambiente
+- ✅ **Content Security Policy** - Política de segurança aplicada
+- ✅ **Validação de Roles** - Controle de acesso por função
+
+## 🛠️ Configuração de Ambiente
+
+### **Backend (Docker)**
+```bash
+# Verificar se está rodando
+docker ps
+
+# Logs do backend
+docker logs agendamento-api
+
+# Variáveis de ambiente ativas
+docker exec agendamento-api env | grep GIN_MODE
+# Deve retornar: GIN_MODE=debug
+```
+
+### **Frontend (Vite)**
+```bash
+# Verificar se está rodando
+netstat -an | findstr :3000
+
+# Proxy configurado para /api -> localhost:8080
+# URLs relativas funcionando corretamente
+```
+
+### **URLs de Acesso:**
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8080
+- **Swagger UI**: http://localhost:8080/swagger/index.html
+- **Health Check**: http://localhost:8080/health
 
 ## 📝 Campos Obrigatórios para Registro
 
@@ -712,6 +763,126 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 5. Teste exclusão (DELETE)
 6. Teste fluxos completos
 
+## 🚨 Solução de Problemas
+
+### **Problema: Erro CORS**
+**Sintomas:**
+```
+Access to XMLHttpRequest at 'http://localhost:8080/api/chairs' from origin 'http://localhost:3000' has been blocked by CORS policy
+```
+
+**Solução:**
+1. Verificar se o backend está rodando: `docker ps`
+2. Verificar GIN_MODE: `docker exec agendamento-api env | grep GIN_MODE`
+3. Deve retornar: `GIN_MODE=debug`
+4. Se estiver `release`, alterar no `docker-compose.yml`
+5. Reiniciar containers: `docker-compose down && docker-compose up -d`
+
+### **Problema: Token Inválido**
+**Sintomas:**
+```json
+{
+  "error": "Token de acesso requerido"
+}
+```
+
+**Solução:**
+1. Fazer login novamente via `/api/auth/login`
+2. Copiar o novo token
+3. Atualizar no Swagger UI: `Bearer <novo_token>`
+
+### **Problema: Usuário Não Aprovado**
+**Sintomas:**
+```json
+{
+  "error": "Usuário não está aprovado"
+}
+```
+
+**Solução:**
+1. Login como admin: `cpf: 12345678909, password: 123456`
+2. Aprovar usuário via `/api/users/{id}/approve`
+3. Ou usar usuário já aprovado
+
+### **Problema: Endpoint Não Encontrado**
+**Sintomas:**
+```
+404 Not Found
+```
+
+**Solução:**
+1. Verificar se a URL está correta
+2. Verificar se o endpoint requer autenticação
+3. Verificar se o método HTTP está correto (GET, POST, PUT, DELETE)
+
+### **Problema: Validação de Dados**
+**Sintomas:**
+```json
+{
+  "error": "Erro de validação",
+  "details": [...]
+}
+```
+
+**Solução:**
+1. Verificar se todos os campos obrigatórios estão preenchidos
+2. Verificar formato dos dados (CPF, email, data)
+3. Verificar limites de caracteres
+
+### **Problema: Banco de Dados**
+**Sintomas:**
+```
+500 Internal Server Error
+```
+
+**Solução:**
+1. Verificar logs: `docker logs agendamento-api`
+2. Verificar se o PostgreSQL está rodando: `docker ps`
+3. Reiniciar containers se necessário
+
+## 📞 Comandos Úteis
+
+### **Verificar Status dos Serviços:**
+```bash
+# Verificar containers
+docker ps
+
+# Verificar logs do backend
+docker logs agendamento-api --tail 20
+
+# Verificar logs do banco
+docker logs agendamento-postgres --tail 10
+
+# Verificar variáveis de ambiente
+docker exec agendamento-api env | grep -E "(GIN_MODE|JWT|DB)"
+```
+
+### **Reiniciar Serviços:**
+```bash
+# Reiniciar apenas o backend
+docker-compose restart api
+
+# Reiniciar tudo
+docker-compose down && docker-compose up -d
+
+# Rebuild se necessário
+docker-compose down && docker-compose up -d --build
+```
+
+### **Testar Conectividade:**
+```bash
+# Testar API
+curl http://localhost:8080/health
+
+# Testar CORS
+curl -H "Origin: http://localhost:3000" -X OPTIONS http://localhost:8080/api/chairs
+
+# Testar proxy do frontend
+curl http://localhost:3000/api/chairs
+```
+
 ---
 
-**🎯 Dica**: Mantenha o Swagger UI aberto e teste todos os cenários possíveis para garantir que a API está funcionando corretamente! 
+**🎯 Dica**: Mantenha o Swagger UI aberto e teste todos os cenários possíveis para garantir que a API está funcionando corretamente!
+
+**🔧 Status Atual**: Sistema operacional com CORS corrigido e todas as funcionalidades testadas e funcionando. 

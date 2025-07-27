@@ -151,9 +151,9 @@ func main() {
 	router := gin.New()
 
 	// Middlewares globais
+	router.Use(middleware.CORS()) // CORS deve ser o primeiro middleware
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-	router.Use(middleware.CORS())
 	router.Use(middleware.SecurityHeaders())
 
 	// Configurar rotas

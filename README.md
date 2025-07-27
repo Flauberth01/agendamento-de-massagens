@@ -38,7 +38,26 @@ agendamento/
 
 ## 🛠️ Instalação e Execução
 
-### Usando Docker (Recomendado)
+### ⚡ Inicialização Rápida (Recomendado)
+
+Para rodar o projeto em **menos de 5 minutos**, consulte:
+- **[QUICK_START.md](./QUICK_START.md)** - Guia de inicialização rápida
+- **[GUIA_COMANDOS.md](./GUIA_COMANDOS.md)** - Guia completo de comandos
+
+### 🚀 Scripts Automáticos
+
+#### Windows (PowerShell)
+```powershell
+.\start.ps1
+```
+
+#### Linux/Mac (Bash)
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+### 🐳 Usando Docker (Manual)
 
 1. Clone o repositório:
 ```bash
@@ -46,17 +65,22 @@ git clone <repository-url>
 cd agendamento
 ```
 
-2. Execute com Docker Compose:
+2. Configure o ambiente:
+```bash
+cp backend/env.example backend/.env
+```
+
+3. Execute com Docker Compose:
 ```bash
 docker-compose up -d
 ```
 
-3. Acesse:
-- Frontend: http://localhost:3000
+4. Acesse:
+- Frontend: http://localhost:5173
 - Backend API: http://localhost:8080
 - Swagger Docs: http://localhost:8080/swagger/index.html
 
-### Desenvolvimento Local
+### 💻 Desenvolvimento Local
 
 #### Backend
 ```bash

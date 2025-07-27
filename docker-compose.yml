@@ -44,7 +44,7 @@ services:
       
       # Server
       - PORT=8080
-      - GIN_MODE=release
+      - GIN_MODE=debug
       - SERVER_READ_TIMEOUT=30s
       - SERVER_WRITE_TIMEOUT=30s
       

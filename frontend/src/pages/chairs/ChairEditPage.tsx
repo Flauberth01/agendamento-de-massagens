@@ -9,30 +9,26 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
+import { useChairs } from '../../hooks/useChairs';
+import type { Chair } from '../../types/chair';
 
 const editChairSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
-  description: z.string().min(1, 'Descrição é obrigatória').max(500, 'Descrição deve ter no máximo 500 caracteres'),
+  description: z.string().optional(),
+  location: z.string().min(1, 'Localização é obrigatória').max(100, 'Localização deve ter no máximo 100 caracteres'),
   status: z.enum(['ativa', 'inativa'])
 });
 
 type EditChairFormData = z.infer<typeof editChairSchema>;
 
-interface Chair {
-  id: string;
-  name: string;
-  description: string;
-  status: 'ativa' | 'inativa';
-  created_at: string;
-  updated_at: string;
-}
-
 export default function ChairEditPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [chair, setChair] = useState<Chair | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const chairId = parseInt(id || '0');
+
+  const { useChairById, useUpdateChair } = useChairs();
+  const { data: chair, isLoading, error } = useChairById(chairId);
+  const updateMutation = useUpdateChair();
 
   const {
     register,
@@ -43,52 +39,29 @@ export default function ChairEditPage() {
     resolver: zodResolver(editChairSchema)
   });
 
+  // Preencher formulário quando os dados da cadeira forem carregados
   useEffect(() => {
-    // Simular carregamento de dados
-    const mockChair: Chair = {
-      id: id || '1',
-      name: 'Cadeira Principal',
-      description: 'Cadeira principal do consultório, localizada na sala 1. Equipada com todos os instrumentos necessários para atendimento odontológico.',
-      status: 'ativa',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-20T14:30:00Z'
-    };
-
-    setTimeout(() => {
-      setChair(mockChair);
+    if (chair) {
       reset({
-        name: mockChair.name,
-        description: mockChair.description,
-        status: mockChair.status
+        name: chair.name,
+        description: chair.description || '',
+        location: chair.location,
+        status: chair.status
       });
-      setIsLoading(false);
-    }, 1000);
-  }, [id, reset]);
+    }
+  }, [chair, reset]);
 
   const onSubmit = async (data: EditChairFormData) => {
-    setIsSaving(true);
-    
     try {
-      // Simular chamada da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Dados atualizados da cadeira:', data);
-      
-      // Aqui seria feita a chamada real para a API
-      // await chairService.updateChair(id!, data);
-      
-      alert('Cadeira atualizada com sucesso!');
-      navigate(`/chairs/${id}`);
+      await updateMutation.mutateAsync({ id: chairId, data });
+      navigate(`/chairs/${chairId}`);
     } catch (error) {
       console.error('Erro ao atualizar cadeira:', error);
-      alert('Erro ao atualizar cadeira. Tente novamente.');
-    } finally {
-      setIsSaving(false);
     }
   };
 
   const handleBack = () => {
-    navigate(`/chairs/${id}`);
+    navigate(`/chairs/${chairId}`);
   };
 
   const handleCancel = () => {
@@ -96,6 +69,20 @@ export default function ChairEditPage() {
       handleBack();
     }
   };
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600">Erro ao carregar cadeira</h1>
+          <p className="text-muted-foreground mt-2">A cadeira não foi encontrada ou ocorreu um erro.</p>
+          <Button onClick={() => navigate('/chairs')} className="mt-4">
+            Voltar à lista
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -160,11 +147,24 @@ export default function ChairEditPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
+              <Label htmlFor="location">Localização *</Label>
+              <Input
+                id="location"
+                {...register('location')}
+                placeholder="Ex: Térreo - Sala 1"
+                className={errors.location ? 'border-red-500' : ''}
+              />
+              {errors.location && (
+                <p className="text-sm text-red-500">{errors.location.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
               <Textarea
                 id="description"
                 {...register('description')}
-                placeholder="Descreva a cadeira, localização, características especiais..."
+                placeholder="Descreva a cadeira, características especiais, observações..."
                 rows={4}
                 className={errors.description ? 'border-red-500' : ''}
               />
@@ -180,8 +180,8 @@ export default function ChairEditPage() {
                 {...register('status')}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background"
               >
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
+                <option value="ativa">Ativa</option>
+                <option value="inativa">Inativa</option>
               </select>
               {errors.status && (
                 <p className="text-sm text-red-500">{errors.status.message}</p>
@@ -204,16 +204,16 @@ export default function ChairEditPage() {
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
-                disabled={isSaving}
+                disabled={updateMutation.isPending}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={isSaving}
+                disabled={updateMutation.isPending}
                 className="flex items-center gap-2"
               >
-                {isSaving ? (
+                {updateMutation.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     Salvando...

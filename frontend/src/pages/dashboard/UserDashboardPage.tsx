@@ -120,11 +120,11 @@ export const UserDashboardPage: React.FC = () => {
   }
 
   const handleNewBooking = () => {
-    navigate('/bookings/create')
+    navigate('/users/booking')
   }
 
   const handleViewBookings = () => {
-    navigate('/bookings')
+    navigate('/users/booking')
   }
 
   if (isLoading) {

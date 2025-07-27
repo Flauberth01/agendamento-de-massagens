@@ -1,71 +1,50 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, Power, PowerOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Power, PowerOff, Search, Filter } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-
-interface Chair {
-  id: string;
-  name: string;
-  description: string;
-  status: 'ativo' | 'inativo';
-  created_at: string;
-  updated_at: string;
-}
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { useChairs } from '../../hooks/useChairs';
+import type { Chair } from '../../types/chair';
 
 export default function ChairListPage() {
   const navigate = useNavigate();
-  const [chairs, setChairs] = useState<Chair[]>([]);
-  const [filteredChairs, setFilteredChairs] = useState<Chair[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'ativo' | 'inativo'>('todos');
-  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'ativa' | 'inativa'>('todos');
+  const [filteredChairs, setFilteredChairs] = useState<Chair[]>([]);
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; chair: Chair | null }>({
+    isOpen: false,
+    chair: null
+  });
 
+  // Hooks para gerenciar cadeiras
+  const { useAllChairs, useToggleChairStatus, useDeleteChair } = useChairs();
+  const { data: chairsResponse, isLoading, error } = useAllChairs();
+  const toggleStatusMutation = useToggleChairStatus();
+  const deleteMutation = useDeleteChair();
+
+  // Ensure chairs is always an array
+  const chairs = Array.isArray(chairsResponse?.chairs) ? chairsResponse.chairs : [];
+
+  // Debug: Log the response structure
+  console.log('chairsResponse:', chairsResponse);
+  console.log('chairs:', chairs);
+  console.log('chairsResponse type:', typeof chairsResponse);
+  console.log('chairsResponse.chairs type:', typeof chairsResponse?.chairs);
+
+  // Filtrar cadeiras baseado nos filtros
   useEffect(() => {
-    // Simular carregamento de dados
-    const mockChairs: Chair[] = [
-      {
-        id: '1',
-        name: 'Cadeira 1',
-        description: 'Cadeira principal do consultório',
-        status: 'ativo',
-        created_at: '2024-01-15T10:00:00Z',
-        updated_at: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: '2',
-        name: 'Cadeira 2',
-        description: 'Cadeira secundária',
-        status: 'ativo',
-        created_at: '2024-01-16T14:30:00Z',
-        updated_at: '2024-01-16T14:30:00Z'
-      },
-      {
-        id: '3',
-        name: 'Cadeira 3',
-        description: 'Cadeira de emergência',
-        status: 'inativo',
-        created_at: '2024-01-17T09:15:00Z',
-        updated_at: '2024-01-17T09:15:00Z'
-      }
-    ];
-
-    setTimeout(() => {
-      setChairs(mockChairs);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
-
-  useEffect(() => {
+    console.log('useEffect triggered with chairs:', chairs);
     let filtered = chairs;
 
     // Filtro por termo de busca
     if (searchTerm) {
       filtered = filtered.filter(chair =>
         chair.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        chair.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (chair.description && chair.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        chair.location.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -74,50 +53,84 @@ export default function ChairListPage() {
       filtered = filtered.filter(chair => chair.status === statusFilter);
     }
 
+    // Ensure filtered is always an array
+    if (!Array.isArray(filtered)) {
+      console.error('filtered is not an array:', filtered);
+      filtered = [];
+    }
+
+    console.log('filtered:', filtered);
     setFilteredChairs(filtered);
   }, [chairs, searchTerm, statusFilter]);
 
   const getStatusBadge = (status: string) => {
-    return status === 'ativo' ? (
+    return status === 'ativa' ? (
       <Badge variant="default" className="bg-green-100 text-green-800">
-        Ativo
+        Ativa
       </Badge>
     ) : (
       <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-        Inativo
+        Inativa
       </Badge>
     );
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('pt-BR');
   };
 
   const handleCreateChair = () => {
     navigate('/chairs/create');
   };
 
-  const handleEditChair = (id: string) => {
+  const handleEditChair = (id: number) => {
     navigate(`/chairs/${id}/edit`);
   };
 
-  const handleViewChair = (id: string) => {
+  const handleViewChair = (id: number) => {
     navigate(`/chairs/${id}`);
   };
 
-  const handleToggleStatus = (id: string) => {
-    setChairs(prev => prev.map(chair => 
-      chair.id === id 
-        ? { ...chair, status: chair.status === 'ativo' ? 'inativo' : 'ativo' }
-        : chair
-    ));
-  };
-
-  const handleDeleteChair = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta cadeira?')) {
-      setChairs(prev => prev.filter(chair => chair.id !== id));
+  const handleToggleStatus = async (id: number, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'ativa' ? false : true;
+      await toggleStatusMutation.mutateAsync({ id, active: newStatus });
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
     }
   };
+
+  const handleDeleteChair = (chair: Chair) => {
+    setDeleteDialog({ isOpen: true, chair });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteDialog.chair) return;
+    
+    try {
+      await deleteMutation.mutateAsync(deleteDialog.chair.id);
+      setDeleteDialog({ isOpen: false, chair: null });
+    } catch (error) {
+      console.error('Erro ao excluir cadeira:', error);
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-8">
+          <p className="text-red-500">Erro ao carregar cadeiras. Tente novamente.</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Recarregar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -147,16 +160,20 @@ export default function ChairListPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Filtros</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filtros
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-4">
-            <div className="flex-1">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome ou descrição..."
+                placeholder="Buscar por nome, descrição ou localização..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+                className="w-full pl-10"
               />
             </div>
             <select
@@ -165,8 +182,8 @@ export default function ChairListPage() {
               className="px-3 py-2 border border-input rounded-md bg-background"
             >
               <option value="todos">Todos os status</option>
-              <option value="ativo">Ativo</option>
-              <option value="inativo">Inativo</option>
+              <option value="ativa">Ativa</option>
+              <option value="inativa">Inativa</option>
             </select>
           </div>
         </CardContent>
@@ -181,11 +198,35 @@ export default function ChairListPage() {
         <CardContent>
           {filteredChairs.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhuma cadeira encontrada</p>
+              <p className="text-muted-foreground">
+                {searchTerm || statusFilter !== 'todos' 
+                  ? 'Nenhuma cadeira encontrada com os filtros aplicados' 
+                  : 'Nenhuma cadeira cadastrada no sistema'
+                }
+              </p>
+              {searchTerm || statusFilter !== 'todos' ? (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('todos');
+                  }}
+                  className="mt-2"
+                >
+                  Limpar Filtros
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleCreateChair}
+                  className="mt-2"
+                >
+                  Criar Primeira Cadeira
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredChairs.map((chair) => (
+              {Array.isArray(filteredChairs) ? filteredChairs.map((chair) => (
                 <div
                   key={chair.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -195,8 +236,13 @@ export default function ChairListPage() {
                       <h3 className="font-semibold">{chair.name}</h3>
                       {getStatusBadge(chair.status)}
                     </div>
+                    {chair.description && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {chair.description}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground mt-1">
-                      {chair.description}
+                      <strong>Localização:</strong> {chair.location}
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">
                       Criado em: {formatDate(chair.created_at)}
@@ -225,10 +271,11 @@ export default function ChairListPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleToggleStatus(chair.id)}
-                      title={chair.status === 'ativo' ? 'Desativar' : 'Ativar'}
+                      onClick={() => handleToggleStatus(chair.id, chair.status)}
+                      title={chair.status === 'ativa' ? 'Desativar' : 'Ativar'}
+                      disabled={toggleStatusMutation.isPending}
                     >
-                      {chair.status === 'ativo' ? (
+                      {chair.status === 'ativa' ? (
                         <PowerOff className="h-4 w-4" />
                       ) : (
                         <Power className="h-4 w-4" />
@@ -238,19 +285,35 @@ export default function ChairListPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteChair(chair.id)}
+                      onClick={() => handleDeleteChair(chair)}
                       title="Excluir"
                       className="text-destructive hover:text-destructive"
+                      disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">Erro: dados de cadeiras inválidos</p>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={() => setDeleteDialog({ isOpen: false, chair: null })}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message={`Tem certeza que deseja excluir a cadeira "${deleteDialog.chair?.name}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </div>
   );
 } 

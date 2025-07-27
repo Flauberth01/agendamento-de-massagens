@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Search, MoreHorizontal, MapPin, Edit, Trash2, Eye, Plus } from 'lucide-react';
-import type { Chair } from '@/types/chair';
+import type { Chair } from '../../types/chair';
 
 interface ChairListProps {
   chairs: Chair[];

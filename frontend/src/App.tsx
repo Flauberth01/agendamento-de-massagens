@@ -20,7 +20,9 @@ import { BookingListPage } from './pages/bookings/BookingListPage'
 import { UserListPage } from './pages/users/UserListPage'
 import { UserCreatePage } from './pages/users/UserCreatePage'
 import { UserDetailPage } from './pages/users/UserDetailPage'
+import { UserEditPage } from './pages/users/UserEditPage'
 import { UserPendingPage } from './pages/users/UserPendingPage'
+import { UserBookingPage } from './pages/users/UserBookingPage'
 import ChairListPage from './pages/chairs/ChairListPage'
 import ChairCreatePage from './pages/chairs/ChairCreatePage'
 import ChairDetailPage from './pages/chairs/ChairDetailPage'
@@ -31,11 +33,21 @@ import { AvailabilityListPage } from './pages/availability/AvailabilityListPage'
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
   const { isAuthenticated, user } = useAuth()
 
+  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated)
+  console.log('ProtectedRoute - user:', user)
+  console.log('ProtectedRoute - allowedRoles:', allowedRoles)
+  console.log('ProtectedRoute - current pathname:', window.location.pathname)
+
   if (!isAuthenticated) {
+    console.log('ProtectedRoute - Usuário não autenticado, redirecionando para login')
     return <Navigate to="/login" replace />
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    console.log('ProtectedRoute - Usuário sem permissão, redirecionando para dashboard')
+    console.log('ProtectedRoute - User role:', user.role)
+    console.log('ProtectedRoute - Allowed roles:', allowedRoles)
+    console.log('ProtectedRoute - Role check:', allowedRoles.includes(user.role))
     // Redirecionar para o dashboard apropriado baseado no role
     switch (user.role) {
       case 'usuario':
@@ -49,6 +61,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
     }
   }
 
+  console.log('ProtectedRoute - Acesso permitido')
   return <>{children}</>
 }
 
@@ -153,6 +166,13 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/users/booking" element={
+              <ProtectedRoute allowedRoles={['usuario']}>
+                <DashboardLayout>
+                  <UserBookingPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/users/pending" element={
               <ProtectedRoute allowedRoles={['atendente', 'admin']}>
                 <DashboardLayout>
@@ -167,8 +187,15 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/users/:id/edit" element={
+              <ProtectedRoute allowedRoles={['atendente', 'admin']}>
+                <DashboardLayout>
+                  <UserEditPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/users/:id" element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['atendente', 'admin']}>
                 <DashboardLayout>
                   <UserDetailPage />
                 </DashboardLayout>

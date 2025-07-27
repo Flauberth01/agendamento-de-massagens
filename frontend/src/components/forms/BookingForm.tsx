@@ -12,8 +12,8 @@ import { Loader2, AlertCircle, Calendar, Clock, MapPin, FileText } from 'lucide-
 import { cn } from '@/utils/cn';
 import { format, addDays, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { Chair } from '@/types/chair';
-import type { AvailabilityTimeSlot } from '@/types/availability';
+import type { Chair } from '../../types/chair';
+import type { AvailabilityTimeSlot } from '../../types/availability';
 
 // Schema de validação
 const bookingSchema = z.object({

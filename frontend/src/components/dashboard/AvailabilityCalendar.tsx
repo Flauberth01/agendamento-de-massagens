@@ -6,9 +6,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, Clock, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { Chair } from '@/types/chair';
-import type { AvailabilityTimeSlot } from '@/types/availability';
-import type { Booking } from '@/types/booking';
+import type { Chair } from '../../types/chair';
+import type { AvailabilityTimeSlot } from '../../types/availability';
+import type { Booking } from '../../types/booking';
 
 interface AvailabilityCalendarProps {
   chairs: Chair[];

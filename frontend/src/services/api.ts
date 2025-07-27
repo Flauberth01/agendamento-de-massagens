@@ -5,7 +5,7 @@ import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'a
 const APP_CONFIG = {
   name: 'Sistema de Agendamento',
   version: '1.0.0',
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  apiUrl: import.meta.env.VITE_API_URL || '', // Usar URL relativa para funcionar com proxy do Vite
 } as const;
 
 // Tipos para respostas da API
@@ -55,7 +55,7 @@ api.interceptors.response.use(
         // Tentar renovar o token
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
-          const response = await axios.post(`${APP_CONFIG.apiUrl}/api/auth/refresh`, {}, {
+          const response = await axios.post(`/api/auth/refresh`, {}, {
             headers: {
               Authorization: `Bearer ${refreshToken}`,
             },

@@ -47,9 +47,8 @@ export interface ChairOccupancy {
 
 // Tipo para resposta de lista de cadeiras
 export interface ChairListResponse {
-  data: Chair[];
+  chairs: Chair[];
   total: number;
-  page: number;
   limit: number;
-  totalPages: number;
+  offset: number;
 } 
