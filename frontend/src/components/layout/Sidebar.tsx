@@ -8,8 +8,7 @@ import {
   Plus,
   Users,
   UserCheck,
-  Clock,
-  BarChart3
+  Clock
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -65,12 +64,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
       href: '/availability',
       icon: Clock,
       show: isAdmin
-    },
-    {
-      label: 'Relatórios',
-      href: '/reports',
-      icon: BarChart3,
-      show: isAttendant
     }
   ]
 

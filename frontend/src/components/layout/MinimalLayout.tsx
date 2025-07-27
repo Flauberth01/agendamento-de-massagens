@@ -20,8 +20,7 @@ import {
   Plus,
   Users,
   UserCheck,
-  Clock,
-  BarChart3
+  Clock
 } from 'lucide-react'
 import { formatName } from '@/utils/formatters'
 
@@ -92,12 +91,6 @@ export const MinimalLayout: React.FC<MinimalLayoutProps> = ({
       href: '/availability',
       icon: Clock,
       show: isAdmin
-    },
-    {
-      label: 'Relatórios',
-      href: '/reports',
-      icon: BarChart3,
-      show: isAttendant
     }
   ]
 
