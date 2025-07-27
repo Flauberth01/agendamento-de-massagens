@@ -54,14 +54,14 @@ export default function ChairEditPage() {
   const onSubmit = async (data: EditChairFormData) => {
     try {
       await updateMutation.mutateAsync({ id: chairId, data });
-      navigate(`/chairs/${chairId}`);
+      navigate('/chairs');
     } catch (error) {
       console.error('Erro ao atualizar cadeira:', error);
     }
   };
 
   const handleBack = () => {
-    navigate(`/chairs/${chairId}`);
+    navigate('/chairs');
   };
 
   const handleCancel = () => {

@@ -106,5 +106,30 @@ export const chairService = {
   }>> {
     const response = await api.get('/api/chairs/today-bookings')
     return response.data.data
+  },
+
+  // Buscar agendamentos de uma cadeira específica
+  async getChairBookings(chairId: number, params?: {
+    limit?: number
+    offset?: number
+  }): Promise<{
+    bookings: Array<{
+      id: number
+      user_name: string
+      date: string
+      time_slot: string
+      status: 'agendado' | 'confirmado' | 'cancelado' | 'concluido' | 'falta'
+    }>
+    total: number
+    limit: number
+    offset: number
+  }> {
+    try {
+      const response = await api.get(`/api/bookings/chair/${chairId}`, { params })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching chair bookings:', error);
+      throw error;
+    }
   }
 } 

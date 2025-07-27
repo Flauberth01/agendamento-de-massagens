@@ -9,52 +9,31 @@ import type { Chair } from '../../types/chair';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 
 interface Booking {
-  id: string;
+  id: number;
   user_name: string;
   date: string;
   time_slot: string;
-  status: 'confirmado' | 'pendente' | 'cancelado' | 'concluido';
+  status: 'agendado' | 'confirmado' | 'cancelado' | 'concluido' | 'falta';
 }
 
 export default function ChairDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const chairId = parseInt(id || '0');
-  const [bookings, setBookings] = useState<Booking[]>([]);
   const [deleteDialog, setDeleteDialog] = useState(false);
 
-  const { useChairById, useToggleChairStatus, useDeleteChair } = useChairs();
+  const { useChairById, useToggleChairStatus, useDeleteChair, useChairBookings } = useChairs();
   const { data: chair, isLoading, error } = useChairById(chairId);
   const toggleStatusMutation = useToggleChairStatus();
   const deleteMutation = useDeleteChair();
+  
+  // Buscar agendamentos reais da API
+  const { data: bookingsData, isLoading: bookingsLoading } = useChairBookings(chairId, {
+    limit: 10,
+    offset: 0
+  });
 
-  // Simular agendamentos (em um sistema real, isso viria da API)
-  useEffect(() => {
-    const mockBookings: Booking[] = [
-      {
-        id: '1',
-        user_name: 'João Silva',
-        date: '2024-01-25',
-        time_slot: '09:00 - 09:30',
-        status: 'confirmado'
-      },
-      {
-        id: '2',
-        user_name: 'Maria Santos',
-        date: '2024-01-25',
-        time_slot: '10:00 - 10:30',
-        status: 'pendente'
-      },
-      {
-        id: '3',
-        user_name: 'Pedro Costa',
-        date: '2024-01-26',
-        time_slot: '14:00 - 14:30',
-        status: 'confirmado'
-      }
-    ];
-    setBookings(mockBookings);
-  }, []);
+  const bookings = bookingsData?.bookings || [];
 
   const getStatusBadge = (status: string) => {
     return status === 'ativa' ? (
@@ -70,10 +49,12 @@ export default function ChairDetailPage() {
 
   const getBookingStatusBadge = (status: string) => {
     const statusConfig = {
+      agendado: { label: 'Agendado', className: 'bg-blue-100 text-blue-800' },
       confirmado: { label: 'Confirmado', className: 'bg-green-100 text-green-800' },
       pendente: { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
       cancelado: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
-      concluido: { label: 'Concluído', className: 'bg-blue-100 text-blue-800' }
+      concluido: { label: 'Concluído', className: 'bg-purple-100 text-purple-800' },
+      falta: { label: 'Falta', className: 'bg-orange-100 text-orange-800' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig];
@@ -87,6 +68,12 @@ export default function ChairDetailPage() {
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('pt-BR');
+  };
+
+  const formatTimeSlot = (startTime: string, endTime: string) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    return `${start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   const handleBack = () => {
@@ -159,6 +146,13 @@ export default function ChairDetailPage() {
       </div>
     );
   }
+
+  // Calcular estatísticas dos agendamentos
+  const totalBookings = bookings.length;
+  const confirmedBookings = bookings.filter(b => b.status === 'confirmado').length;
+  const pendingBookings = bookings.filter(b => b.status === 'agendado').length;
+  const cancelledBookings = bookings.filter(b => b.status === 'cancelado').length;
+  const completedBookings = bookings.filter(b => b.status === 'concluido').length;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -269,22 +263,28 @@ export default function ChairDetailPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{bookings.length}</div>
+                <div className="text-2xl font-bold text-blue-600">{totalBookings}</div>
                 <div className="text-sm text-muted-foreground">Total de Agendamentos</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {bookings.filter(b => b.status === 'confirmado').length}
-                </div>
+                <div className="text-2xl font-bold text-green-600">{confirmedBookings}</div>
                 <div className="text-sm text-muted-foreground">Confirmados</div>
               </div>
             </div>
             
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">
-                {bookings.filter(b => b.status === 'pendente').length}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <div className="text-lg font-bold text-yellow-600">{pendingBookings}</div>
+                <div className="text-xs text-muted-foreground">Pendentes</div>
               </div>
-              <div className="text-sm text-muted-foreground">Pendentes</div>
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="text-lg font-bold text-purple-600">{completedBookings}</div>
+                <div className="text-xs text-muted-foreground">Concluídos</div>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-lg">
+                <div className="text-lg font-bold text-red-600">{cancelledBookings}</div>
+                <div className="text-xs text-muted-foreground">Cancelados</div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -299,7 +299,12 @@ export default function ChairDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {bookings.length === 0 ? (
+          {bookingsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-muted-foreground">Carregando agendamentos...</p>
+            </div>
+          ) : bookings.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">Nenhum agendamento encontrado</p>
             </div>

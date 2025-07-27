@@ -50,6 +50,18 @@ export const useChairs = () => {
     });
   };
 
+  const useChairBookings = (chairId: number, params?: {
+    limit?: number
+    offset?: number
+  }) => {
+    return useQuery({
+      queryKey: ['chairs', chairId, 'bookings', params],
+      queryFn: () => chairService.getChairBookings(chairId, params),
+      enabled: !!chairId,
+      staleTime: 2 * 60 * 1000, // 2 minutos
+    });
+  };
+
   // Mutations
   const useCreateChair = () => {
     return useMutation({
@@ -117,6 +129,7 @@ export const useChairs = () => {
     useAvailableChairs,
     useChairStats,
     useChairsWithTodayBookings,
+    useChairBookings,
     
     // Mutations
     useCreateChair,

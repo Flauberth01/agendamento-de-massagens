@@ -572,13 +572,27 @@ func (h *BookingHandler) GetChairBookings(c *gin.Context) {
 		return
 	}
 
+	// Converter para DTOs com relacionamentos
+	bookingResponses := make([]map[string]interface{}, len(bookings))
+	for i, booking := range bookings {
+		bookingResponses[i] = map[string]interface{}{
+			"id":         booking.ID,
+			"user_name":  booking.User.Name,
+			"date":       booking.StartTime.Format("2006-01-02"),
+			"time_slot":  booking.StartTime.Format("15:04") + " - " + booking.EndTime.Format("15:04"),
+			"status":     booking.Status,
+			"start_time": booking.StartTime,
+			"end_time":   booking.EndTime,
+			"user_id":    booking.UserID,
+			"chair_id":   booking.ChairID,
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"data": bookings,
-		"pagination": gin.H{
-			"total":  total,
-			"limit":  limit,
-			"offset": offset,
-		},
+		"bookings": bookingResponses,
+		"total":    total,
+		"limit":    limit,
+		"offset":   offset,
 	})
 }
 
