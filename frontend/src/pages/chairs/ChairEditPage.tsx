@@ -10,6 +10,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
 import { useChairs } from '../../hooks/useChairs';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import type { Chair } from '../../types/chair';
 
 const editChairSchema = z.object({
@@ -25,6 +26,7 @@ export default function ChairEditPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const chairId = parseInt(id || '0');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { useChairById, useUpdateChair } = useChairs();
   const { data: chair, isLoading, error } = useChairById(chairId);
@@ -65,9 +67,12 @@ export default function ChairEditPage() {
   };
 
   const handleCancel = () => {
-    if (confirm('Tem certeza que deseja cancelar? As alterações serão perdidas.')) {
-      handleBack();
-    }
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    handleBack();
   };
 
   if (error) {
@@ -229,6 +234,17 @@ export default function ChairEditPage() {
           </form>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={confirmCancel}
+        title="Cancelar Edição"
+        message="Tem certeza que deseja cancelar? As alterações não salvas serão perdidas."
+        confirmText="Sim, Cancelar"
+        cancelText="Continuar Editando"
+        variant="destructive"
+      />
     </div>
   );
 } 

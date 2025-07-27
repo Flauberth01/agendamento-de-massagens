@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale'
 import { availabilityService } from '../../services/availabilityService'
 import { chairService } from '../../services/chairService'
 import { handleApiError } from '../../services/api'
+import { ConfirmDialog } from '../../components/ui/confirm-dialog'
 
 
 const DAYS_OF_WEEK = [
@@ -38,6 +39,8 @@ export const AvailabilityListPage: React.FC = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedChair, setSelectedChair] = useState<string>('all')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [availabilityToDelete, setAvailabilityToDelete] = useState<number | null>(null)
 
   // Buscar disponibilidades
   const { data: availabilityResponse, isLoading, error } = useQuery({
@@ -77,6 +80,8 @@ export const AvailabilityListPage: React.FC = () => {
     onSuccess: () => {
       toast.success('Disponibilidade deletada com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['availabilities'] })
+      setShowDeleteDialog(false)
+      setAvailabilityToDelete(null)
     },
     onError: (error) => {
       const apiError = handleApiError(error)
@@ -106,8 +111,13 @@ export const AvailabilityListPage: React.FC = () => {
   }
 
   const handleDeleteAvailability = (id: number) => {
-    if (confirm('Tem certeza que deseja deletar esta disponibilidade? Esta ação não pode ser desfeita.')) {
-      deleteMutation.mutate(id)
+    setAvailabilityToDelete(id)
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDelete = () => {
+    if (availabilityToDelete) {
+      deleteMutation.mutate(availabilityToDelete)
     }
   }
 
@@ -334,6 +344,16 @@ export const AvailabilityListPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir esta disponibilidade? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </div>
   )
 } 

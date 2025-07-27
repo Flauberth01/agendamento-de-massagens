@@ -21,13 +21,21 @@ import {
   Clock,
   UserCheck,
   UserX,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
 import type { User, UserApprovalRequest } from '../../types/user'
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '../../components/ui/dropdown-menu'
+import { ConfirmDialog } from '../../components/ui/confirm-dialog'
 
 export const UserListPage: React.FC = () => {
   const navigate = useNavigate()
@@ -35,6 +43,8 @@ export const UserListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [roleFilter, setRoleFilter] = useState<string>('all')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<number | null>(null)
 
   // Buscar usuários
   const { data: usersResponse, isLoading, error } = useQuery({
@@ -89,6 +99,8 @@ export const UserListPage: React.FC = () => {
     onSuccess: () => {
       toast.success('Usuário deletado com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      setShowDeleteDialog(false)
+      setUserToDelete(null)
     },
     onError: (error) => {
       const apiError = handleApiError(error)
@@ -141,8 +153,13 @@ export const UserListPage: React.FC = () => {
   }
 
   const handleDeleteUser = (userId: number) => {
-    if (confirm('Tem certeza que deseja deletar este usuário? Esta ação não pode ser desfeita.')) {
-      deleteMutation.mutate(userId)
+    setUserToDelete(userId)
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDelete = () => {
+    if (userToDelete) {
+      deleteMutation.mutate(userToDelete)
     }
   }
 
@@ -414,6 +431,16 @@ export const UserListPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </div>
   )
 } 

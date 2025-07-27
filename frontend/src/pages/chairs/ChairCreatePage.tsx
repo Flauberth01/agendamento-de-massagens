@@ -10,6 +10,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
 import { useChairs } from '../../hooks/useChairs';
+import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 import { toast } from 'sonner';
 
 const createChairSchema = z.object({
@@ -23,6 +24,7 @@ type CreateChairFormData = z.infer<typeof createChairSchema>;
 
 export default function ChairCreatePage() {
   const navigate = useNavigate();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { useCreateChair } = useChairs();
   const createMutation = useCreateChair();
 
@@ -48,6 +50,15 @@ export default function ChairCreatePage() {
 
   const handleBack = () => {
     navigate('/chairs');
+  };
+
+  const handleCancel = () => {
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    handleBack();
   };
 
   return (
@@ -134,7 +145,7 @@ export default function ChairCreatePage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleBack}
+                onClick={handleCancel}
                 disabled={createMutation.isPending}
               >
                 Cancelar
@@ -160,6 +171,17 @@ export default function ChairCreatePage() {
           </form>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={confirmCancel}
+        title="Cancelar Criação"
+        message="Tem certeza que deseja cancelar? Os dados preenchidos serão perdidos."
+        confirmText="Sim, Cancelar"
+        cancelText="Continuar Criando"
+        variant="destructive"
+      />
     </div>
   );
 } 
