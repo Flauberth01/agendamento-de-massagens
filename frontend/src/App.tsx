@@ -122,7 +122,7 @@ function App() {
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <DashboardLayout>
+                <DashboardLayout variant="minimal">
                   <UserDashboardPage />
                 </DashboardLayout>
               </ProtectedRoute>
@@ -168,7 +168,7 @@ function App() {
             } />
             <Route path="/users/booking" element={
               <ProtectedRoute allowedRoles={['usuario']}>
-                <DashboardLayout>
+                <DashboardLayout variant="minimal">
                   <UserBookingPage />
                 </DashboardLayout>
               </ProtectedRoute>

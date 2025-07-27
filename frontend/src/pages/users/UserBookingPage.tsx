@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
+import { ConfirmDialog } from '../../components/ui/confirm-dialog'
 import { 
   Calendar, 
   Clock, 
@@ -18,7 +19,9 @@ import {
   AlertCircle,
   ArrowLeft,
   Eye,
-  Trash2
+  Trash2,
+  MapPin,
+  User
 } from 'lucide-react'
 import { format, addDays, startOfDay, isBefore, differenceInHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -38,7 +41,9 @@ interface TimeSlot {
 
 export const UserBookingPage: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   
   // Estados
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -47,8 +52,11 @@ export const UserBookingPage: React.FC = () => {
   const [showBookingForm, setShowBookingForm] = useState(false)
   const [bookingNotes, setBookingNotes] = useState('')
   const [viewMode, setViewMode] = useState<'calendar' | 'my-bookings'>('calendar')
-  const [showCancellationWarning, setShowCancellationWarning] = useState(false)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [bookingToCancel, setBookingToCancel] = useState<Booking | null>(null)
+
+  // Verificar se há um agendamento para cancelar na URL
+  const cancelBookingId = searchParams.get('cancel')
 
   // Buscar cadeiras ativas
   const { data: chairsResponse } = useQuery({
@@ -92,6 +100,7 @@ export const UserBookingPage: React.FC = () => {
       setShowBookingForm(false)
       setSelectedTimeSlot(null)
       setBookingNotes('')
+      navigate('/dashboard')
     },
     onError: (error) => {
       const apiError = handleApiError(error)
@@ -108,6 +117,8 @@ export const UserBookingPage: React.FC = () => {
       toast.success('Agendamento cancelado com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['user-bookings'] })
       queryClient.invalidateQueries({ queryKey: ['availability'] })
+      setShowCancelDialog(false)
+      setBookingToCancel(null)
     },
     onError: (error) => {
       const apiError = handleApiError(error)
@@ -119,6 +130,18 @@ export const UserBookingPage: React.FC = () => {
 
   const availableChairs = Array.isArray(chairsResponse?.chairs) ? chairsResponse.chairs : []
   const userBookingsList = Array.isArray(userBookings?.data) ? userBookings.data : []
+
+  // Verificar se há agendamento para cancelar na URL
+  useEffect(() => {
+    if (cancelBookingId) {
+      const booking = userBookingsList.find(b => b.id === parseInt(cancelBookingId))
+      if (booking) {
+        setBookingToCancel(booking)
+        setShowCancelDialog(true)
+        setViewMode('my-bookings')
+      }
+    }
+  }, [cancelBookingId, userBookingsList])
 
   // Funções utilitárias
   const canCancelBooking = (booking: Booking) => {
@@ -183,20 +206,13 @@ export const UserBookingPage: React.FC = () => {
     }
     
     setBookingToCancel(booking)
-    setShowCancellationWarning(true)
+    setShowCancelDialog(true)
   }
 
   const handleConfirmCancellation = () => {
     if (bookingToCancel) {
       cancelBookingMutation.mutate(bookingToCancel.id)
-      setShowCancellationWarning(false)
-      setBookingToCancel(null)
     }
-  }
-
-  const handleCancelCancellation = () => {
-    setShowCancellationWarning(false)
-    setBookingToCancel(null)
   }
 
   const formatTime = (date: Date) => {
@@ -219,11 +235,11 @@ export const UserBookingPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'agendado':
-        return <Badge variant="secondary">Agendado</Badge>
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
       case 'confirmado':
-        return <Badge variant="default">Confirmado</Badge>
+        return <Badge variant="default" className="bg-green-100 text-green-800">Confirmado</Badge>
       case 'concluido':
-        return <Badge variant="default" className="bg-green-500">Concluído</Badge>
+        return <Badge variant="default" className="bg-green-500 text-white">Concluído</Badge>
       case 'falta':
         return <Badge variant="destructive">Falta</Badge>
       case 'cancelado':
@@ -251,8 +267,7 @@ export const UserBookingPage: React.FC = () => {
             Voltar
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Agendar Sessão</h1>
-            <p className="text-gray-600">Agende sua sessão de massagem de forma simples</p>
+            <p className="text-muted-foreground">Agende sua sessão de massagem de forma simples</p>
           </div>
         </div>
         
@@ -299,17 +314,17 @@ export const UserBookingPage: React.FC = () => {
                       className={`
                         p-3 border rounded-lg text-left transition-colors
                         ${isDisabled 
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'hover:bg-blue-50 hover:border-blue-300 cursor-pointer'
+                          ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                          : 'hover:bg-accent hover:border-accent-foreground cursor-pointer'
                         }
                         ${isSelected
-                          ? 'bg-blue-100 border-blue-500 text-blue-700'
-                          : 'bg-white border-gray-200'
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'bg-background border-border'
                         }
                       `}
                     >
                       <div className="font-medium">{formatDate(date)}</div>
-                      <div className="text-sm text-gray-500">{getDayName(date)}</div>
+                      <div className="text-sm text-muted-foreground">{getDayName(date)}</div>
                     </button>
                   )
                 })}
@@ -329,9 +344,9 @@ export const UserBookingPage: React.FC = () => {
               {selectedDate ? (
                 availableChairs.length === 0 ? (
                   <div className="text-center py-8">
-                    <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Nenhuma cadeira disponível</h3>
-                    <p className="text-gray-600">Não há cadeiras ativas no momento.</p>
+                    <p className="text-muted-foreground">Não há cadeiras ativas no momento.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -342,16 +357,16 @@ export const UserBookingPage: React.FC = () => {
                         className={`
                           w-full p-3 border rounded-lg text-left transition-colors
                           ${selectedChair?.id === chair.id
-                            ? 'bg-blue-100 border-blue-500'
-                            : 'hover:bg-gray-50 hover:border-gray-300'
+                            ? 'bg-primary border-primary text-primary-foreground'
+                            : 'hover:bg-accent hover:border-accent-foreground'
                           }
                         `}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          <Building className="h-4 w-4 text-blue-500" />
+                          <Building className="h-4 w-4" />
                           <span className="font-medium">{chair.name}</span>
                         </div>
-                        <div className="text-sm text-gray-600">{chair.location}</div>
+                        <div className="text-sm text-muted-foreground">{chair.location}</div>
                         <div className="text-xs text-green-600 mt-1">Disponível</div>
                       </button>
                     ))}
@@ -359,8 +374,8 @@ export const UserBookingPage: React.FC = () => {
                 )
               ) : (
                 <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Selecione uma data primeiro</p>
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Selecione uma data primeiro</p>
                 </div>
               )}
             </CardContent>
@@ -383,9 +398,9 @@ export const UserBookingPage: React.FC = () => {
                   </div>
                 ) : availabilityData?.timeSlots.length === 0 ? (
                   <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Nenhum horário disponível</h3>
-                    <p className="text-gray-600">Não há horários disponíveis para esta data e cadeira.</p>
+                    <p className="text-muted-foreground">Não há horários disponíveis para esta data e cadeira.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
@@ -402,20 +417,20 @@ export const UserBookingPage: React.FC = () => {
                         className={`
                           p-3 border rounded-lg text-center transition-colors
                           ${!slot.available
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'hover:bg-blue-50 hover:border-blue-300 cursor-pointer'
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                            : 'hover:bg-accent hover:border-accent-foreground cursor-pointer'
                           }
                           ${selectedTimeSlot && 
                             format(selectedTimeSlot.startTime, 'HH:mm') === slot.startTime
-                            ? 'bg-blue-100 border-blue-500 text-blue-700'
-                            : 'bg-white border-gray-200'
+                            ? 'bg-primary border-primary text-primary-foreground'
+                            : 'bg-background border-border'
                           }
                         `}
                       >
                         <div className="font-medium">{slot.startTime}</div>
-                        <div className="text-xs text-gray-500">30 min</div>
+                        <div className="text-xs text-muted-foreground">30 min</div>
                         {!slot.available && (
-                          <div className="text-xs text-red-500 mt-1">Ocupado</div>
+                          <div className="text-xs text-destructive mt-1">Ocupado</div>
                         )}
                       </button>
                     ))}
@@ -423,8 +438,8 @@ export const UserBookingPage: React.FC = () => {
                 )
               ) : (
                 <div className="text-center py-8">
-                  <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Selecione uma cadeira primeiro</p>
+                  <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Selecione uma cadeira primeiro</p>
                 </div>
               )}
             </CardContent>
@@ -444,8 +459,8 @@ export const UserBookingPage: React.FC = () => {
             <CardContent>
               {upcomingBookings.length === 0 ? (
                 <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Você não possui agendamentos futuros</p>
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">Você não possui agendamentos futuros</p>
                   <Button onClick={() => setViewMode('calendar')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Agendar Nova Sessão
@@ -455,12 +470,12 @@ export const UserBookingPage: React.FC = () => {
                 <div className="space-y-4">
                   {upcomingBookings.map((booking) => (
                     <div key={booking.id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <Building className="h-5 w-5 text-blue-500" />
+                          <Building className="h-5 w-5 text-primary" />
                           <div>
                             <div className="font-medium">{booking.chair?.name}</div>
-                            <div className="text-sm text-gray-600">{booking.chair?.location}</div>
+                            <div className="text-sm text-muted-foreground">{booking.chair?.location}</div>
                           </div>
                         </div>
                         {getStatusBadge(booking.status)}
@@ -468,24 +483,24 @@ export const UserBookingPage: React.FC = () => {
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                         <div>
-                          <span className="text-gray-600">Data:</span>
+                          <span className="text-muted-foreground">Data:</span>
                           <p className="font-medium">{formatDate(new Date(booking.start_time))}</p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Horário:</span>
+                          <span className="text-muted-foreground">Horário:</span>
                           <p className="font-medium">
                             {formatTime(new Date(booking.start_time))} - {formatTime(new Date(booking.end_time))}
                           </p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Tempo restante:</span>
-                          <p className="font-medium text-blue-600">{getTimeUntilBooking(booking)}</p>
+                          <span className="text-muted-foreground">Tempo restante:</span>
+                          <p className="font-medium text-primary">{getTimeUntilBooking(booking)}</p>
                         </div>
                       </div>
 
                       {booking.notes && (
                         <div className="mb-3">
-                          <span className="text-gray-600 text-sm">Observações:</span>
+                          <span className="text-muted-foreground text-sm">Observações:</span>
                           <p className="text-sm mt-1">{booking.notes}</p>
                         </div>
                       )}
@@ -524,17 +539,20 @@ export const UserBookingPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               {pastBookings.length === 0 ? (
-                <p className="text-center text-gray-500 py-4">Nenhum histórico disponível</p>
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhum histórico disponível</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {pastBookings.slice(0, 5).map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
-                          <Building className="h-4 w-4 text-blue-500" />
+                          <Building className="h-4 w-4 text-primary" />
                           <div className="font-medium">{booking.chair?.name}</div>
                         </div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           {formatDate(new Date(booking.start_time))} às {formatTime(new Date(booking.start_time))}
                         </div>
                       </div>
@@ -552,8 +570,8 @@ export const UserBookingPage: React.FC = () => {
 
       {/* Modal de Confirmação de Agendamento */}
       {showBookingForm && selectedChair && selectedDate && selectedTimeSlot && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4 border shadow-lg">
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle className="h-5 w-5 text-green-500" />
               <h3 className="text-lg font-semibold">Confirmar Agendamento</h3>
@@ -562,21 +580,21 @@ export const UserBookingPage: React.FC = () => {
             <div className="space-y-4 mb-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Data:</span>
+                  <span className="text-muted-foreground">Data:</span>
                   <p className="font-medium">{formatDate(selectedDate)}</p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Horário:</span>
+                  <span className="text-muted-foreground">Horário:</span>
                   <p className="font-medium">
                     {formatTime(selectedTimeSlot.startTime)} - {formatTime(selectedTimeSlot.endTime)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Cadeira:</span>
+                  <span className="text-muted-foreground">Cadeira:</span>
                   <p className="font-medium">{selectedChair.name}</p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Local:</span>
+                  <span className="text-muted-foreground">Local:</span>
                   <p className="font-medium">{selectedChair.location}</p>
                 </div>
               </div>
@@ -621,55 +639,16 @@ export const UserBookingPage: React.FC = () => {
       )}
 
       {/* Modal de Confirmação de Cancelamento */}
-      {showCancellationWarning && bookingToCancel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              <h3 className="text-lg font-semibold">Confirmar Cancelamento</h3>
-            </div>
-            
-            <div className="mb-6">
-              <p className="text-gray-600 mb-2">
-                Tem certeza que deseja cancelar este agendamento?
-              </p>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-sm">
-                  <div className="font-medium">{bookingToCancel.chair?.name}</div>
-                  <div className="text-gray-600">
-                    {formatDate(new Date(bookingToCancel.start_time))} às {formatTime(new Date(bookingToCancel.start_time))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={handleCancelCancellation}
-                className="flex-1"
-              >
-                Manter Agendamento
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleConfirmCancellation}
-                disabled={cancelBookingMutation.isPending}
-                className="flex-1"
-              >
-                {cancelBookingMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Cancelando...
-                  </>
-                ) : (
-                  'Confirmar Cancelamento'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={handleConfirmCancellation}
+        title="Confirmar Cancelamento"
+        message="Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita."
+        confirmText="Confirmar Cancelamento"
+        cancelText="Manter Agendamento"
+        variant="destructive"
+      />
     </div>
   )
 } 

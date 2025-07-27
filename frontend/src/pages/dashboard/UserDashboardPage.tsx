@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { useAuth } from '../../stores/authStore'
+import { bookingService } from '../../services/bookingService'
 import { 
   Calendar, 
   Clock, 
@@ -11,91 +13,70 @@ import {
   XCircle, 
   Plus,
   Loader2,
+  MapPin,
+  User,
   CalendarDays,
-  TrendingUp
+  Sparkles
 } from 'lucide-react'
-
-interface UserBooking {
-  id: number
-  chair: {
-    name: string
-    location: string
-  }
-  start_time: string
-  end_time: string
-  status: 'agendado' | 'confirmado' | 'cancelado' | 'concluido' | 'falta'
-  notes?: string
-}
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { handleApiError } from '../../services/api'
+import type { Booking } from '../../types/booking'
 
 interface UserStats {
   totalBookings: number
   completedBookings: number
-  activeBookings: number
   upcomingBookings: number
+  activeBookings: number
 }
 
 export const UserDashboardPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
-  const [userStats, setUserStats] = useState<UserStats>({
-    totalBookings: 0,
-    completedBookings: 0,
-    activeBookings: 0,
-    upcomingBookings: 0
+
+  // Buscar agendamentos do usuário
+  const { data: userBookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ['user-bookings'],
+    queryFn: () => bookingService.getUserBookings(),
+    staleTime: 1 * 60 * 1000,
   })
-  const [upcomingBookings, setUpcomingBookings] = useState<UserBooking[]>([])
-  const [recentBookings, setRecentBookings] = useState<UserBooking[]>([])
+
+  const bookings = userBookings?.data || []
+
+  // Calcular estatísticas
+  const stats: UserStats = {
+    totalBookings: bookings.length,
+    completedBookings: bookings.filter(b => b.status === 'concluido').length,
+    upcomingBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'confirmado').length,
+    activeBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'confirmado').length
+  }
+
+  // Próximo agendamento
+  const nextBooking = bookings
+    .filter(b => b.status === 'agendado' || b.status === 'confirmado')
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())[0]
+
+  // Histórico recente (últimos 3)
+  const recentBookings = bookings
+    .filter(b => b.status === 'concluido' || b.status === 'cancelado')
+    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+    .slice(0, 3)
 
   useEffect(() => {
-    // Simular carregamento de dados
-    setTimeout(() => {
-      setUserStats({
-        totalBookings: 15,
-        completedBookings: 12,
-        activeBookings: 1,
-        upcomingBookings: 1
-      })
-
-      setUpcomingBookings([
-        {
-          id: 1,
-          chair: { name: 'Cadeira 1', location: 'Sala de Massagem A' },
-          start_time: '2024-01-16T14:00:00Z',
-          end_time: '2024-01-16T14:30:00Z',
-          status: 'agendado'
-        }
-      ])
-
-      setRecentBookings([
-        {
-          id: 2,
-          chair: { name: 'Cadeira 2', location: 'Sala de Massagem B' },
-          start_time: '2024-01-15T10:00:00Z',
-          end_time: '2024-01-15T10:30:00Z',
-          status: 'concluido'
-        },
-        {
-          id: 3,
-          chair: { name: 'Cadeira 1', location: 'Sala de Massagem A' },
-          start_time: '2024-01-12T16:00:00Z',
-          end_time: '2024-01-12T16:30:00Z',
-          status: 'concluido'
-        }
-      ])
-
+    if (!bookingsLoading) {
       setIsLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }, [bookingsLoading])
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'agendado':
-        return <Badge variant="secondary">Agendado</Badge>
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
       case 'confirmado':
-        return <Badge variant="default">Confirmado</Badge>
+        return <Badge variant="default" className="bg-green-100 text-green-800">Confirmado</Badge>
       case 'concluido':
-        return <Badge variant="default" className="bg-green-500">Concluído</Badge>
+        return <Badge variant="default" className="bg-green-500 text-white">Concluído</Badge>
       case 'falta':
         return <Badge variant="destructive">Falta</Badge>
       case 'cancelado':
@@ -105,171 +86,199 @@ export const UserDashboardPage: React.FC = () => {
     }
   }
 
-  const formatDateTime = (dateTime: string) => {
-    return new Date(dateTime).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  const formatDateTime = (dateTime: Date) => {
+    return format(dateTime, 'dd/MM, HH:mm', { locale: ptBR })
   }
 
-  const handleCancelBooking = (bookingId: number) => {
-    // Implementar cancelamento de agendamento
-    console.log('Cancelar agendamento:', bookingId)
+  const formatDate = (dateTime: Date) => {
+    return format(dateTime, 'dd/MM/yyyy', { locale: ptBR })
   }
 
   const handleNewBooking = () => {
     navigate('/users/booking')
   }
 
-  const handleViewBookings = () => {
-    navigate('/users/booking')
+  const handleCancelBooking = (bookingId: number) => {
+    navigate(`/users/booking?cancel=${bookingId}`)
   }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando seu dashboard...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Meu Dashboard</h1>
-        <p className="text-gray-600">Bem-vindo, {user?.name}</p>
+    <div className="space-y-8">
+      {/* Header com saudação */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Olá, {user?.name}! 👋
+        </h2>
+        <p className="text-muted-foreground">
+          Gerencie seus agendamentos e acompanhe suas sessões
+        </p>
       </div>
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Sessões</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-blue-900">Total de Sessões</CardTitle>
+            <Calendar className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats.totalBookings}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-blue-900">{stats.totalBookings}</div>
+            <p className="text-xs text-blue-700">
               Sessões realizadas
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-green-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium text-green-900">Concluídas</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{userStats.completedBookings}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-green-900">{stats.completedBookings}</div>
+            <p className="text-xs text-green-700">
               Sessões finalizadas
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Próximas</CardTitle>
-            <Clock className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium text-purple-900">Próximas</CardTitle>
+            <Clock className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{userStats.upcomingBookings}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-purple-900">{stats.upcomingBookings}</div>
+            <p className="text-xs text-purple-700">
               Agendamentos futuros
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-50 to-orange-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ativas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium text-orange-900">Ativas</CardTitle>
+            <User className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{userStats.activeBookings}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-orange-900">{stats.activeBookings}</div>
+            <p className="text-xs text-orange-700">
               Sessões ativas
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Próximo Agendamento */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CalendarDays className="h-5 w-5 text-blue-600" />
               Próximo Agendamento
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {upcomingBookings.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">Você não possui agendamentos futuros</p>
-                <Button onClick={handleNewBooking} className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agendar Nova Sessão
+            {!nextBooking ? (
+              <div className="text-center py-12">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                  <Sparkles className="h-10 w-10 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Nenhum agendamento futuro
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Que tal agendar sua primeira sessão de massagem?
+                </p>
+                <Button onClick={handleNewBooking} size="lg" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Agendar Primeira Sessão
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
-                {upcomingBookings.map((booking) => (
-                  <div key={booking.id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-medium">{booking.chair.name}</div>
-                      {getStatusBadge(booking.status)}
+                <div className="p-6 border border-blue-200 rounded-xl bg-gradient-to-br from-blue-50 to-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="font-semibold text-xl text-gray-900">{nextBooking.chair?.name}</div>
+                    {getStatusBadge(nextBooking.status)}
+                  </div>
+                  
+                  <div className="space-y-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-4 w-4 text-blue-600" />
+                      <span>{nextBooking.chair?.location}</span>
                     </div>
-                    <div className="text-sm text-gray-600 mb-2">
-                      📍 {booking.chair.location}
-                    </div>
-                    <div className="text-sm text-gray-600 mb-3">
-                      🕒 {formatDateTime(booking.start_time)}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleCancelBooking(booking.id)}
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Cancelar
-                      </Button>
-                      <Button size="sm" className="flex-1" onClick={handleNewBooking}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Agendar Outra
-                      </Button>
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">{formatDateTime(nextBooking.start_time)}</span>
                     </div>
                   </div>
-                ))}
+
+                  <div className="flex gap-3 mt-6">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleCancelBooking(nextBooking.id)}
+                      className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleNewBooking}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agendar Outra
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Histórico Recente */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Clock className="h-5 w-5 text-purple-600" />
               Histórico Recente
             </CardTitle>
           </CardHeader>
           <CardContent>
             {recentBookings.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">Nenhum histórico disponível</p>
+              <div className="text-center py-12">
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                  <Clock className="h-10 w-10 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Nenhum histórico disponível
+                </h3>
+                <p className="text-muted-foreground">
+                  Suas sessões concluídas aparecerão aqui
+                </p>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {recentBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={booking.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex-1">
-                      <div className="font-medium">{booking.chair.name}</div>
-                      <div className="text-sm text-gray-600">
-                        {formatDateTime(booking.start_time)}
+                      <div className="font-medium text-gray-900">{booking.chair?.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatDate(booking.start_time)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -282,29 +291,6 @@ export const UserDashboardPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Ações Rápidas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ações Rápidas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button onClick={handleNewBooking} className="h-20 flex-col">
-              <Plus className="h-6 w-6 mb-2" />
-              <span>Agendar Nova Sessão</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={handleViewBookings}>
-              <Calendar className="h-6 w-6 mb-2" />
-              <span>Ver Meus Agendamentos</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={handleViewBookings}>
-              <Clock className="h-6 w-6 mb-2" />
-              <span>Meu Histórico</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 } 

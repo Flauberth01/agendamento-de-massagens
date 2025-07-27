@@ -6,11 +6,13 @@ import { cn } from '@/utils/cn'
 interface DashboardLayoutProps {
   children: React.ReactNode
   showSidebar?: boolean
+  variant?: 'default' | 'minimal'
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   children, 
-  showSidebar = true 
+  showSidebar = true,
+  variant = 'default'
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -22,17 +24,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     setSidebarOpen(false)
   }
 
+  // Para variante minimal, não mostrar sidebar
+  const shouldShowSidebar = showSidebar && variant !== 'minimal'
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <Header 
         onMenuToggle={handleMenuToggle}
-        showMenuButton={showSidebar}
+        showMenuButton={shouldShowSidebar}
+        variant={variant}
       />
 
       <div className="flex">
         {/* Sidebar */}
-        {showSidebar && (
+        {shouldShowSidebar && (
           <Sidebar 
             isOpen={sidebarOpen}
             onClose={handleSidebarClose}
@@ -42,7 +48,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {/* Main content */}
         <main className={cn(
           "flex-1 min-h-screen",
-          showSidebar ? "lg:ml-56" : ""
+          shouldShowSidebar ? "lg:ml-56" : ""
         )}>
           <div className="p-4 lg:p-6">
             {children}

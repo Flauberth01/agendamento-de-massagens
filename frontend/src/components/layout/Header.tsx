@@ -15,15 +15,18 @@ import {
   Menu 
 } from 'lucide-react'
 import { formatName } from '@/utils/formatters'
+import { cn } from '@/utils/cn'
 
 interface HeaderProps {
   onMenuToggle?: () => void
   showMenuButton?: boolean
+  variant?: 'default' | 'minimal'
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   onMenuToggle, 
-  showMenuButton = false 
+  showMenuButton = false,
+  variant = 'default'
 }) => {
   const { user, logout, isLoggingOut } = useAuth()
 
@@ -47,8 +50,11 @@ export const Header: React.FC<HeaderProps> = ({
             </Button>
           )}
           
-          <h1 className="text-base font-medium text-gray-900">
-            Sistema de Agendamento
+          <h1 className={cn(
+            "font-medium text-gray-900",
+            variant === 'minimal' ? "text-lg" : "text-base"
+          )}>
+            {variant === 'minimal' ? 'Meu Dashboard' : 'Sistema de Agendamento'}
           </h1>
         </div>
 
