@@ -1,0 +1,77 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: agendamento-postgres
+    environment:
+      POSTGRES_DB: agendamento_db
+      POSTGRES_USER: the_user
+      POSTGRES_PASSWORD: agendamento_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agendamento-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U the_user -d agendamento_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Backend
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agendamento-api
+    environment:
+      # Database
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=the_user
+      - DB_PASSWORD=agendamento_password
+      - DB_NAME=agendamento_db
+      - DB_SSLMODE=disable
+      - DB_TIMEZONE=America/Sao_Paulo
+      - DB_MAX_OPEN_CONNS=100
+      - DB_MAX_IDLE_CONNS=10
+      - DB_CONN_MAX_LIFETIME=1h
+      
+      # JWT
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRATION=24h
+      
+      # Server
+      - PORT=8080
+      - GIN_MODE=release
+      - SERVER_READ_TIMEOUT=30s
+      - SERVER_WRITE_TIMEOUT=30s
+      
+      # Logging
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      
+      # Email - Mailtrap
+      - SMTP_HOST=sandbox.smtp.mailtrap.io
+      - SMTP_PORT=2525
+      - SMTP_USERNAME=4eb9b4bf7a6ca8
+      - SMTP_PASSWORD=2024d182336c71
+      - FROM_EMAIL=flauberth12@gmail.com
+      - FROM_NAME=Sistema de Agendamento
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - agendamento-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  agendamento-network:
+    driver: bridge

@@ -1,0 +1,1668 @@
+basePath: /api
+definitions:
+  dtos.ChairResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      location:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dtos.CreateChairRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      location:
+        maxLength: 100
+        minLength: 2
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      status:
+        enum:
+        - ativa
+        - inativa
+        type: string
+    required:
+    - location
+    - name
+    type: object
+  dtos.CreateChairResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      location:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+  dtos.CreateUserRequest:
+    properties:
+      birth_date:
+        type: string
+      cpf:
+        type: string
+      email:
+        type: string
+      function:
+        type: string
+      gender:
+        enum:
+        - masculino
+        - feminino
+        - outro
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 10
+        type: string
+      position:
+        type: string
+      registration:
+        type: string
+      requested_role:
+        enum:
+        - usuario
+        - atendente
+        - admin
+        type: string
+      sector:
+        type: string
+    required:
+    - cpf
+    - email
+    - name
+    - password
+    - phone
+    type: object
+  dtos.CreateUserResponse:
+    properties:
+      birth_date:
+        type: string
+      cpf:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      function:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+      registration:
+        type: string
+      requested_role:
+        type: string
+      role:
+        type: string
+      sector:
+        type: string
+      status:
+        type: string
+    type: object
+  entities.Availability:
+    properties:
+      chair:
+        allOf:
+        - $ref: '#/definitions/entities.Chair'
+        description: Relacionamentos
+      chair_id:
+        type: integer
+      created_at:
+        type: string
+      day_of_week:
+        description: 0=Domingo, 6=Sábado
+        maximum: 6
+        minimum: 0
+        type: integer
+      end_time:
+        description: Formato HH:MM
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      start_time:
+        description: Formato HH:MM
+        type: string
+      updated_at:
+        type: string
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+    required:
+    - chair_id
+    - day_of_week
+    - end_time
+    - start_time
+    type: object
+  entities.Booking:
+    properties:
+      chair:
+        $ref: '#/definitions/entities.Chair'
+      chair_id:
+        type: integer
+      created_at:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      notes:
+        type: string
+      start_time:
+        type: string
+      status:
+        enum:
+        - agendado
+        - confirmado
+        - cancelado
+        - concluido
+        - falta
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/entities.User'
+        description: Relacionamentos
+      user_id:
+        type: integer
+    required:
+    - chair_id
+    - end_time
+    - start_time
+    - user_id
+    type: object
+  entities.Chair:
+    properties:
+      availabilities:
+        items:
+          $ref: '#/definitions/entities.Availability'
+        type: array
+      bookings:
+        description: Relacionamentos
+        items:
+          $ref: '#/definitions/entities.Booking'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      location:
+        maxLength: 100
+        minLength: 2
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      status:
+        enum:
+        - ativa
+        - inativa
+        type: string
+      updated_at:
+        type: string
+    required:
+    - location
+    - name
+    type: object
+  entities.User:
+    properties:
+      birth_date:
+        type: string
+      bookings:
+        description: Relacionamentos
+        items:
+          $ref: '#/definitions/entities.Booking'
+        type: array
+      cpf:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      function:
+        type: string
+      gender:
+        enum:
+        - masculino
+        - feminino
+        - outro
+        type: string
+      id:
+        type: integer
+      last_login:
+        type: string
+      name:
+        maxLength: 60
+        minLength: 2
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 10
+        type: string
+      position:
+        type: string
+      registration:
+        type: string
+      requested_role:
+        enum:
+        - usuario
+        - atendente
+        - admin
+        type: string
+      role:
+        enum:
+        - usuario
+        - atendente
+        - admin
+        type: string
+      sector:
+        type: string
+      status:
+        enum:
+        - pendente
+        - aprovado
+        - reprovado
+        type: string
+      updated_at:
+        type: string
+    required:
+    - cpf
+    - email
+    - name
+    - phone
+    type: object
+  handlers.LoginRequest:
+    properties:
+      cpf:
+        description: |-
+          CPF do usuário (apenas números, pontos e hífen serão removidos automaticamente)
+          required: true
+          example: "123.456.789-09"
+        type: string
+      password:
+        description: |-
+          Senha do usuário (mínimo 6 caracteres)
+          required: true
+          example: "minhasenha123"
+        minLength: 6
+        type: string
+    required:
+    - cpf
+    - password
+    type: object
+  handlers.LoginResponse:
+    properties:
+      expires_at:
+        description: |-
+          Data e hora de expiração do token
+          example: "2024-01-15T10:30:00Z"
+        type: string
+      refresh_token:
+        description: |-
+          Refresh token para renovar o token principal (válido por 7 dias)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        type: string
+      token:
+        description: |-
+          Token JWT para autenticação (válido por 24 horas)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        type: string
+      user:
+        additionalProperties: true
+        description: Dados do usuário autenticado
+        type: object
+    type: object
+  handlers.RefreshRequest:
+    properties:
+      refresh_token:
+        description: |-
+          Refresh token obtido no login
+          required: true
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.RefreshResponse:
+    properties:
+      expires_at:
+        description: |-
+          Nova data e hora de expiração
+          example: "2024-01-15T10:30:00Z"
+        type: string
+      refresh_token:
+        description: |-
+          Novo refresh token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        type: string
+      token:
+        description: |-
+          Novo token JWT para autenticação
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      birth_date:
+        description: |-
+          Data de nascimento
+          required: true
+          example: "1990-01-15T00:00:00Z"
+        type: string
+      cpf:
+        description: |-
+          CPF do usuário (apenas números, pontos e hífen serão removidos automaticamente)
+          required: true
+          example: "123.456.789-09"
+        type: string
+      email:
+        description: |-
+          Email do usuário
+          required: true
+          example: "joao@example.com"
+        type: string
+      function:
+        description: |-
+          Função/cargo do usuário
+          required: true
+          example: "Desenvolvedor"
+        type: string
+      gender:
+        description: |-
+          Gênero do usuário
+          required: true
+          enum: masculino,feminino,outro
+          example: "masculino"
+        enum:
+        - masculino
+        - feminino
+        - outro
+        type: string
+      name:
+        description: |-
+          Nome completo do usuário
+          required: true
+          example: "João Silva"
+        minLength: 2
+        type: string
+      password:
+        description: |-
+          Senha do usuário (mínimo 6 caracteres)
+          required: true
+          example: "minhasenha123"
+        minLength: 6
+        type: string
+      phone:
+        description: |-
+          Telefone do usuário
+          required: true
+          example: "11999999999"
+        minLength: 10
+        type: string
+      position:
+        description: |-
+          Posição hierárquica
+          required: true
+          example: "Junior"
+        type: string
+      registration:
+        description: |-
+          Matrícula do usuário
+          required: true
+          example: "12345"
+        type: string
+      requested_role:
+        description: |-
+          Role solicitado pelo usuário
+          required: true
+          enum: usuario,atendente,admin
+          example: "usuario"
+        enum:
+        - usuario
+        - atendente
+        - admin
+        type: string
+      sector:
+        description: |-
+          Setor de trabalho
+          required: true
+          example: "TI"
+        type: string
+    required:
+    - birth_date
+    - cpf
+    - email
+    - function
+    - gender
+    - name
+    - password
+    - phone
+    - position
+    - registration
+    - requested_role
+    - sector
+    type: object
+  handlers.RegisterResponse:
+    properties:
+      email:
+        description: |-
+          Email do usuário
+          example: "joao@example.com"
+        type: string
+      id:
+        description: |-
+          ID do usuário criado
+          example: 1
+        type: integer
+      message:
+        description: |-
+          Mensagem informativa
+          example: "Usuário registrado com sucesso. Aguarde aprovação."
+        type: string
+      name:
+        description: |-
+          Nome do usuário
+          example: "João Silva"
+        type: string
+      role:
+        description: |-
+          Role atribuído (sempre "usuario" para novos registros)
+          example: "usuario"
+        type: string
+      status:
+        description: |-
+          Status do usuário (sempre "pendente" para novos registros)
+          example: "pendente"
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API REST para sistema de agendamento de cadeiras de massagem
+  title: Sistema de Agendamento API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica um usuário usando CPF e senha e retorna um token JWT
+      parameters:
+      - description: Dados de login
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login realizado com sucesso
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: CPF ou senha inválidos ou usuário não aprovado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Autenticar usuário
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalida o token atual e registra o logout no sistema
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout realizado com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Fazer logout
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Renova o token JWT usando o refresh token válido
+      parameters:
+      - description: Refresh token
+        in: body
+        name: refresh
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token renovado com sucesso
+          schema:
+            $ref: '#/definitions/handlers.RefreshResponse'
+        "400":
+          description: Refresh token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Refresh token expirado ou inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Renovar token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registra um novo usuário no sistema. O usuário será criado com
+        status "pendente" e aguardará aprovação.
+      parameters:
+      - description: Dados do novo usuário
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Usuário registrado com sucesso
+          schema:
+            $ref: '#/definitions/handlers.RegisterResponse'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: CPF ou email já cadastrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Registrar novo usuário
+      tags:
+      - auth
+  /availabilities:
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma lista paginada de disponibilidades com filtros opcionais
+      parameters:
+      - default: 10
+        description: Limite de resultados por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Número de registros a pular
+        in: query
+        name: offset
+        type: integer
+      - description: Filtrar por ID da cadeira
+        in: query
+        name: chair_id
+        type: integer
+      - description: Filtrar por dia da semana (0=Domingo, 6=Sábado)
+        in: query
+        name: day_of_week
+        type: integer
+      - description: Filtrar por status ativo
+        in: query
+        name: is_active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de disponibilidades
+          schema:
+            items:
+              $ref: '#/definitions/entities.Availability'
+            type: array
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Listar disponibilidades
+      tags:
+      - availabilities
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova disponibilidade para uma cadeira (apenas admins)
+      parameters:
+      - description: Dados da disponibilidade
+        in: body
+        name: availability
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Availability'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Disponibilidade criada com sucesso
+          schema:
+            $ref: '#/definitions/entities.Availability'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Criar disponibilidade
+      tags:
+      - availabilities
+  /availabilities/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de uma disponibilidade específica pelo ID
+      parameters:
+      - description: ID da disponibilidade
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Disponibilidade encontrada
+          schema:
+            $ref: '#/definitions/entities.Availability'
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Disponibilidade não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar disponibilidade por ID
+      tags:
+      - availabilities
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de uma disponibilidade existente (apenas admins)
+      parameters:
+      - description: ID da disponibilidade
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados atualizados da disponibilidade
+        in: body
+        name: availability
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Availability'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Disponibilidade atualizada com sucesso
+          schema:
+            $ref: '#/definitions/entities.Availability'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Disponibilidade não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Atualizar disponibilidade
+      tags:
+      - availabilities
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo agendamento para uma cadeira de massagem
+      parameters:
+      - description: Dados do agendamento
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Booking'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Agendamento criado com sucesso
+          schema:
+            $ref: '#/definitions/entities.Booking'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Criar agendamento
+      tags:
+      - bookings
+  /bookings/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de um agendamento específico pelo ID
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Agendamento encontrado
+          schema:
+            $ref: '#/definitions/entities.Booking'
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar agendamento por ID
+      tags:
+      - bookings
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de um agendamento existente
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados atualizados do agendamento
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Booking'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Agendamento atualizado com sucesso
+          schema:
+            $ref: '#/definitions/entities.Booking'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Atualizar agendamento
+      tags:
+      - bookings
+  /bookings/{id}/cancel:
+    patch:
+      consumes:
+      - application/json
+      description: Cancela um agendamento existente com motivo opcional
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Motivo do cancelamento
+        in: body
+        name: reason
+        schema:
+          properties:
+            reason:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Agendamento cancelado com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Cancelar agendamento
+      tags:
+      - bookings
+  /bookings/{id}/confirm:
+    patch:
+      consumes:
+      - application/json
+      description: Confirma um agendamento pendente (apenas para atendentes/admins)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Agendamento confirmado com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Confirmar agendamento
+      tags:
+      - bookings
+  /chairs:
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma lista paginada de todas as cadeiras disponíveis
+      parameters:
+      - default: 10
+        description: Limite de resultados por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Número de registros a pular
+        in: query
+        name: offset
+        type: integer
+      - description: Filtrar por status da cadeira
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de cadeiras
+          schema:
+            items:
+              $ref: '#/definitions/entities.Chair'
+            type: array
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Listar cadeiras
+      tags:
+      - chairs
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova cadeira de massagem no sistema (apenas admins)
+      parameters:
+      - description: Dados da cadeira
+        in: body
+        name: chair
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateChairRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Cadeira criada com sucesso
+          schema:
+            $ref: '#/definitions/dtos.CreateChairResponse'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Criar cadeira
+      tags:
+      - chairs
+  /chairs/{chair_id}/availabilities:
+    get:
+      consumes:
+      - application/json
+      description: Retorna todas as disponibilidades configuradas para uma cadeira
+        específica
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: chair_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Disponibilidades da cadeira
+          schema:
+            items:
+              $ref: '#/definitions/entities.Availability'
+            type: array
+        "400":
+          description: ID da cadeira inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cadeira não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar disponibilidades de uma cadeira
+      tags:
+      - availabilities
+  /chairs/{chair_id}/available-slots:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os horários disponíveis para agendamento em uma cadeira
+        específica em uma data
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: chair_id
+        required: true
+        type: integer
+      - description: 'Data para buscar horários (formato: YYYY-MM-DD)'
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de horários disponíveis
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar horários disponíveis
+      tags:
+      - availabilities
+  /chairs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Exclui uma cadeira do sistema (apenas admins)
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cadeira excluída com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cadeira não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Excluir cadeira
+      tags:
+      - chairs
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de uma cadeira específica pelo ID
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cadeira encontrada
+          schema:
+            $ref: '#/definitions/dtos.ChairResponse'
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cadeira não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar cadeira por ID
+      tags:
+      - chairs
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de uma cadeira existente (apenas admins)
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados atualizados da cadeira
+        in: body
+        name: chair
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Chair'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cadeira atualizada com sucesso
+          schema:
+            $ref: '#/definitions/entities.Chair'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cadeira não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Atualizar cadeira
+      tags:
+      - chairs
+  /dashboard/admin:
+    get:
+      consumes:
+      - application/json
+      description: Retorna dados completos do dashboard com estatísticas, usuários
+        pendentes e ocupação das cadeiras para administradores
+      parameters:
+      - default: hoje
+        description: 'Data para filtrar agendamentos (formato: YYYY-MM-DD)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dados completos do dashboard
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado - apenas administradores
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Dashboard do administrador
+      tags:
+      - dashboard
+  /dashboard/attendant:
+    get:
+      consumes:
+      - application/json
+      description: Retorna dados do dashboard com agendamentos e estatísticas para
+        atendentes
+      parameters:
+      - default: hoje
+        description: 'Data para filtrar agendamentos (formato: YYYY-MM-DD)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dados do dashboard
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado - apenas atendentes e admins
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Dashboard do atendente
+      tags:
+      - dashboard
+  /dashboard/chair-occupancy:
+    get:
+      consumes:
+      - application/json
+      description: Retorna dados de ocupação das cadeiras para uma data específica
+      parameters:
+      - default: hoje
+        description: 'Data para calcular ocupação (formato: YYYY-MM-DD)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dados de ocupação das cadeiras
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Formato de data inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Ocupação das cadeiras
+      tags:
+      - dashboard
+  /dashboard/pending-approvals:
+    get:
+      consumes:
+      - application/json
+      description: Retorna lista de usuários aguardando aprovação do administrador
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de usuários pendentes
+          schema:
+            items:
+              $ref: '#/definitions/entities.User'
+            type: array
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado - apenas administradores
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar usuários pendentes
+      tags:
+      - dashboard
+  /dashboard/test-reminders:
+    post:
+      consumes:
+      - application/json
+      description: Envia lembretes para todos os agendamentos do próximo dia (para
+        testes)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lembretes enviados com sucesso
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Não autorizado
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: Enviar lembretes de teste
+      tags:
+      - Dashboard
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo usuário no sistema
+      parameters:
+      - description: Dados do usuário
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Usuário criado com sucesso
+          schema:
+            $ref: '#/definitions/dtos.CreateUserResponse'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Criar usuário
+      tags:
+      - users
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de um usuário específico pelo ID
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuário encontrado
+          schema:
+            $ref: '#/definitions/entities.User'
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuário não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar usuário por ID
+      tags:
+      - users
+securityDefinitions:
+  Bearer:
+    description: Digite 'Bearer' seguido de um espaço e o token JWT obtido no login
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
