@@ -18,10 +18,11 @@ import {
   Building,
   AlertCircle,
   ArrowLeft,
-  Eye,
   Trash2,
   MapPin,
-  User
+  User,
+  Sparkles,
+  XCircle
 } from 'lucide-react'
 import { format, addDays, startOfDay, isBefore, differenceInHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -51,7 +52,6 @@ export const UserBookingPage: React.FC = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null)
   const [showBookingForm, setShowBookingForm] = useState(false)
   const [bookingNotes, setBookingNotes] = useState('')
-  const [viewMode, setViewMode] = useState<'calendar' | 'my-bookings'>('calendar')
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [bookingToCancel, setBookingToCancel] = useState<Booking | null>(null)
 
@@ -65,7 +65,7 @@ export const UserBookingPage: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   })
 
-  // Buscar agendamentos do usuário
+  // Buscar agendamentos do usuário (apenas para cancelamento via URL)
   const { data: userBookings } = useQuery({
     queryKey: ['user-bookings'],
     queryFn: () => bookingService.getUserBookings(),
@@ -119,6 +119,7 @@ export const UserBookingPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['availability'] })
       setShowCancelDialog(false)
       setBookingToCancel(null)
+      navigate('/dashboard')
     },
     onError: (error) => {
       const apiError = handleApiError(error)
@@ -131,6 +132,11 @@ export const UserBookingPage: React.FC = () => {
   const availableChairs = Array.isArray(chairsResponse?.chairs) ? chairsResponse.chairs : []
   const userBookingsList = Array.isArray(userBookings?.data) ? userBookings.data : []
 
+  // Verificar se o usuário já tem um agendamento ativo
+  const activeBooking = userBookingsList.find(booking => 
+    booking.status === 'agendado' || booking.status === 'confirmado'
+  )
+
   // Verificar se há agendamento para cancelar na URL
   useEffect(() => {
     if (cancelBookingId) {
@@ -138,7 +144,6 @@ export const UserBookingPage: React.FC = () => {
       if (booking) {
         setBookingToCancel(booking)
         setShowCancelDialog(true)
-        setViewMode('my-bookings')
       }
     }
   }, [cancelBookingId, userBookingsList])
@@ -149,22 +154,6 @@ export const UserBookingPage: React.FC = () => {
     const bookingTime = new Date(booking.start_time)
     const hoursUntilBooking = differenceInHours(bookingTime, now)
     return hoursUntilBooking >= 3
-  }
-
-  const getTimeUntilBooking = (booking: Booking) => {
-    const now = new Date()
-    const bookingTime = new Date(booking.start_time)
-    const diffInHours = differenceInHours(bookingTime, now)
-    
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((bookingTime.getTime() - now.getTime()) / (1000 * 60))
-      return `${diffInMinutes} minutos`
-    } else if (diffInHours < 24) {
-      return `${diffInHours} horas`
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24)
-      return `${diffInDays} dias`
-    }
   }
 
   const handleDateSelect = (date: Date) => {
@@ -197,21 +186,11 @@ export const UserBookingPage: React.FC = () => {
     createBookingMutation.mutate(bookingData)
   }
 
-  const handleCancelBooking = (booking: Booking) => {
-    if (!canCancelBooking(booking)) {
-      toast.error('Não é possível cancelar este agendamento', {
-        description: 'O cancelamento deve ser feito com pelo menos 3 horas de antecedência.'
-      })
-      return
-    }
-    
-    setBookingToCancel(booking)
-    setShowCancelDialog(true)
-  }
-
   const handleConfirmCancellation = () => {
     if (bookingToCancel) {
       cancelBookingMutation.mutate(bookingToCancel.id)
+    } else if (activeBooking) {
+      cancelBookingMutation.mutate(activeBooking.id)
     }
   }
 
@@ -232,71 +211,79 @@ export const UserBookingPage: React.FC = () => {
     return isBefore(date, today)
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'agendado':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
-      case 'confirmado':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Confirmado</Badge>
-      case 'concluido':
-        return <Badge variant="default" className="bg-green-500 text-white">Concluído</Badge>
-      case 'falta':
-        return <Badge variant="destructive">Falta</Badge>
-      case 'cancelado':
-        return <Badge variant="destructive">Cancelado</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
-    }
-  }
-
-  const upcomingBookings = userBookingsList.filter(booking => 
-    booking.status === 'agendado' || booking.status === 'confirmado'
-  )
-
-  const pastBookings = userBookingsList.filter(booking => 
-    booking.status === 'concluido' || booking.status === 'cancelado' || booking.status === 'falta'
-  )
-
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-          <div>
-            <p className="text-muted-foreground">Agende sua sessão de massagem de forma simples</p>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === 'calendar' ? 'default' : 'outline'}
-            onClick={() => setViewMode('calendar')}
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Calendário
-          </Button>
-          <Button
-            variant={viewMode === 'my-bookings' ? 'default' : 'outline'}
-            onClick={() => setViewMode('my-bookings')}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Meus Agendamentos
-          </Button>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Header Minimalista */}
+      <div className="text-center space-y-2">
+        {activeBooking ? (
+          <>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Agendamento Ativo
+            </h2>
+            <p className="text-muted-foreground">
+              Você já possui um agendamento ativo. Cancele o atual para fazer um novo.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 max-w-md mx-auto">
+              <div className="flex items-center gap-3 mb-2">
+                <Building className="h-5 w-5 text-blue-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">{activeBooking.chair?.name}</div>
+                  <div className="text-sm text-muted-foreground">{activeBooking.chair?.location}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-600">
+                <Clock className="h-4 w-4" />
+                <span>{formatDate(activeBooking.start_time)} às {formatTime(activeBooking.start_time)}</span>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-center mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/dashboard')} 
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Voltar ao Dashboard
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => handleConfirmCancellation()}
+                className="border-red-200 text-red-700 hover:bg-red-50"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Cancelar Agendamento
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Agendar Sessão de Massagem
+            </h2>
+            <p className="text-muted-foreground">
+              Escolha a data, cadeira e horário para sua sessão
+            </p>
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/dashboard')} 
+              className="flex items-center gap-2 mx-auto mt-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar ao Dashboard
+            </Button>
+          </>
+        )}
       </div>
 
-      {viewMode === 'calendar' ? (
+      {/* Processo de Agendamento */}
+      {!activeBooking && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Seleção de Data */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5" />
-                Selecione uma Data
+          {/* Passo 1: Seleção de Data */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CalendarDays className="h-5 w-5 text-blue-600" />
+                Passo 1: Escolha a Data
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -312,19 +299,19 @@ export const UserBookingPage: React.FC = () => {
                       onClick={() => !isDisabled && handleDateSelect(date)}
                       disabled={isDisabled}
                       className={`
-                        p-3 border rounded-lg text-left transition-colors
+                        p-3 border rounded-lg text-left transition-all duration-200
                         ${isDisabled 
-                          ? 'bg-muted text-muted-foreground cursor-not-allowed' 
-                          : 'hover:bg-accent hover:border-accent-foreground cursor-pointer'
+                          ? 'bg-gray-50 text-gray-400 cursor-not-allowed' 
+                          : 'hover:bg-blue-50 hover:border-blue-200 cursor-pointer'
                         }
                         ${isSelected
-                          ? 'bg-primary border-primary text-primary-foreground'
-                          : 'bg-background border-border'
+                          ? 'bg-blue-100 border-blue-300 text-blue-900 shadow-sm'
+                          : 'bg-white border-gray-200'
                         }
                       `}
                     >
                       <div className="font-medium">{formatDate(date)}</div>
-                      <div className="text-sm text-muted-foreground">{getDayName(date)}</div>
+                      <div className="text-sm text-muted-foreground capitalize">{getDayName(date)}</div>
                     </button>
                   )
                 })}
@@ -332,78 +319,87 @@ export const UserBookingPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Seleção de Cadeira */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Selecione uma Cadeira
+          {/* Passo 2: Seleção de Cadeira */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Building className="h-5 w-5 text-green-600" />
+                Passo 2: Escolha a Cadeira
               </CardTitle>
             </CardHeader>
             <CardContent>
               {selectedDate ? (
                 availableChairs.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Nenhuma cadeira disponível</h3>
+                  <div className="text-center py-12">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                      <Building className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma cadeira disponível</h3>
                     <p className="text-muted-foreground">Não há cadeiras ativas no momento.</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {availableChairs.map((chair: Chair) => (
                       <button
                         key={chair.id}
                         onClick={() => handleChairSelect(chair)}
                         className={`
-                          w-full p-3 border rounded-lg text-left transition-colors
+                          w-full p-4 border rounded-lg text-left transition-all duration-200
                           ${selectedChair?.id === chair.id
-                            ? 'bg-primary border-primary text-primary-foreground'
-                            : 'hover:bg-accent hover:border-accent-foreground'
+                            ? 'bg-green-50 border-green-300 text-green-900 shadow-sm'
+                            : 'hover:bg-green-50 hover:border-green-200 bg-white border-gray-200'
                           }
                         `}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building className="h-4 w-4" />
-                          <span className="font-medium">{chair.name}</span>
+                        <div className="flex items-center gap-3 mb-2">
+                          <Building className="h-5 w-5 text-green-600" />
+                          <span className="font-semibold text-lg">{chair.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">{chair.location}</div>
-                        <div className="text-xs text-green-600 mt-1">Disponível</div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <MapPin className="h-4 w-4" />
+                          <span>{chair.location}</span>
+                        </div>
+                        <div className="text-xs text-green-600 font-medium">✓ Disponível</div>
                       </button>
                     ))}
                   </div>
                 )
               ) : (
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <div className="text-center py-12">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="h-8 w-8 text-blue-400" />
+                  </div>
                   <p className="text-muted-foreground">Selecione uma data primeiro</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Seleção de Horário */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Selecione um Horário
+          {/* Passo 3: Seleção de Horário */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="h-5 w-5 text-purple-600" />
+                Passo 3: Escolha o Horário
               </CardTitle>
             </CardHeader>
             <CardContent>
               {selectedChair && selectedDate ? (
                 availabilityLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <span className="ml-2">Carregando horários...</span>
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                    <span className="ml-3 text-muted-foreground">Carregando horários...</span>
                   </div>
                 ) : availabilityData?.timeSlots.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Nenhum horário disponível</h3>
+                  <div className="text-center py-12">
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                      <Clock className="h-8 w-8 text-purple-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum horário disponível</h3>
                     <p className="text-muted-foreground">Não há horários disponíveis para esta data e cadeira.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {availabilityData?.timeSlots.map((slot, index) => (
                       <button
                         key={index}
@@ -415,152 +411,33 @@ export const UserBookingPage: React.FC = () => {
                         })}
                         disabled={!slot.available}
                         className={`
-                          p-3 border rounded-lg text-center transition-colors
+                          p-4 border rounded-lg text-center transition-all duration-200
                           ${!slot.available
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                            : 'hover:bg-accent hover:border-accent-foreground cursor-pointer'
+                            ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                            : 'hover:bg-purple-50 hover:border-purple-200 cursor-pointer bg-white border-gray-200'
                           }
                           ${selectedTimeSlot && 
                             format(selectedTimeSlot.startTime, 'HH:mm') === slot.startTime
-                            ? 'bg-primary border-primary text-primary-foreground'
-                            : 'bg-background border-border'
+                            ? 'bg-purple-100 border-purple-300 text-purple-900 shadow-sm'
+                            : ''
                           }
                         `}
                       >
-                        <div className="font-medium">{slot.startTime}</div>
-                        <div className="text-xs text-muted-foreground">30 min</div>
+                        <div className="font-semibold text-lg">{slot.startTime}</div>
+                        <div className="text-xs text-muted-foreground">30 minutos</div>
                         {!slot.available && (
-                          <div className="text-xs text-destructive mt-1">Ocupado</div>
+                          <div className="text-xs text-red-500 mt-1 font-medium">Ocupado</div>
                         )}
                       </button>
                     ))}
                   </div>
                 )
               ) : (
-                <div className="text-center py-8">
-                  <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <div className="text-center py-12">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <Building className="h-8 w-8 text-green-400" />
+                  </div>
                   <p className="text-muted-foreground">Selecione uma cadeira primeiro</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
-        /* Visualização dos Meus Agendamentos */
-        <div className="space-y-6">
-          {/* Próximos Agendamentos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Próximos Agendamentos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {upcomingBookings.length === 0 ? (
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">Você não possui agendamentos futuros</p>
-                  <Button onClick={() => setViewMode('calendar')}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agendar Nova Sessão
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingBookings.map((booking) => (
-                    <div key={booking.id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <Building className="h-5 w-5 text-primary" />
-                          <div>
-                            <div className="font-medium">{booking.chair?.name}</div>
-                            <div className="text-sm text-muted-foreground">{booking.chair?.location}</div>
-                          </div>
-                        </div>
-                        {getStatusBadge(booking.status)}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
-                        <div>
-                          <span className="text-muted-foreground">Data:</span>
-                          <p className="font-medium">{formatDate(new Date(booking.start_time))}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Horário:</span>
-                          <p className="font-medium">
-                            {formatTime(new Date(booking.start_time))} - {formatTime(new Date(booking.end_time))}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Tempo restante:</span>
-                          <p className="font-medium text-primary">{getTimeUntilBooking(booking)}</p>
-                        </div>
-                      </div>
-
-                      {booking.notes && (
-                        <div className="mb-3">
-                          <span className="text-muted-foreground text-sm">Observações:</span>
-                          <p className="text-sm mt-1">{booking.notes}</p>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2">
-                        {canCancelBooking(booking) && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleCancelBooking(booking)}
-                            disabled={cancelBookingMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Cancelar
-                          </Button>
-                        )}
-                        <Button size="sm" className="flex-1" onClick={() => setViewMode('calendar')}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          Agendar Outra
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Histórico */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Histórico de Sessões
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pastBookings.length === 0 ? (
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Nenhum histórico disponível</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pastBookings.slice(0, 5).map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <Building className="h-4 w-4 text-primary" />
-                          <div className="font-medium">{booking.chair?.name}</div>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {formatDate(new Date(booking.start_time))} às {formatTime(new Date(booking.start_time))}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(booking.status)}
-                      </div>
-                    </div>
-                  ))}
                 </div>
               )}
             </CardContent>
@@ -571,42 +448,50 @@ export const UserBookingPage: React.FC = () => {
       {/* Modal de Confirmação de Agendamento */}
       {showBookingForm && selectedChair && selectedDate && selectedTimeSlot && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4 border shadow-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <h3 className="text-lg font-semibold">Confirmar Agendamento</h3>
+          <div className="bg-background rounded-xl p-8 max-w-md w-full mx-4 border shadow-xl">
+            <div className="text-center mb-6">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Confirmar Agendamento</h3>
+              <p className="text-muted-foreground">Revise os detalhes da sua sessão</p>
             </div>
             
             <div className="space-y-4 mb-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Data:</span>
-                  <p className="font-medium">{formatDate(selectedDate)}</p>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-muted-foreground">Data:</span>
+                  <span className="font-medium">{formatDate(selectedDate)}</span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Horário:</span>
-                  <p className="font-medium">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm text-muted-foreground">Horário:</span>
+                  <span className="font-medium">
                     {formatTime(selectedTimeSlot.startTime)} - {formatTime(selectedTimeSlot.endTime)}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Cadeira:</span>
-                  <p className="font-medium">{selectedChair.name}</p>
+                <div className="flex items-center gap-3">
+                  <Building className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-muted-foreground">Cadeira:</span>
+                  <span className="font-medium">{selectedChair.name}</span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Local:</span>
-                  <p className="font-medium">{selectedChair.location}</p>
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm text-muted-foreground">Local:</span>
+                  <span className="font-medium">{selectedChair.location}</span>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="notes">Observações (opcional)</Label>
+                <Label htmlFor="notes" className="text-sm font-medium">Observações (opcional)</Label>
                 <Textarea
                   id="notes"
                   placeholder="Alguma observação especial..."
                   value={bookingNotes}
                   onChange={(e) => setBookingNotes(e.target.value)}
-                  className="mt-1"
+                  className="mt-2"
+                  rows={3}
                 />
               </div>
             </div>
@@ -622,7 +507,7 @@ export const UserBookingPage: React.FC = () => {
               <Button
                 onClick={handleConfirmBooking}
                 disabled={createBookingMutation.isPending}
-                className="flex-1"
+                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
               >
                 {createBookingMutation.isPending ? (
                   <>

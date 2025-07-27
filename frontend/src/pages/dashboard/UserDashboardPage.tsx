@@ -16,7 +16,8 @@ import {
   MapPin,
   User,
   CalendarDays,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -225,23 +226,25 @@ export const UserDashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-3 mt-6">
+                  <div className="mt-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 text-blue-800">
+                        <AlertCircle className="h-4 w-4" />
+                        <span className="text-sm font-medium">Limite de Agendamento</span>
+                      </div>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Você pode ter apenas um agendamento ativo por vez. Cancele este agendamento para fazer um novo.
+                      </p>
+                    </div>
+                    
                     <Button 
                       size="sm" 
                       variant="outline"
                       onClick={() => handleCancelBooking(nextBooking.id)}
-                      className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                      className="w-full border-red-200 text-red-700 hover:bg-red-50"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
-                      Cancelar
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={handleNewBooking}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Agendar Outra
+                      Cancelar Agendamento
                     </Button>
                   </div>
                 </div>
