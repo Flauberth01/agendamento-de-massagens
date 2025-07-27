@@ -522,6 +522,169 @@ info:
   title: Sistema de Agendamento API
   version: "1.0"
 paths:
+  /audit-logs:
+    get:
+      consumes:
+      - application/json
+      description: Lista logs de auditoria com paginação e filtros opcionais
+      parameters:
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      - description: Filtrar por ID do usuário
+        in: query
+        name: user_id
+        type: integer
+      - description: Filtrar por ação
+        in: query
+        name: action
+        type: string
+      - description: Filtrar por recurso
+        in: query
+        name: resource
+        type: string
+      - description: Filtrar por ID do recurso
+        in: query
+        name: resource_id
+        type: integer
+      - description: Filtrar por endereço IP
+        in: query
+        name: ip_address
+        type: string
+      - description: Data de início (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Data de fim (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de logs de auditoria
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Listar logs de auditoria
+      tags:
+      - audit-logs
+  /audit-logs/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna um log de auditoria específico pelo ID
+      parameters:
+      - description: ID do log de auditoria
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Log de auditoria encontrado
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Log não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar log de auditoria
+      tags:
+      - audit-logs
+  /audit-logs/user/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Lista logs de auditoria de um usuário específico
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de logs do usuário
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuário não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Logs de auditoria de usuário
+      tags:
+      - audit-logs
   /auth/login:
     post:
       consumes:
@@ -678,15 +841,15 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retorna uma lista paginada de disponibilidades com filtros opcionais
+      description: Lista disponibilidades com paginação e filtros opcionais
       parameters:
       - default: 10
-        description: Limite de resultados por página
+        description: Limite de registros por página
         in: query
         name: limit
         type: integer
       - default: 0
-        description: Número de registros a pular
+        description: Offset para paginação
         in: query
         name: offset
         type: integer
@@ -694,7 +857,7 @@ paths:
         in: query
         name: chair_id
         type: integer
-      - description: Filtrar por dia da semana (0=Domingo, 6=Sábado)
+      - description: Filtrar por dia da semana (0-6)
         in: query
         name: day_of_week
         type: integer
@@ -708,9 +871,8 @@ paths:
         "200":
           description: Lista de disponibilidades
           schema:
-            items:
-              $ref: '#/definitions/entities.Availability'
-            type: array
+            additionalProperties: true
+            type: object
         "400":
           description: Parâmetros inválidos
           schema:
@@ -863,6 +1025,66 @@ paths:
       tags:
       - availabilities
   /bookings:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos com paginação e filtros opcionais
+      parameters:
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      - description: Filtrar por ID do usuário
+        in: query
+        name: user_id
+        type: integer
+      - description: Filtrar por ID da cadeira
+        in: query
+        name: chair_id
+        type: integer
+      - description: Filtrar por status
+        in: query
+        name: status
+        type: string
+      - description: Data de início (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Data de fim (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Listar agendamentos
+      tags:
+      - bookings
     post:
       consumes:
       - application/json
@@ -985,6 +1207,62 @@ paths:
       summary: Atualizar agendamento
       tags:
       - bookings
+  /bookings/{id}/attendance:
+    post:
+      consumes:
+      - application/json
+      description: Marca presença ou falta de um usuário em um agendamento (apenas
+        atendentes e admins)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados de presença
+        in: body
+        name: attendance
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Presença marcada com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Marcar presença
+      tags:
+      - bookings
   /bookings/{id}/cancel:
     patch:
       consumes:
@@ -1083,6 +1361,431 @@ paths:
       security:
       - Bearer: []
       summary: Confirmar agendamento
+      tags:
+      - bookings
+  /bookings/{id}/reschedule:
+    put:
+      consumes:
+      - application/json
+      description: Reagenda um agendamento existente (apenas admin)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados para reagendamento
+        in: body
+        name: reschedule
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Agendamento reagendado com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Reagendar agendamento
+      tags:
+      - bookings
+  /bookings/attendant-stats:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas específicas para atendentes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estatísticas do atendente
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado - apenas atendentes e admins
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Estatísticas do atendente
+      tags:
+      - bookings
+  /bookings/chair/{chair_id}/date/{date}:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos de uma cadeira específica em uma data (apenas
+        atendentes e admins)
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: chair_id
+        required: true
+        type: integer
+      - description: 'Data para buscar agendamentos (formato: YYYY-MM-DD)'
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos da cadeira na data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Agendamentos de cadeira por data
+      tags:
+      - bookings
+  /bookings/date/{date}:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos de uma data específica (apenas atendentes e
+        admins)
+      parameters:
+      - description: 'Data para buscar agendamentos (formato: YYYY-MM-DD)'
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos da data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Formato de data inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Agendamentos por data
+      tags:
+      - bookings
+  /bookings/stats:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas gerais dos agendamentos (apenas atendentes
+        e admins)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estatísticas dos agendamentos
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Estatísticas de agendamentos
+      tags:
+      - bookings
+  /bookings/system-stats:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas gerais do sistema para administradores
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estatísticas do sistema
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado - apenas administradores
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Estatísticas do sistema
+      tags:
+      - bookings
+  /bookings/today:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos do dia atual
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos de hoje
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Agendamentos de hoje
+      tags:
+      - bookings
+  /bookings/upcoming:
+    get:
+      consumes:
+      - application/json
+      description: Lista próximos agendamentos do usuário autenticado
+      parameters:
+      - default: 10
+        description: Limite de registros
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de próximos agendamentos
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Próximos agendamentos
+      tags:
+      - bookings
+  /bookings/user:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos do usuário autenticado
+      parameters:
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos do usuário
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Meus agendamentos
+      tags:
+      - bookings
+  /bookings/user-stats:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas de agendamentos de um usuário específico
+      parameters:
+      - description: ID do usuário (opcional, usa usuário logado se não informado)
+        in: query
+        name: user_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estatísticas do usuário
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Estatísticas do usuário
+      tags:
+      - bookings
+  /bookings/user/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos de um usuário específico
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos do usuário
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuário não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Agendamentos de usuário
       tags:
       - bookings
   /chairs:
@@ -1400,6 +2103,254 @@ paths:
       summary: Atualizar cadeira
       tags:
       - chairs
+  /chairs/{id}/activate:
+    post:
+      consumes:
+      - application/json
+      description: Ativa uma cadeira específica (apenas admin)
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cadeira ativada com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cadeira não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Ativar cadeira
+      tags:
+      - chairs
+  /chairs/{id}/deactivate:
+    post:
+      consumes:
+      - application/json
+      description: Desativa uma cadeira específica (apenas admin)
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cadeira desativada com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cadeira não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Desativar cadeira
+      tags:
+      - chairs
+  /chairs/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Altera o status de uma cadeira específica (apenas admin)
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Novo status da cadeira
+        in: body
+        name: status
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status alterado com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Cadeira não encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Alterar status da cadeira
+      tags:
+      - chairs
+  /chairs/active:
+    get:
+      consumes:
+      - application/json
+      description: Lista cadeiras ativas com paginação
+      parameters:
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de cadeiras ativas
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar cadeiras ativas
+      tags:
+      - chairs
+  /chairs/available:
+    get:
+      consumes:
+      - application/json
+      description: Lista cadeiras disponíveis para agendamento
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de cadeiras disponíveis
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Erro ao buscar cadeiras
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar cadeiras disponíveis
+      tags:
+      - chairs
+  /chairs/stats:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas gerais das cadeiras
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estatísticas das cadeiras
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Estatísticas das cadeiras
+      tags:
+      - chairs
   /dashboard/admin:
     get:
       consumes:
@@ -1553,6 +2504,80 @@ paths:
       summary: Buscar usuários pendentes
       tags:
       - dashboard
+  /dashboard/sessions/date/{date}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna agendamentos de uma data específica (apenas atendentes
+        e admins)
+      parameters:
+      - description: 'Data para buscar sessões (formato: YYYY-MM-DD)'
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos da data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Formato de data inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Sessões por data
+      tags:
+      - dashboard
+  /dashboard/stats/attendance:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas de comparecimento e cancelamento (apenas atendentes
+        e admins)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estatísticas de comparecimento
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Estatísticas de comparecimento
+      tags:
+      - dashboard
   /dashboard/test-reminders:
     post:
       consumes:
@@ -1583,6 +2608,62 @@ paths:
       tags:
       - Dashboard
   /users:
+    get:
+      consumes:
+      - application/json
+      description: Lista usuários com paginação e filtros opcionais
+      parameters:
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      - description: Filtrar por nome
+        in: query
+        name: name
+        type: string
+      - description: Filtrar por email
+        in: query
+        name: email
+        type: string
+      - description: Filtrar por role
+        in: query
+        name: role
+        type: string
+      - description: Filtrar por status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de usuários
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Listar usuários
+      tags:
+      - users
     post:
       consumes:
       - application/json
@@ -1619,6 +2700,54 @@ paths:
       tags:
       - users
   /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Exclui um usuário específico do sistema (apenas admin)
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuário excluído com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuário não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Excluir usuário
+      tags:
+      - users
     get:
       consumes:
       - application/json
@@ -1657,6 +2786,204 @@ paths:
       security:
       - Bearer: []
       summary: Buscar usuário por ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de um usuário específico (apenas admin)
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados do usuário
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuário atualizado com sucesso
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuário não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Atualizar usuário
+      tags:
+      - users
+  /users/{id}/approve:
+    post:
+      consumes:
+      - application/json
+      description: Aprova um usuário pendente (apenas atendentes e admins)
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuário aprovado com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuário não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Aprovar usuário
+      tags:
+      - users
+  /users/{id}/reject:
+    post:
+      consumes:
+      - application/json
+      description: Rejeita um usuário pendente (apenas atendentes e admins)
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuário rejeitado com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ID inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuário não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Rejeitar usuário
+      tags:
+      - users
+  /users/pending:
+    get:
+      consumes:
+      - application/json
+      description: Lista usuários pendentes de aprovação (apenas atendentes e admins)
+      parameters:
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de usuários pendentes
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar usuários pendentes
       tags:
       - users
 securityDefinitions:

@@ -56,6 +56,20 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 }
 
 // UpdateUser atualiza um usuário
+// @Summary Atualizar usuário
+// @Description Atualiza os dados de um usuário específico (apenas admin)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do usuário"
+// @Param user body entities.User true "Dados do usuário"
+// @Success 200 {object} map[string]interface{} "Usuário atualizado com sucesso"
+// @Failure 400 {object} map[string]string "Dados inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Usuário não encontrado"
+// @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -99,6 +113,19 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser exclui um usuário
+// @Summary Excluir usuário
+// @Description Exclui um usuário específico do sistema (apenas admin)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do usuário"
+// @Success 200 {object} map[string]string "Usuário excluído com sucesso"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Usuário não encontrado"
+// @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -124,6 +151,22 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 }
 
 // ListUsers lista usuários com paginação
+// @Summary Listar usuários
+// @Description Lista usuários com paginação e filtros opcionais
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Param name query string false "Filtrar por nome"
+// @Param email query string false "Filtrar por email"
+// @Param role query string false "Filtrar por role"
+// @Param status query string false "Filtrar por status"
+// @Success 200 {object} map[string]interface{} "Lista de usuários"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	// Parâmetros de paginação
 	limitParam := c.DefaultQuery("limit", "10")
@@ -171,6 +214,19 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 }
 
 // ApproveUser aprova um usuário
+// @Summary Aprovar usuário
+// @Description Aprova um usuário pendente (apenas atendentes e admins)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do usuário"
+// @Success 200 {object} map[string]string "Usuário aprovado com sucesso"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Usuário não encontrado"
+// @Router /users/{id}/approve [post]
 func (h *UserHandler) ApproveUser(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -206,6 +262,19 @@ func (h *UserHandler) ApproveUser(c *gin.Context) {
 }
 
 // RejectUser rejeita um usuário
+// @Summary Rejeitar usuário
+// @Description Rejeita um usuário pendente (apenas atendentes e admins)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do usuário"
+// @Success 200 {object} map[string]string "Usuário rejeitado com sucesso"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Usuário não encontrado"
+// @Router /users/{id}/reject [post]
 func (h *UserHandler) RejectUser(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -306,6 +375,19 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 }
 
 // GetPendingApprovals busca usuários pendentes de aprovação
+// @Summary Buscar usuários pendentes
+// @Description Lista usuários pendentes de aprovação (apenas atendentes e admins)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de usuários pendentes"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Router /users/pending [get]
 func (h *UserHandler) GetPendingApprovals(c *gin.Context) {
 	// Parâmetros de paginação
 	limitParam := c.DefaultQuery("limit", "10")

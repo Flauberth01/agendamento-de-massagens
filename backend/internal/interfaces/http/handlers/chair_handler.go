@@ -257,6 +257,18 @@ func (h *ChairHandler) ListChairs(c *gin.Context) {
 }
 
 // GetActiveChairs busca cadeiras ativas
+// @Summary Buscar cadeiras ativas
+// @Description Lista cadeiras ativas com paginação
+// @Tags chairs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de cadeiras ativas"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /chairs/active [get]
 func (h *ChairHandler) GetActiveChairs(c *gin.Context) {
 	// Parâmetros de paginação
 	limitParam := c.DefaultQuery("limit", "10")
@@ -287,6 +299,16 @@ func (h *ChairHandler) GetActiveChairs(c *gin.Context) {
 }
 
 // GetAvailableChairs busca cadeiras disponíveis
+// @Summary Buscar cadeiras disponíveis
+// @Description Lista cadeiras disponíveis para agendamento
+// @Tags chairs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Success 200 {object} map[string]interface{} "Lista de cadeiras disponíveis"
+// @Failure 400 {object} map[string]string "Erro ao buscar cadeiras"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /chairs/available [get]
 func (h *ChairHandler) GetAvailableChairs(c *gin.Context) {
 	chairs, err := h.chairUseCase.GetAvailableChairs()
 	if err != nil {
@@ -301,6 +323,20 @@ func (h *ChairHandler) GetAvailableChairs(c *gin.Context) {
 }
 
 // ChangeChairStatus altera o status de uma cadeira
+// @Summary Alterar status da cadeira
+// @Description Altera o status de uma cadeira específica (apenas admin)
+// @Tags chairs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID da cadeira"
+// @Param status body object true "Novo status da cadeira"
+// @Success 200 {object} map[string]string "Status alterado com sucesso"
+// @Failure 400 {object} map[string]string "Dados inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Cadeira não encontrada"
+// @Router /chairs/{id}/status [put]
 func (h *ChairHandler) ChangeChairStatus(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -334,6 +370,19 @@ func (h *ChairHandler) ChangeChairStatus(c *gin.Context) {
 }
 
 // ActivateChair ativa uma cadeira
+// @Summary Ativar cadeira
+// @Description Ativa uma cadeira específica (apenas admin)
+// @Tags chairs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID da cadeira"
+// @Success 200 {object} map[string]string "Cadeira ativada com sucesso"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Cadeira não encontrada"
+// @Router /chairs/{id}/activate [post]
 func (h *ChairHandler) ActivateChair(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -358,6 +407,19 @@ func (h *ChairHandler) ActivateChair(c *gin.Context) {
 }
 
 // DeactivateChair desativa uma cadeira
+// @Summary Desativar cadeira
+// @Description Desativa uma cadeira específica (apenas admin)
+// @Tags chairs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID da cadeira"
+// @Success 200 {object} map[string]string "Cadeira desativada com sucesso"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Cadeira não encontrada"
+// @Router /chairs/{id}/deactivate [post]
 func (h *ChairHandler) DeactivateChair(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -382,6 +444,15 @@ func (h *ChairHandler) DeactivateChair(c *gin.Context) {
 }
 
 // GetChairStats retorna estatísticas das cadeiras
+// @Summary Estatísticas das cadeiras
+// @Description Retorna estatísticas gerais das cadeiras
+// @Tags chairs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Success 200 {object} map[string]interface{} "Estatísticas das cadeiras"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /chairs/stats [get]
 func (h *ChairHandler) GetChairStats(c *gin.Context) {
 	stats, err := h.chairUseCase.GetChairStats()
 	if err != nil {

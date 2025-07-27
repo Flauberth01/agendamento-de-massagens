@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"agendamento-backend/internal/application/usecases"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuditLogHandler struct {
@@ -20,6 +21,18 @@ func NewAuditLogHandler(auditLogUseCase *usecases.AuditLogUseCase) *AuditLogHand
 }
 
 // GetAuditLog busca log de auditoria por ID
+// @Summary Buscar log de auditoria
+// @Description Retorna um log de auditoria específico pelo ID
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do log de auditoria"
+// @Success 200 {object} map[string]interface{} "Log de auditoria encontrado"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 404 {object} map[string]string "Log não encontrado"
+// @Router /audit-logs/{id} [get]
 func (h *AuditLogHandler) GetAuditLog(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -38,6 +51,25 @@ func (h *AuditLogHandler) GetAuditLog(c *gin.Context) {
 }
 
 // ListAuditLogs lista logs de auditoria com paginação
+// @Summary Listar logs de auditoria
+// @Description Lista logs de auditoria com paginação e filtros opcionais
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Param user_id query int false "Filtrar por ID do usuário"
+// @Param action query string false "Filtrar por ação"
+// @Param resource query string false "Filtrar por recurso"
+// @Param resource_id query int false "Filtrar por ID do recurso"
+// @Param ip_address query string false "Filtrar por endereço IP"
+// @Param start_date query string false "Data de início (YYYY-MM-DD)"
+// @Param end_date query string false "Data de fim (YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{} "Lista de logs de auditoria"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /audit-logs [get]
 func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 	// Parâmetros de paginação
 	limitParam := c.DefaultQuery("limit", "10")
@@ -68,7 +100,8 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 		filters["resource"] = resource
 	}
 	if resourceIDParam := c.Query("resource_id"); resourceIDParam != "" {
-		resourceID, parseErr := strconv.ParseUint(resourceIDParam, 10, 32); if parseErr == nil {
+		resourceID, parseErr := strconv.ParseUint(resourceIDParam, 10, 32)
+		if parseErr == nil {
 			filters["resource_id"] = uint(resourceID)
 		}
 	}
@@ -103,6 +136,20 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 }
 
 // GetUserAuditLogs busca logs de auditoria de um usuário
+// @Summary Logs de auditoria de usuário
+// @Description Lista logs de auditoria de um usuário específico
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param user_id path int true "ID do usuário"
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de logs do usuário"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 404 {object} map[string]string "Usuário não encontrado"
+// @Router /audit-logs/user/{user_id} [get]
 func (h *AuditLogHandler) GetUserAuditLogs(c *gin.Context) {
 	userIDParam := c.Param("user_id")
 	userID, err := strconv.ParseUint(userIDParam, 10, 32)

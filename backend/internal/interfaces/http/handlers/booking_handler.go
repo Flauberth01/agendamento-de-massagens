@@ -289,6 +289,23 @@ func (h *BookingHandler) MarkAsNoShow(c *gin.Context) {
 }
 
 // ListBookings lista agendamentos com paginação
+// @Summary Listar agendamentos
+// @Description Lista agendamentos com paginação e filtros opcionais
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Param user_id query int false "Filtrar por ID do usuário"
+// @Param chair_id query int false "Filtrar por ID da cadeira"
+// @Param status query string false "Filtrar por status"
+// @Param start_date query string false "Data de início (YYYY-MM-DD)"
+// @Param end_date query string false "Data de fim (YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /bookings [get]
 func (h *BookingHandler) ListBookings(c *gin.Context) {
 	// Parâmetros de paginação
 	limitParam := c.DefaultQuery("limit", "10")
@@ -347,6 +364,18 @@ func (h *BookingHandler) ListBookings(c *gin.Context) {
 }
 
 // GetMyBookings busca agendamentos do usuário logado
+// @Summary Meus agendamentos
+// @Description Lista agendamentos do usuário autenticado
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos do usuário"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /bookings/user [get]
 func (h *BookingHandler) GetMyBookings(c *gin.Context) {
 	// Obter userID do contexto de autenticação
 	userID, exists := middleware.GetUserIDFromContext(c)
@@ -386,6 +415,20 @@ func (h *BookingHandler) GetMyBookings(c *gin.Context) {
 }
 
 // GetUserBookings busca agendamentos de um usuário
+// @Summary Agendamentos de usuário
+// @Description Lista agendamentos de um usuário específico
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param user_id path int true "ID do usuário"
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos do usuário"
+// @Failure 400 {object} map[string]string "ID inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 404 {object} map[string]string "Usuário não encontrado"
+// @Router /bookings/user/{user_id} [get]
 func (h *BookingHandler) GetUserBookings(c *gin.Context) {
 	userIDParam := c.Param("user_id")
 	userID, err := strconv.ParseUint(userIDParam, 10, 32)
@@ -425,6 +468,15 @@ func (h *BookingHandler) GetUserBookings(c *gin.Context) {
 }
 
 // GetTodayBookings busca agendamentos de hoje
+// @Summary Agendamentos de hoje
+// @Description Lista agendamentos do dia atual
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos de hoje"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /bookings/today [get]
 func (h *BookingHandler) GetTodayBookings(c *gin.Context) {
 	bookings, err := h.bookingUseCase.GetTodayBookings()
 	if err != nil {
@@ -436,6 +488,17 @@ func (h *BookingHandler) GetTodayBookings(c *gin.Context) {
 }
 
 // GetUpcomingBookings busca próximos agendamentos
+// @Summary Próximos agendamentos
+// @Description Lista próximos agendamentos do usuário autenticado
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros" default(10)
+// @Success 200 {object} map[string]interface{} "Lista de próximos agendamentos"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /bookings/upcoming [get]
 func (h *BookingHandler) GetUpcomingBookings(c *gin.Context) {
 	limitParam := c.DefaultQuery("limit", "10")
 	limit, err := strconv.Atoi(limitParam)
@@ -460,6 +523,16 @@ func (h *BookingHandler) GetUpcomingBookings(c *gin.Context) {
 }
 
 // GetBookingStats retorna estatísticas dos agendamentos
+// @Summary Estatísticas de agendamentos
+// @Description Retorna estatísticas gerais dos agendamentos (apenas atendentes e admins)
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Success 200 {object} map[string]interface{} "Estatísticas dos agendamentos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Router /bookings/stats [get]
 func (h *BookingHandler) GetBookingStats(c *gin.Context) {
 	stats, err := h.bookingUseCase.GetBookingStats()
 	if err != nil {
@@ -510,6 +583,18 @@ func (h *BookingHandler) GetChairBookings(c *gin.Context) {
 }
 
 // GetBookingsByDate busca agendamentos de uma data específica
+// @Summary Agendamentos por data
+// @Description Lista agendamentos de uma data específica (apenas atendentes e admins)
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param date path string true "Data para buscar agendamentos (formato: YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos da data"
+// @Failure 400 {object} map[string]string "Formato de data inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Router /bookings/date/{date} [get]
 func (h *BookingHandler) GetBookingsByDate(c *gin.Context) {
 	dateParam := c.Param("date")
 	date, err := time.Parse("2006-01-02", dateParam)
@@ -528,6 +613,19 @@ func (h *BookingHandler) GetBookingsByDate(c *gin.Context) {
 }
 
 // GetChairBookingsByDate busca agendamentos de uma cadeira em uma data específica
+// @Summary Agendamentos de cadeira por data
+// @Description Lista agendamentos de uma cadeira específica em uma data (apenas atendentes e admins)
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param chair_id path int true "ID da cadeira"
+// @Param date path string true "Data para buscar agendamentos (formato: YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos da cadeira na data"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Router /bookings/chair/{chair_id}/date/{date} [get]
 func (h *BookingHandler) GetChairBookingsByDate(c *gin.Context) {
 	chairIDParam := c.Param("chair_id")
 	chairID, err := strconv.ParseUint(chairIDParam, 10, 32)
@@ -553,6 +651,20 @@ func (h *BookingHandler) GetChairBookingsByDate(c *gin.Context) {
 }
 
 // RescheduleBooking reagenda um agendamento
+// @Summary Reagendar agendamento
+// @Description Reagenda um agendamento existente (apenas admin)
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do agendamento"
+// @Param reschedule body object true "Dados para reagendamento"
+// @Success 200 {object} map[string]string "Agendamento reagendado com sucesso"
+// @Failure 400 {object} map[string]string "Dados inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Agendamento não encontrado"
+// @Router /bookings/{id}/reschedule [put]
 func (h *BookingHandler) RescheduleBooking(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -582,6 +694,20 @@ func (h *BookingHandler) RescheduleBooking(c *gin.Context) {
 }
 
 // MarkAttendance marca presença do usuário
+// @Summary Marcar presença
+// @Description Marca presença ou falta de um usuário em um agendamento (apenas atendentes e admins)
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do agendamento"
+// @Param attendance body object true "Dados de presença"
+// @Success 200 {object} map[string]string "Presença marcada com sucesso"
+// @Failure 400 {object} map[string]string "Dados inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Agendamento não encontrado"
+// @Router /bookings/{id}/attendance [post]
 func (h *BookingHandler) MarkAttendance(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)

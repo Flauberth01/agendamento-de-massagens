@@ -185,6 +185,18 @@ func (h *DashboardHandler) GetAdminDashboard(c *gin.Context) {
 }
 
 // GetSessionsByDate busca sessões agendadas por data
+// @Summary Sessões por data
+// @Description Retorna agendamentos de uma data específica (apenas atendentes e admins)
+// @Tags dashboard
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param date path string true "Data para buscar sessões (formato: YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos da data"
+// @Failure 400 {object} map[string]string "Formato de data inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Acesso negado"
+// @Router /dashboard/sessions/date/{date} [get]
 func (h *DashboardHandler) GetSessionsByDate(c *gin.Context) {
 	dateParam := c.Param("date")
 	date, err := time.Parse("2006-01-02", dateParam)
@@ -272,6 +284,16 @@ func (h *DashboardHandler) GetChairOccupancy(c *gin.Context) {
 }
 
 // GetAttendanceStats busca estatísticas de comparecimento
+// @Summary Estatísticas de comparecimento
+// @Description Retorna estatísticas de comparecimento e cancelamento (apenas atendentes e admins)
+// @Tags dashboard
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Success 200 {object} map[string]interface{} "Estatísticas de comparecimento"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Acesso negado"
+// @Router /dashboard/stats/attendance [get]
 func (h *DashboardHandler) GetAttendanceStats(c *gin.Context) {
 	stats, err := h.bookingUseCase.GetBookingStats()
 	if err != nil {

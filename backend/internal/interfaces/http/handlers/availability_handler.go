@@ -181,17 +181,17 @@ func (h *AvailabilityHandler) DeleteAvailability(c *gin.Context) {
 
 // ListAvailabilities lista disponibilidades com paginação
 // @Summary Listar disponibilidades
-// @Description Retorna uma lista paginada de disponibilidades com filtros opcionais
+// @Description Lista disponibilidades com paginação e filtros opcionais
 // @Tags availabilities
 // @Accept json
 // @Produce json
 // @Security Bearer
-// @Param limit query int false "Limite de resultados por página" default(10)
-// @Param offset query int false "Número de registros a pular" default(0)
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
 // @Param chair_id query int false "Filtrar por ID da cadeira"
-// @Param day_of_week query int false "Filtrar por dia da semana (0=Domingo, 6=Sábado)"
+// @Param day_of_week query int false "Filtrar por dia da semana (0-6)"
 // @Param is_active query bool false "Filtrar por status ativo"
-// @Success 200 {array} entities.Availability "Lista de disponibilidades"
+// @Success 200 {object} map[string]interface{} "Lista de disponibilidades"
 // @Failure 400 {object} map[string]string "Parâmetros inválidos"
 // @Failure 401 {object} map[string]string "Token inválido"
 // @Router /availabilities [get]
