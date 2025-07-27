@@ -71,7 +71,9 @@ export const userService = {
   // Buscar usuários pendentes de aprovação
   async getPendingUsers(): Promise<User[]> {
     const response = await api.get('/api/users/pending')
-    return response.data
+    const data = response.data.data
+    // Se data for um objeto vazio ou não for um array, retorna array vazio
+    return Array.isArray(data) ? data : []
   },
 
   // Buscar estatísticas de usuários

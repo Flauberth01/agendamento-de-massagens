@@ -20,6 +20,7 @@ import { BookingListPage } from './pages/bookings/BookingListPage'
 import { UserListPage } from './pages/users/UserListPage'
 import { UserCreatePage } from './pages/users/UserCreatePage'
 import { UserDetailPage } from './pages/users/UserDetailPage'
+import { UserPendingPage } from './pages/users/UserPendingPage'
 import ChairListPage from './pages/chairs/ChairListPage'
 import ChairCreatePage from './pages/chairs/ChairCreatePage'
 import ChairDetailPage from './pages/chairs/ChairDetailPage'
@@ -144,11 +145,18 @@ function App() {
               </ProtectedRoute>
             } />
 
-            {/* User Management Routes (Admin Only) */}
+            {/* User Management Routes */}
             <Route path="/users" element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['atendente', 'admin']}>
                 <DashboardLayout>
                   <UserListPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/users/pending" element={
+              <ProtectedRoute allowedRoles={['atendente', 'admin']}>
+                <DashboardLayout>
+                  <UserPendingPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
