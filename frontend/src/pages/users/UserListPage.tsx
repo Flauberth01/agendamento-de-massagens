@@ -21,20 +21,13 @@ import {
   Clock,
   UserCheck,
   UserX,
-  Loader2,
-  X
+  Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
 import type { User, UserApprovalRequest } from '../../types/user'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '../../components/ui/dropdown-menu'
 import { ConfirmDialog } from '../../components/ui/confirm-dialog'
 
 export const UserListPage: React.FC = () => {

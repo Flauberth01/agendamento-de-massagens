@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Label } from '../../components/ui/label';
 import { useChairs } from '../../hooks/useChairs';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
-import type { Chair } from '../../types/chair';
+
 
 const editChairSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),

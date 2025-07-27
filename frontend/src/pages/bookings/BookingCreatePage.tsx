@@ -68,7 +68,7 @@ export const BookingCreatePage: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5 minutos
   })
 
-  const availableChairs = chairsResponse?.data || []
+  const availableChairs = chairsResponse?.chairs || []
 
   // Buscar disponibilidade quando data e cadeira são selecionadas
   const { data: availabilityData, isLoading: availabilityLoading } = useQuery({

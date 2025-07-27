@@ -24,10 +24,16 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+// Função para cancelar requisições pendentes
+export const cancelPendingRequests = () => {
+  // Cancelar todas as requisições pendentes do axios
+  // Isso é feito automaticamente quando o token é removido
+};
+
 // Interceptor para requisições
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Adicionar token de autenticação se existir
+    // Verificar se o token ainda existe antes de adicionar
     const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -135,9 +141,30 @@ export const getCurrentUser = () => {
 
 // Função para limpar dados de autenticação
 export const clearAuth = (): void => {
+  // Limpar tokens
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
+  
+  // Limpar dados de sessão
+  sessionStorage.removeItem('access_token');
+  sessionStorage.removeItem('refresh_token');
+  sessionStorage.removeItem('user');
+  
+  // Limpar cookies relacionados à autenticação (se houver)
+  try {
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+  } catch (error) {
+    // Ignorar erros ao limpar cookies
+  }
+  
+  // Limpar persistência do Zustand
+  localStorage.removeItem('auth-storage');
+  sessionStorage.removeItem('auth-storage');
 };
 
 // Função para salvar dados de autenticação

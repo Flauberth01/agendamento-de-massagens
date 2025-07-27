@@ -50,17 +50,36 @@ export const useAuth = () => {
 
   // Logout mutation
   const logoutMutation = useMutation({
-    mutationFn: () => authService.logout(),
+    mutationFn: async () => {
+      // Usar o logout do store que já faz a chamada da API
+      await logoutStore()
+      return { success: true }
+    },
     onSuccess: () => {
-      logoutStore()
+      // Cancelar todas as requisições pendentes
+      queryClient.cancelQueries()
+      
+      // Limpar cache e navegar
       queryClient.clear()
-      navigate('/login')
+      
+      // Limpar qualquer estado residual
+      sessionStorage.clear()
+      
+      // Navegar para login
+      navigate('/login', { replace: true })
     },
     onError: () => {
-      // Mesmo com erro, fazer logout local
-      logoutStore()
+      // Cancelar todas as requisições pendentes
+      queryClient.cancelQueries()
+      
+      // Mesmo com erro, limpar cache e navegar
       queryClient.clear()
-      navigate('/login')
+      
+      // Limpar qualquer estado residual
+      sessionStorage.clear()
+      
+      // Navegar para login
+      navigate('/login', { replace: true })
     }
   })
 

@@ -12,10 +12,11 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { 
   LogOut, 
-  Menu 
+  Menu
 } from 'lucide-react'
 import { formatName } from '@/utils/formatters'
 import { cn } from '@/utils/cn'
+
 
 interface HeaderProps {
   onMenuToggle?: () => void

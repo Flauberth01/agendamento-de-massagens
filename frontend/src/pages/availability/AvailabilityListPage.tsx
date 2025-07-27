@@ -92,7 +92,7 @@ export const AvailabilityListPage: React.FC = () => {
   })
 
   const availabilities = availabilityResponse?.data || []
-  const chairs = chairsResponse?.data || []
+  const chairs = chairsResponse?.chairs || []
 
   const handleCreateAvailability = () => {
     navigate('/availability/create')
@@ -136,7 +136,7 @@ export const AvailabilityListPage: React.FC = () => {
   }
 
   const getChairName = (chairId: number) => {
-    const chair = chairs.find(c => c.id === chairId)
+    const chair = chairs.find((c: any) => c.id === chairId)
     return chair?.name || `Cadeira ${chairId}`
   }
 
@@ -210,7 +210,7 @@ export const AvailabilityListPage: React.FC = () => {
                 className="w-full p-2 border rounded-md"
               >
                 <option value="all">Todas as cadeiras</option>
-                {chairs.map((chair) => (
+                {chairs.map((chair: any) => (
                   <option key={chair.id} value={chair.id}>
                     {chair.name}
                   </option>

@@ -1,12 +1,11 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Badge } from '../ui/badge'
+
 import { 
   Calendar, 
   Clock, 
   CheckCircle, 
-  XCircle, 
-  AlertCircle,
+  
   TrendingUp
 } from 'lucide-react'
 import type { Booking } from '../../types/booking'
@@ -143,7 +142,6 @@ interface DetailedStatsProps {
 
 export const DetailedStats: React.FC<DetailedStatsProps> = ({ bookings }) => {
   const stats = React.useMemo(() => {
-    const now = new Date()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     

@@ -15,7 +15,7 @@ interface AuthState {
   // Ações
   login: (credentials: LoginForm) => Promise<boolean>;
   register: (userData: CreateUserRequest) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshAuth: () => Promise<boolean>;
   setUser: (user: User) => void;
   setError: (error: string | null) => void;
@@ -98,6 +98,8 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           // Limpar dados locais
           clearAuth();
+          
+          // Limpar estado do Zustand
           set({
             user: null,
             token: null,
@@ -106,6 +108,10 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
+          
+          // Limpar persistência do Zustand
+          localStorage.removeItem('auth-storage');
+          sessionStorage.removeItem('auth-storage');
         }
       },
 

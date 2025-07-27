@@ -21,8 +21,8 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { handleApiError } from '../../services/api'
-import type { Booking } from '../../types/booking'
+
+
 
 interface UserStats {
   totalBookings: number

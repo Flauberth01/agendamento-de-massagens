@@ -1,20 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Edit, Power, PowerOff, Trash2, Calendar, Clock, User, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { useChairs } from '../../hooks/useChairs';
-import type { Chair } from '../../types/chair';
+
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
 
-interface Booking {
-  id: number;
-  user_name: string;
-  date: string;
-  time_slot: string;
-  status: 'agendado' | 'confirmado' | 'cancelado' | 'concluido' | 'falta';
-}
+
 
 export default function ChairDetailPage() {
   const navigate = useNavigate();
@@ -70,11 +64,7 @@ export default function ChairDetailPage() {
     return date.toLocaleDateString('pt-BR');
   };
 
-  const formatTimeSlot = (startTime: string, endTime: string) => {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    return `${start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-  };
+
 
   const handleBack = () => {
     navigate('/chairs');

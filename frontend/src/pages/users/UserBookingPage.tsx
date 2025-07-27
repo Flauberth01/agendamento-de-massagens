@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Badge } from '../../components/ui/badge'
+
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { ConfirmDialog } from '../../components/ui/confirm-dialog'
@@ -12,24 +12,18 @@ import {
   Calendar, 
   Clock, 
   CheckCircle, 
-  Plus,
   Loader2,
   CalendarDays,
   Building,
-  AlertCircle,
   ArrowLeft,
-  Trash2,
   MapPin,
-  User,
-  Sparkles,
   XCircle
 } from 'lucide-react'
-import { format, addDays, startOfDay, isBefore, differenceInHours } from 'date-fns'
+import { format, addDays, startOfDay, isBefore } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { bookingService } from '../../services/bookingService'
 import { chairService } from '../../services/chairService'
 import { handleApiError } from '../../services/api'
-import { useAuth } from '../../stores/authStore'
 import type { Booking, CreateBookingRequest } from '../../types/booking'
 import type { Chair } from '../../types/chair'
 
@@ -44,7 +38,7 @@ export const UserBookingPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+
   
   // Estados
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -149,12 +143,7 @@ export const UserBookingPage: React.FC = () => {
   }, [cancelBookingId, userBookingsList])
 
   // Funções utilitárias
-  const canCancelBooking = (booking: Booking) => {
-    const now = new Date()
-    const bookingTime = new Date(booking.start_time)
-    const hoursUntilBooking = differenceInHours(bookingTime, now)
-    return hoursUntilBooking >= 3
-  }
+
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
