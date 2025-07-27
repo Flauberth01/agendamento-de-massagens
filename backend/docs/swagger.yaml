@@ -2103,11 +2103,11 @@ paths:
       summary: Atualizar cadeira
       tags:
       - chairs
-  /chairs/{id}/activate:
-    post:
+  /chairs/{id}/toggle-status:
+    patch:
       consumes:
       - application/json
-      description: Ativa uma cadeira específica (apenas admin)
+      description: Alterna o status de uma cadeira entre ativa e inativa (apenas admin)
       parameters:
       - description: ID da cadeira
         in: path
@@ -2118,10 +2118,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Cadeira ativada com sucesso
+          description: Status alternado com sucesso
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "400":
           description: ID inválido
@@ -2149,111 +2148,7 @@ paths:
             type: object
       security:
       - Bearer: []
-      summary: Ativar cadeira
-      tags:
-      - chairs
-  /chairs/{id}/deactivate:
-    post:
-      consumes:
-      - application/json
-      description: Desativa uma cadeira específica (apenas admin)
-      parameters:
-      - description: ID da cadeira
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Cadeira desativada com sucesso
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: ID inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Token inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Sem permissão
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Cadeira não encontrada
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - Bearer: []
-      summary: Desativar cadeira
-      tags:
-      - chairs
-  /chairs/{id}/status:
-    put:
-      consumes:
-      - application/json
-      description: Altera o status de uma cadeira específica (apenas admin)
-      parameters:
-      - description: ID da cadeira
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Novo status da cadeira
-        in: body
-        name: status
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Status alterado com sucesso
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Dados inválidos
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Token inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Sem permissão
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Cadeira não encontrada
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - Bearer: []
-      summary: Alterar status da cadeira
+      summary: Alternar status da cadeira
       tags:
       - chairs
   /chairs/active:

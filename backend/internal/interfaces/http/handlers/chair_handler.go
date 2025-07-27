@@ -322,68 +322,21 @@ func (h *ChairHandler) GetAvailableChairs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": response})
 }
 
-// ChangeChairStatus altera o status de uma cadeira
-// @Summary Alterar status da cadeira
-// @Description Altera o status de uma cadeira específica (apenas admin)
+// ToggleChairStatus alterna o status de uma cadeira
+// @Summary Alternar status da cadeira
+// @Description Alterna o status de uma cadeira entre ativa e inativa (apenas admin)
 // @Tags chairs
 // @Accept json
 // @Produce json
 // @Security Bearer
 // @Param id path int true "ID da cadeira"
-// @Param status body object true "Novo status da cadeira"
-// @Success 200 {object} map[string]string "Status alterado com sucesso"
-// @Failure 400 {object} map[string]string "Dados inválidos"
-// @Failure 401 {object} map[string]string "Token inválido"
-// @Failure 403 {object} map[string]string "Sem permissão"
-// @Failure 404 {object} map[string]string "Cadeira não encontrada"
-// @Router /chairs/{id}/status [put]
-func (h *ChairHandler) ChangeChairStatus(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
-		return
-	}
-
-	var request struct {
-		Status string `json:"status" binding:"required"`
-	}
-
-	if bindErr := c.ShouldBindJSON(&request); bindErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Status é obrigatório"})
-		return
-	}
-
-	// Obter userID do contexto de autenticação
-	userID, exists := middleware.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
-		return
-	}
-	err = h.chairUseCase.ChangeChairStatus(uint(id), request.Status, userID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Status da cadeira alterado com sucesso"})
-}
-
-// ActivateChair ativa uma cadeira
-// @Summary Ativar cadeira
-// @Description Ativa uma cadeira específica (apenas admin)
-// @Tags chairs
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Param id path int true "ID da cadeira"
-// @Success 200 {object} map[string]string "Cadeira ativada com sucesso"
+// @Success 200 {object} map[string]interface{} "Status alternado com sucesso"
 // @Failure 400 {object} map[string]string "ID inválido"
 // @Failure 401 {object} map[string]string "Token inválido"
 // @Failure 403 {object} map[string]string "Sem permissão"
 // @Failure 404 {object} map[string]string "Cadeira não encontrada"
-// @Router /chairs/{id}/activate [post]
-func (h *ChairHandler) ActivateChair(c *gin.Context) {
+// @Router /chairs/{id}/toggle-status [patch]
+func (h *ChairHandler) ToggleChairStatus(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
@@ -397,50 +350,41 @@ func (h *ChairHandler) ActivateChair(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
 		return
 	}
-	err = h.chairUseCase.ActivateChair(uint(id), userID)
+
+	// Buscar a cadeira atual para verificar o status
+	chair, err := h.chairUseCase.GetChairByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Cadeira não encontrada"})
+		return
+	}
+
+	// Determinar o novo status (alternar entre ativa e inativa)
+	var newStatus string
+	if chair.Status == "ativa" {
+		newStatus = "inativa"
+	} else {
+		newStatus = "ativa"
+	}
+
+	err = h.chairUseCase.ChangeChairStatus(uint(id), newStatus, userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Cadeira ativada com sucesso"})
-}
-
-// DeactivateChair desativa uma cadeira
-// @Summary Desativar cadeira
-// @Description Desativa uma cadeira específica (apenas admin)
-// @Tags chairs
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Param id path int true "ID da cadeira"
-// @Success 200 {object} map[string]string "Cadeira desativada com sucesso"
-// @Failure 400 {object} map[string]string "ID inválido"
-// @Failure 401 {object} map[string]string "Token inválido"
-// @Failure 403 {object} map[string]string "Sem permissão"
-// @Failure 404 {object} map[string]string "Cadeira não encontrada"
-// @Router /chairs/{id}/deactivate [post]
-func (h *ChairHandler) DeactivateChair(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
-		return
+	message := "Cadeira ativada com sucesso"
+	if newStatus == "inativa" {
+		message = "Cadeira desativada com sucesso"
 	}
 
-	// Obter userID do contexto de autenticação
-	userID, exists := middleware.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
-		return
-	}
-	err = h.chairUseCase.DeactivateChair(uint(id), userID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Cadeira desativada com sucesso"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": message,
+		"data": gin.H{
+			"chair_id":        id,
+			"new_status":      newStatus,
+			"previous_status": chair.Status,
+		},
+	})
 }
 
 // GetChairStats retorna estatísticas das cadeiras

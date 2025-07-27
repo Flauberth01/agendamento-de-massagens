@@ -101,10 +101,9 @@ export default function ChairDetailPage() {
     if (!chair) return;
     
     try {
-      const newStatus = chair.status === 'ativa' ? false : true;
-      await toggleStatusMutation.mutateAsync({ id: chairId, active: newStatus });
+      await toggleStatusMutation.mutateAsync(chairId);
     } catch (error) {
-      console.error('Erro ao alterar status:', error);
+      console.error('Erro ao alternar status:', error);
     }
   };
 

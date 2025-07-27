@@ -1,9 +1,10 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
 	"agendamento-backend/internal/interfaces/http/handlers"
 	"agendamento-backend/internal/interfaces/http/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 // SetupChairRoutes configura as rotas de cadeiras
@@ -26,10 +27,8 @@ func SetupChairRoutes(router *gin.RouterGroup, chairHandler *handlers.ChairHandl
 			adminOnly.PUT("/:id", chairHandler.UpdateChair)
 			adminOnly.DELETE("/:id", chairHandler.DeleteChair)
 
-			// Operações de status (apenas admin)
-			adminOnly.PUT("/:id/status", chairHandler.ChangeChairStatus)
-			adminOnly.POST("/:id/activate", chairHandler.ActivateChair)
-			adminOnly.POST("/:id/deactivate", chairHandler.DeactivateChair)
+			// Operação de status (apenas admin)
+			adminOnly.PATCH("/:id/toggle-status", chairHandler.ToggleChairStatus)
 		}
 	}
 }

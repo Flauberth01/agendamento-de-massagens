@@ -163,16 +163,6 @@ func (uc *ChairUseCase) ChangeChairStatus(chairID uint, newStatus string, change
 	return nil
 }
 
-// ActivateChair ativa uma cadeira
-func (uc *ChairUseCase) ActivateChair(chairID, activatedBy uint) error {
-	return uc.ChangeChairStatus(chairID, "ativa", activatedBy)
-}
-
-// DeactivateChair desativa uma cadeira
-func (uc *ChairUseCase) DeactivateChair(chairID, deactivatedBy uint) error {
-	return uc.ChangeChairStatus(chairID, "inativa", deactivatedBy)
-}
-
 // GetChairStats retorna estatísticas das cadeiras
 func (uc *ChairUseCase) GetChairStats() (map[string]int64, error) {
 	stats := make(map[string]int64)

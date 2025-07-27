@@ -92,12 +92,11 @@ export default function ChairListPage() {
     navigate(`/chairs/${id}`);
   };
 
-  const handleToggleStatus = async (id: number, currentStatus: string) => {
+  const handleToggleStatus = async (id: number) => {
     try {
-      const newStatus = currentStatus === 'ativa' ? false : true;
-      await toggleStatusMutation.mutateAsync({ id, active: newStatus });
+      await toggleStatusMutation.mutateAsync(id);
     } catch (error) {
-      console.error('Erro ao alterar status:', error);
+      console.error('Erro ao alternar status:', error);
     }
   };
 
@@ -271,7 +270,7 @@ export default function ChairListPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleToggleStatus(chair.id, chair.status)}
+                      onClick={() => handleToggleStatus(chair.id)}
                       title={chair.status === 'ativa' ? 'Desativar' : 'Ativar'}
                       disabled={toggleStatusMutation.isPending}
                     >

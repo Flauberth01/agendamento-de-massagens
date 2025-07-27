@@ -2596,14 +2596,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/chairs/{id}/activate": {
-            "post": {
+        "/chairs/{id}/toggle-status": {
+            "patch": {
                 "security": [
                     {
                         "Bearer": []
                     }
                 ],
-                "description": "Ativa uma cadeira específica (apenas admin)",
+                "description": "Alterna o status de uma cadeira entre ativa e inativa (apenas admin)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2613,7 +2613,7 @@ const docTemplate = `{
                 "tags": [
                     "chairs"
                 ],
-                "summary": "Ativar cadeira",
+                "summary": "Alternar status da cadeira",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2625,177 +2625,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Cadeira ativada com sucesso",
+                        "description": "Status alternado com sucesso",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "ID inválido",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Token inválido",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Sem permissão",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Cadeira não encontrada",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/chairs/{id}/deactivate": {
-            "post": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Desativa uma cadeira específica (apenas admin)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chairs"
-                ],
-                "summary": "Desativar cadeira",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID da cadeira",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Cadeira desativada com sucesso",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "ID inválido",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Token inválido",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Sem permissão",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Cadeira não encontrada",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/chairs/{id}/status": {
-            "put": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Altera o status de uma cadeira específica (apenas admin)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chairs"
-                ],
-                "summary": "Alterar status da cadeira",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID da cadeira",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Novo status da cadeira",
-                        "name": "status",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Status alterado com sucesso",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Dados inválidos",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

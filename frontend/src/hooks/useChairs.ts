@@ -83,16 +83,15 @@ export const useChairs = () => {
 
   const useToggleChairStatus = () => {
     return useMutation({
-      mutationFn: ({ id, active }: { id: number; active: boolean }) => 
-        chairService.toggleChairStatus(id, active),
-      onSuccess: (_, { id }) => {
-        toast.success('Status da cadeira alterado com sucesso!');
+      mutationFn: (id: number) => chairService.toggleChairStatus(id),
+      onSuccess: (response, id) => {
+        toast.success(response.message);
         queryClient.invalidateQueries({ queryKey: ['chairs'] });
         queryClient.invalidateQueries({ queryKey: ['chairs', id] });
       },
       onError: (error) => {
-        console.error('Erro ao alterar status da cadeira:', error);
-        toast.error('Erro ao alterar status da cadeira. Tente novamente.');
+        console.error('Erro ao alternar status da cadeira:', error);
+        toast.error('Erro ao alternar status da cadeira. Tente novamente.');
       },
     });
   };

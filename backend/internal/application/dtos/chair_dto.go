@@ -54,12 +54,6 @@ type ListChairsResponse struct {
 	Offset int             `json:"offset"`
 }
 
-// ChangeChairStatusRequest representa os dados para alterar status da cadeira
-type ChangeChairStatusRequest struct {
-	Status string `json:"status" validate:"required,oneof=ativa inativa"`
-	Reason string `json:"reason,omitempty" validate:"max=500"`
-}
-
 // ChairStatsResponse representa estatísticas das cadeiras
 type ChairStatsResponse struct {
 	TotalChairs     int64 `json:"total_chairs"`

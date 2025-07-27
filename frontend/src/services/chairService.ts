@@ -61,10 +61,17 @@ export const chairService = {
     return response.data.data
   },
 
-  // Ativar/desativar cadeira (admin)
-  async toggleChairStatus(id: number, active: boolean): Promise<Chair> {
-    const response = await api.patch(`/api/chairs/${id}/status`, { active })
-    return response.data.data
+  // Alternar status da cadeira (admin) - ativa/inativa
+  async toggleChairStatus(id: number): Promise<{
+    message: string
+    data: {
+      chair_id: number
+      new_status: string
+      previous_status: string
+    }
+  }> {
+    const response = await api.patch(`/api/chairs/${id}/toggle-status`)
+    return response.data
   },
 
   // Deletar cadeira (admin)
