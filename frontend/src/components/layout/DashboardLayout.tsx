@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
+import { cn } from '@/utils/cn'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -41,18 +42,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {/* Main content */}
         <main className={cn(
           "flex-1 min-h-screen",
-          showSidebar ? "lg:ml-64" : ""
+          showSidebar ? "lg:ml-56" : ""
         )}>
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             {children}
           </div>
         </main>
       </div>
     </div>
   )
-}
-
-// Função utilitária para combinar classes
-function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ')
 } 
