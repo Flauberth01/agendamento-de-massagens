@@ -880,3 +880,112 @@ func (h *BookingHandler) GetUserStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": stats})
 }
+
+// GetRescheduleOptions busca opções disponíveis para reagendamento
+// @Summary Buscar opções de reagendamento
+// @Description Busca horários disponíveis para reagendar um agendamento específico
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param booking_id path int true "ID do agendamento"
+// @Param date query string true "Data para buscar disponibilidades (YYYY-MM-DD)"
+// @Success 200 {object} dtos.RescheduleOptionsResponse "Opções de reagendamento"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 404 {object} map[string]string "Agendamento não encontrado"
+// @Router /bookings/reschedule-options/{booking_id} [get]
+func (h *BookingHandler) GetRescheduleOptions(c *gin.Context) {
+	bookingIDParam := c.Param("booking_id")
+	bookingID, err := strconv.ParseUint(bookingIDParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID do agendamento inválido"})
+		return
+	}
+
+	dateParam := c.Query("date")
+	if dateParam == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Data é obrigatória"})
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", dateParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de data inválido. Use YYYY-MM-DD"})
+		return
+	}
+
+	options, err := h.bookingUseCase.GetRescheduleOptions(uint(bookingID), date)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": options})
+}
+
+// RescheduleBookingDateTime reagenda apenas data e horário de um agendamento
+// @Summary Reagendar data e horário
+// @Description Reagenda apenas a data e horário de um agendamento existente
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param booking_id path int true "ID do agendamento"
+// @Param reschedule body dtos.RescheduleBookingRequest true "Dados para reagendamento"
+// @Success 200 {object} dtos.RescheduleBookingResponse "Agendamento reagendado com sucesso"
+// @Failure 400 {object} map[string]string "Dados inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 404 {object} map[string]string "Agendamento não encontrado"
+// @Router /bookings/reschedule-datetime/{booking_id} [put]
+func (h *BookingHandler) RescheduleBookingDateTime(c *gin.Context) {
+	bookingIDParam := c.Param("booking_id")
+	bookingID, err := strconv.ParseUint(bookingIDParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID do agendamento inválido"})
+		return
+	}
+
+	var req dtos.RescheduleBookingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
+		return
+	}
+
+	// Obter userID do contexto de autenticação
+	userID, exists := middleware.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
+
+	err = h.bookingUseCase.RescheduleBookingDateTime(uint(bookingID), req.StartTime, userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Buscar o booking atualizado para retornar
+	updatedBooking, err := h.bookingUseCase.GetBookingByID(uint(bookingID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar agendamento atualizado"})
+		return
+	}
+
+	// Converter para DTO de resposta
+	response := dtos.RescheduleBookingResponse{
+		ID:        updatedBooking.ID,
+		UserID:    updatedBooking.UserID,
+		ChairID:   updatedBooking.ChairID,
+		StartTime: updatedBooking.StartTime,
+		EndTime:   updatedBooking.EndTime,
+		Status:    updatedBooking.Status,
+		Notes:     updatedBooking.Notes,
+		UpdatedAt: updatedBooking.UpdatedAt,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Agendamento reagendado com sucesso",
+		"data":    response,
+	})
+}

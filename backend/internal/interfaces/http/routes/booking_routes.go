@@ -24,6 +24,14 @@ func SetupBookingRoutes(router *gin.RouterGroup, bookingHandler *handlers.Bookin
 		bookings.GET("/attendant-stats", middleware.AdminOrAttendantMiddleware(), bookingHandler.GetAttendantStats)
 		bookings.GET("/stats", middleware.AdminOrAttendantMiddleware(), bookingHandler.GetBookingStats)
 
+		// Rotas para atendentes e admins (reagendamento) - ANTES das rotas com :id
+		rescheduleGroup := bookings.Group("/")
+		rescheduleGroup.Use(middleware.AdminOrAttendantMiddleware())
+		{
+			rescheduleGroup.GET("/reschedule-options/:booking_id", bookingHandler.GetRescheduleOptions)
+			rescheduleGroup.PUT("/reschedule-datetime/:booking_id", bookingHandler.RescheduleBookingDateTime)
+		}
+
 		// Rotas com parâmetros (depois das rotas específicas)
 		bookings.GET("/user/:user_id", bookingHandler.GetUserBookings) // Rota com parâmetro depois
 		bookings.GET("/:id", bookingHandler.GetBooking)

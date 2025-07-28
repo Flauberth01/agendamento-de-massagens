@@ -167,5 +167,40 @@ export const bookingService = {
       params: userId ? { userId } : undefined 
     })
     return response.data
+  },
+
+  // Buscar opções de reagendamento (novo endpoint)
+  async getRescheduleOptions(bookingId: number, date: string): Promise<{
+    booking_id: number
+    current_booking: Booking
+    available_slots: string[]
+    date: string
+    chair_id: number
+    chair_name: string
+  }> {
+    const response = await api.get(`/api/bookings/reschedule-options/${bookingId}`, {
+      params: { date }
+    })
+    return response.data
+  },
+
+  // Reagendar apenas data e horário (novo endpoint)
+  async rescheduleBookingDateTime(bookingId: number, startTime: Date): Promise<{
+    message: string
+    data: {
+      id: number
+      user_id: number
+      chair_id: number
+      start_time: string
+      end_time: string
+      status: string
+      notes: string
+      updated_at: string
+    }
+  }> {
+    const response = await api.put(`/api/bookings/reschedule-datetime/${bookingId}`, {
+      start_time: startTime.toISOString()
+    })
+    return response.data
   }
 } 

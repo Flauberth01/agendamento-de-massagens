@@ -16,7 +16,6 @@ import {
   Calendar,
   Users,
   X,
-  Plus,
   Check
 } from 'lucide-react'
 import { availabilityService } from '../../services/availabilityService'

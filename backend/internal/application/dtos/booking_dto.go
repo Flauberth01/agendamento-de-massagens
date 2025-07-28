@@ -101,3 +101,36 @@ type AvailabilityResponse struct {
 	Available bool   `json:"available"`
 	Message   string `json:"message"`
 }
+
+// RescheduleBookingRequest representa os dados para reagendar um agendamento
+type RescheduleBookingRequest struct {
+	StartTime time.Time `json:"start_time" validate:"required"`
+}
+
+// RescheduleBookingResponse representa a resposta do reagendamento
+type RescheduleBookingResponse struct {
+	ID        uint      `json:"id"`
+	UserID    uint      `json:"user_id"`
+	ChairID   uint      `json:"chair_id"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+	Status    string    `json:"status"`
+	Notes     string    `json:"notes"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// GetRescheduleOptionsRequest representa os dados para buscar opções de reagendamento
+type GetRescheduleOptionsRequest struct {
+	BookingID uint      `json:"booking_id" validate:"required"`
+	Date      time.Time `json:"date" validate:"required"`
+}
+
+// RescheduleOptionsResponse representa as opções disponíveis para reagendamento
+type RescheduleOptionsResponse struct {
+	BookingID      uint            `json:"booking_id"`
+	CurrentBooking BookingResponse `json:"current_booking"`
+	AvailableSlots []string        `json:"available_slots"`
+	Date           string          `json:"date"`
+	ChairID        uint            `json:"chair_id"`
+	ChairName      string          `json:"chair_name"`
+}

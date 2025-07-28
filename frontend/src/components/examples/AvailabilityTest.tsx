@@ -6,8 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { availabilityService } from '@/services/availabilityService'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+
 
 export const AvailabilityTest: React.FC = () => {
   const [selectedChairId, setSelectedChairId] = useState<number>(1)

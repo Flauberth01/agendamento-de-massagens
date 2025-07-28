@@ -9,10 +9,10 @@ export const useAvailability = () => {
   const queryClient = useQueryClient()
 
   // Listar disponibilidades
-  const useAvailabilitiesList = (page = 1, limit = 10) => {
+  const useAvailabilitiesList = (limit = 10, offset = 0) => {
     return useQuery({
-      queryKey: ['availabilities', page, limit],
-      queryFn: () => availabilityService.getAllAvailabilities({ page, limit }),
+      queryKey: ['availabilities', offset, limit],
+      queryFn: () => availabilityService.getAllAvailabilities({ limit, offset }),
       staleTime: 5 * 60 * 1000, // 5 minutos
     })
   }

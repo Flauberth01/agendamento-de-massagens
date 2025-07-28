@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { ConfirmDialog } from '../../components/ui/confirm-dialog'
 import { useBookings } from '../../hooks/useBookings'
-import { useAuth } from '../../hooks/useAuth'
+import type { Booking } from '../../types/booking'
 
 import { 
   Calendar, 
@@ -16,34 +16,17 @@ import {
   Filter,
   Loader2,
   XCircle,
-  Eye,
   Building,
   Clock,
-  CheckCircle,
   UserCheck,
-  CalendarDays,
-  AlertCircle
+  CalendarDays
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-interface Booking {
-  id: number
-  chair: {
-    name: string
-    location: string
-  }
-  start_time: string
-  end_time: string
-  status: 'agendado' | 'confirmado' | 'cancelado' | 'concluido' | 'falta'
-  notes?: string
-  created_at: string
-}
-
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const { useUserBookings, useCancelBooking, useConfirmBooking, useMarkAttendance } = useBookings()
+  const { useUserBookings, useCancelBooking, useMarkAttendance } = useBookings()
 
   // Estados
   const [searchTerm, setSearchTerm] = useState('')
@@ -51,34 +34,25 @@ export const BookingListPage: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<string>('')
   const [chairFilter, setChairFilter] = useState<string>('')
   const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [showAttendanceDialog, setShowAttendanceDialog] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
-  const [actionType, setActionType] = useState<'cancel' | 'confirm' | 'attendance' | null>(null)
 
   // Buscar agendamentos do usuário (sem filtro de status para buscar todos)
-  const { data: bookingsResponse, isLoading, error } = useUserBookings()
+  const { data: bookingsResponse, isLoading } = useUserBookings()
 
   // Mutações
   const cancelBookingMutation = useCancelBooking()
-  const confirmBookingMutation = useConfirmBooking()
   const markAttendanceMutation = useMarkAttendance()
 
   const bookings = bookingsResponse?.data || []
   
-  // Obter cadeiras únicas para filtro
-  const uniqueChairs = [...new Set(bookings.map(booking => booking.chair.name))]
-  
-  // Obter sessões ativas (confirmadas e não concluídas)
-  const activeBookings = bookings.filter(booking => 
-    booking.status === 'confirmado' || booking.status === 'agendado'
-  )
+
   
   // Aplicar filtros
   const filteredBookings = bookings.filter(booking => {
     // Filtro por termo de busca
-    if (searchTerm && !booking.chair.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !booking.chair.location.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !booking.chair?.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !booking.chair?.location?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false
     }
     
@@ -89,14 +63,14 @@ export const BookingListPage: React.FC = () => {
     
     // Filtro por data
     if (dateFilter) {
-      const bookingDate = format(new Date(booking.start_time), 'yyyy-MM-dd')
+      const bookingDate = format(booking.start_time, 'yyyy-MM-dd')
       if (bookingDate !== dateFilter) {
         return false
       }
     }
     
     // Filtro por cadeira
-    if (chairFilter && !booking.chair.name.toLowerCase().includes(chairFilter.toLowerCase())) {
+    if (chairFilter && !booking.chair?.name?.toLowerCase().includes(chairFilter.toLowerCase())) {
       return false
     }
     
@@ -120,17 +94,17 @@ export const BookingListPage: React.FC = () => {
     }
   }
 
-  const formatDate = (dateTime: string) => {
-    return format(new Date(dateTime), 'dd/MM/yyyy', { locale: ptBR })
+  const formatDate = (dateTime: Date) => {
+    return format(dateTime, 'dd/MM/yyyy', { locale: ptBR })
   }
 
-  const formatTime = (dateTime: string) => {
-    return format(new Date(dateTime), 'HH:mm', { locale: ptBR })
+  const formatTime = (dateTime: Date) => {
+    return format(dateTime, 'HH:mm', { locale: ptBR })
   }
 
   const canCancelBooking = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = new Date(booking.start_time)
+    const bookingTime = booking.start_time
     const threeHoursBefore = new Date(bookingTime.getTime() - 3 * 60 * 60 * 1000)
     
     return booking.status === 'agendado' && now < threeHoursBefore
@@ -138,7 +112,7 @@ export const BookingListPage: React.FC = () => {
 
   const canRescheduleBooking = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = new Date(booking.start_time)
+    const bookingTime = booking.start_time
     
     // Pode reagendar se o agendamento está agendado e ainda não aconteceu
     // ou se aconteceu há menos de 2 horas (para permitir reagendamento de sessões recentes)
@@ -149,7 +123,7 @@ export const BookingListPage: React.FC = () => {
 
   const canConfirmPresence = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = new Date(booking.start_time)
+    const bookingTime = booking.start_time
     
     // Pode confirmar presença se o agendamento está confirmado e a sessão já começou
     // (permite marcar presença mesmo após o horário da sessão)
@@ -158,13 +132,12 @@ export const BookingListPage: React.FC = () => {
 
   const isUpcoming = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = new Date(booking.start_time)
+    const bookingTime = booking.start_time
     return bookingTime > now
   }
 
   const handleCancelBooking = (booking: Booking) => {
     setSelectedBooking(booking)
-    setActionType('cancel')
     setShowCancelDialog(true)
   }
 
@@ -175,13 +148,10 @@ export const BookingListPage: React.FC = () => {
 
   const handleConfirmPresence = (booking: Booking) => {
     setSelectedBooking(booking)
-    setActionType('attendance')
     setShowAttendanceDialog(true)
   }
 
-  const handleViewBooking = (bookingId: number) => {
-    navigate(`/bookings/${bookingId}`)
-  }
+
 
   const handleNewBooking = () => {
     navigate('/bookings/create')
@@ -305,69 +275,7 @@ export const BookingListPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Sessões Ativas */}
-      {activeBookings.length > 0 ? (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <CheckCircle className="h-5 w-5" />
-              Sessões Ativas ({activeBookings.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {activeBookings.slice(0, 3).map((booking) => (
-                <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
-                  <div className="flex items-center gap-3">
-                    <Building className="h-4 w-4 text-green-600" />
-                    <div>
-                      <p className="font-medium text-green-800">{booking.chair.name}</p>
-                      <p className="text-sm text-green-600">
-                        {formatDate(booking.start_time)} às {formatTime(booking.start_time)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(booking.status)}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewBooking(booking.id)}
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Ver
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {activeBookings.length > 3 && (
-                <div className="text-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setStatusFilter('confirmado')}
-                    className="text-green-600 hover:text-green-700"
-                  >
-                    Ver todas as sessões ativas ({activeBookings.length})
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-gray-200 bg-gray-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-600">
-              <AlertCircle className="h-5 w-5" />
-              Nenhuma Sessão Ativa
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500">Não há sessões ativas no momento.</p>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Lista de Agendamentos */}
       <Card>
@@ -400,97 +308,90 @@ export const BookingListPage: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {filteredBookings.map((booking) => (
-                <div key={booking.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Building className="h-5 w-5 text-blue-500" />
-                        <div>
-                          <h3 className="font-medium">{booking.chair.name}</h3>
-                          <p className="text-sm text-gray-600">{booking.chair.location}</p>
-                        </div>
-                        {isUpcoming(booking) && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                            <Clock className="h-3 w-3 mr-1" />
-                            Próxima
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
-                        <div>
-                          <span className="text-gray-600">Data:</span>
-                          <p className="font-medium">{formatDate(booking.start_time)}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Horário:</span>
-                          <p className="font-medium">
-                            {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Status:</span>
-                          <div className="mt-1">{getStatusBadge(booking.status)}</div>
-                        </div>
-                      </div>
+                                 <div key={booking.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                   <div className="flex items-start gap-4">
+                     <div className="flex-1">
+                       <div className="flex items-center gap-3 mb-3">
+                         <Building className="h-5 w-5 text-blue-500" />
+                         <div>
+                           <h3 className="font-medium">{booking.chair?.name}</h3>
+                           <p className="text-sm text-gray-600">{booking.chair?.location}</p>
+                         </div>
+                         {isUpcoming(booking) && (
+                           <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                             <Clock className="h-3 w-3 mr-1" />
+                             Próxima
+                           </Badge>
+                         )}
+                       </div>
+                       
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
+                         <div>
+                           <span className="text-gray-600">Data:</span>
+                           <p className="font-medium">{formatDate(booking.start_time)}</p>
+                         </div>
+                         <div>
+                           <span className="text-gray-600">Horário:</span>
+                           <p className="font-medium">
+                             {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
+                           </p>
+                         </div>
+                         <div>
+                           <span className="text-gray-600">Status:</span>
+                           <div className="mt-1">{getStatusBadge(booking.status)}</div>
+                         </div>
+                       </div>
 
-                      {booking.notes && (
-                        <div className="mt-3">
-                          <span className="text-gray-600 text-sm">Observações:</span>
-                          <p className="text-sm mt-1">{booking.notes}</p>
-                        </div>
-                      )}
-                    </div>
+                       {booking.notes && (
+                         <div className="mt-3">
+                           <span className="text-gray-600 text-sm">Observações:</span>
+                           <p className="text-sm mt-1">{booking.notes}</p>
+                         </div>
+                       )}
+                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewBooking(booking.id)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver
-                      </Button>
-                      
-                      {/* Botões de ação baseados no status */}
-                      {canCancelBooking(booking) && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleCancelBooking(booking)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Cancelar
-                        </Button>
-                      )}
+                     <div className="flex flex-col items-end gap-2 min-w-fit">
+                        {/* Botões de ação baseados no status */}
+                       <div className="flex gap-2">
+                         {canCancelBooking(booking) && (
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handleCancelBooking(booking)}
+                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                           >
+                             <XCircle className="h-4 w-4 mr-1" />
+                             Cancelar
+                           </Button>
+                         )}
 
-                      {canRescheduleBooking(booking) && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRescheduleBooking(booking)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <CalendarDays className="h-4 w-4 mr-1" />
-                          Reagendar
-                        </Button>
-                      )}
+                         {canRescheduleBooking(booking) && (
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handleRescheduleBooking(booking)}
+                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                           >
+                             <CalendarDays className="h-4 w-4 mr-1" />
+                             Reagendar
+                           </Button>
+                         )}
+                       </div>
 
-                      {canConfirmPresence(booking) && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleConfirmPresence(booking)}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <UserCheck className="h-4 w-4 mr-1" />
-                          Confirmar Presença
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                       {canConfirmPresence(booking) && (
+                         <Button
+                           size="sm"
+                           variant="default"
+                           onClick={() => handleConfirmPresence(booking)}
+                           className="bg-green-600 hover:bg-green-700 text-white"
+                         >
+                           <UserCheck className="h-4 w-4 mr-1" />
+                           Confirmar Presença
+                         </Button>
+                       )}
+                     </div>
+                   </div>
+                 </div>
               ))}
             </div>
           )}

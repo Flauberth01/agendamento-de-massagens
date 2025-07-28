@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"agendamento-backend/internal/application/dtos"
 	"agendamento-backend/internal/domain/entities"
 	"agendamento-backend/internal/domain/ports"
 	"agendamento-backend/internal/domain/repositories"
@@ -446,6 +447,150 @@ func (uc *BookingUseCase) RescheduleBooking(bookingID uint, newStartTime time.Ti
 	// Registrar auditoria
 	auditLog := entities.NewAuditLog(&updatedBy, entities.ActionUpdate, entities.ResourceBooking, &bookingID)
 	auditLog.SetDescription(fmt.Sprintf("Reagendado para %s na cadeira %d", newStartTime.Format("2006-01-02 15:04"), newChairID))
+	uc.auditRepo.Create(auditLog)
+
+	return nil
+}
+
+// GetRescheduleOptions busca opções disponíveis para reagendamento
+func (uc *BookingUseCase) GetRescheduleOptions(bookingID uint, date time.Time) (*dtos.RescheduleOptionsResponse, error) {
+	// Buscar agendamento atual
+	booking, err := uc.bookingRepo.GetByID(bookingID)
+	if err != nil {
+		return nil, fmt.Errorf("agendamento não encontrado: %w", err)
+	}
+
+	// Verificar se pode ser reagendado (não pode estar concluído ou cancelado)
+	if booking.Status == "concluido" || booking.Status == "cancelado" {
+		return nil, errors.New("não é possível reagendar um agendamento concluído ou cancelado")
+	}
+
+	// Verificar se a data está no futuro
+	if date.Before(time.Now().Truncate(24 * time.Hour)) {
+		return nil, errors.New("não é possível reagendar para uma data no passado")
+	}
+
+	// Buscar cadeira
+	chair, err := uc.chairRepo.GetByID(booking.ChairID)
+	if err != nil {
+		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
+	}
+
+	// Buscar disponibilidades da cadeira para a data
+	availabilities, err := uc.availabilityRepo.GetChairAvailabilityForDate(booking.ChairID, date)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar disponibilidades: %w", err)
+	}
+
+	// Buscar agendamentos existentes para a cadeira na data
+	bookings, err := uc.bookingRepo.GetByChairAndDate(booking.ChairID, date)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar agendamentos: %w", err)
+	}
+
+	// Criar mapa de horários já agendados (apenas agendamentos não cancelados)
+	bookedSlots := make(map[string]bool)
+	for _, existingBooking := range bookings {
+		if existingBooking.Status != "cancelado" && existingBooking.Status != "falta" && existingBooking.ID != bookingID {
+			slotTime := existingBooking.StartTime.Format("15:04")
+			bookedSlots[slotTime] = true
+		}
+	}
+
+	// Gerar todos os slots disponíveis e remover os já agendados
+	var availableSlots []string
+	for _, availability := range availabilities {
+		if availability.IsValidForDate(date) {
+			slots, err := availability.GetTimeSlots()
+			if err != nil {
+				continue
+			}
+
+			// Filtrar apenas slots não agendados
+			for _, slot := range slots {
+				if !bookedSlots[slot] {
+					availableSlots = append(availableSlots, slot)
+				}
+			}
+		}
+	}
+
+	// Converter booking para DTO
+	bookingResponse := dtos.BookingResponse{
+		ID:        booking.ID,
+		UserID:    booking.UserID,
+		ChairID:   booking.ChairID,
+		StartTime: booking.StartTime,
+		EndTime:   booking.EndTime,
+		Status:    booking.Status,
+		Notes:     booking.Notes,
+		CreatedAt: booking.CreatedAt,
+		UpdatedAt: booking.UpdatedAt,
+	}
+
+	response := &dtos.RescheduleOptionsResponse{
+		BookingID:      bookingID,
+		CurrentBooking: bookingResponse,
+		AvailableSlots: availableSlots,
+		Date:           date.Format("2006-01-02"),
+		ChairID:        booking.ChairID,
+		ChairName:      chair.Name,
+	}
+
+	return response, nil
+}
+
+// RescheduleBookingDateTime reagenda apenas data e horário de um agendamento
+func (uc *BookingUseCase) RescheduleBookingDateTime(bookingID uint, newStartTime time.Time, updatedBy uint) error {
+	// Buscar agendamento atual
+	booking, err := uc.bookingRepo.GetByID(bookingID)
+	if err != nil {
+		return fmt.Errorf("agendamento não encontrado: %w", err)
+	}
+
+	// Verificar se pode ser reagendado (não pode estar concluído ou cancelado)
+	if booking.Status == "concluido" || booking.Status == "cancelado" {
+		return errors.New("não é possível reagendar um agendamento concluído ou cancelado")
+	}
+
+	// Verificar se o novo horário está no futuro
+	if newStartTime.Before(time.Now()) {
+		return errors.New("não é possível reagendar para um horário no passado")
+	}
+
+	// Calcular novo horário de fim (30 minutos após o início)
+	newEndTime := newStartTime.Add(30 * time.Minute)
+
+	// Verificar disponibilidade no novo horário (excluindo o próprio agendamento)
+	hasConflict, err := uc.bookingRepo.HasConflict(booking.ChairID, newStartTime, newEndTime, &bookingID)
+	if err != nil {
+		return fmt.Errorf("erro ao verificar disponibilidade: %w", err)
+	}
+	if hasConflict {
+		return errors.New("já existe um agendamento neste horário")
+	}
+
+	// Verificar se a cadeira está disponível no novo horário
+	isAvailable, err := uc.availabilityRepo.IsChairAvailableAtTime(booking.ChairID, newStartTime)
+	if err != nil {
+		return fmt.Errorf("erro ao verificar disponibilidade da cadeira: %w", err)
+	}
+	if !isAvailable {
+		return errors.New("cadeira não está disponível no horário solicitado")
+	}
+
+	// Atualizar apenas data e horário
+	booking.StartTime = newStartTime
+	booking.EndTime = newEndTime
+
+	err = uc.bookingRepo.Update(booking)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar agendamento: %w", err)
+	}
+
+	// Registrar auditoria
+	auditLog := entities.NewAuditLog(&updatedBy, entities.ActionUpdate, entities.ResourceBooking, &bookingID)
+	auditLog.SetDescription(fmt.Sprintf("Reagendado para %s", newStartTime.Format("2006-01-02 15:04")))
 	uc.auditRepo.Create(auditLog)
 
 	return nil

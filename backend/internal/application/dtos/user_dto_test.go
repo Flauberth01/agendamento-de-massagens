@@ -159,6 +159,7 @@ func TestUserResponse_Fields(t *testing.T) {
 	assert.Equal(t, "João Silva", response.Name)
 	assert.Equal(t, "12345678909", response.CPF)
 	assert.Equal(t, "joao@example.com", response.Email)
+	assert.Equal(t, "11999999999", response.Phone)
 	assert.Equal(t, "usuario", response.Role)
 	assert.Equal(t, "aprovado", response.Status)
 	assert.Equal(t, now, response.CreatedAt)
