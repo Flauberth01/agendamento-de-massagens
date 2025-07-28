@@ -3,22 +3,30 @@ import { bookingService } from '../services/bookingService'
 import { availabilityService } from '../services/availabilityService'
 import type { CreateBookingRequest } from '../types/booking'
 import { toast } from 'sonner'
+import { useAuth } from './useAuth'
 
 export const useBookings = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   // Buscar agendamentos do usuário
-  const useUserBookings = (params?: {
-    status?: string
-    startDate?: string
-    endDate?: string
-    page?: number
-    limit?: number
-  }) => {
+  const useUserBookings = () => {
     return useQuery({
-      queryKey: ['user-bookings', params],
-      queryFn: () => bookingService.getUserBookings(params),
-      staleTime: 5 * 60 * 1000, // 5 minutos
+      queryKey: ['user-bookings'],
+      queryFn: async () => {
+        // Se for atendente ou admin, buscar todos os agendamentos
+        // Se for usuário regular, buscar apenas os próprios agendamentos
+        if (user?.role === 'atendente' || user?.role === 'admin') {
+          console.log('Usuário é atendente/admin - buscando todos os agendamentos')
+          const response = await bookingService.getAllBookings()
+          return response
+        } else {
+          console.log('Usuário é regular - buscando apenas seus agendamentos')
+          const response = await bookingService.getUserBookings()
+          return response
+        }
+      },
+      enabled: !!user,
     })
   }
 
@@ -125,6 +133,23 @@ export const useBookings = () => {
     })
   }
 
+  // Reagendar agendamento
+  const useRescheduleBooking = () => {
+    return useMutation({
+      mutationFn: ({ id, data }: { id: number; data: { start_time: Date; chair_id?: number } }) =>
+        bookingService.rescheduleBooking(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['user-bookings'] })
+        queryClient.invalidateQueries({ queryKey: ['upcoming-bookings'] })
+        queryClient.invalidateQueries({ queryKey: ['booking-stats'] })
+        toast.success('Agendamento reagendado com sucesso!')
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao reagendar agendamento')
+      },
+    })
+  }
+
   // Confirmar agendamento (atendente)
   const useConfirmBooking = () => {
     return useMutation({
@@ -168,6 +193,7 @@ export const useBookings = () => {
     useChairAvailability,
     useCreateBooking,
     useCancelBooking,
+    useRescheduleBooking,
     useConfirmBooking,
     useMarkAttendance,
   }

@@ -46,6 +46,12 @@ export const bookingService = {
     return response.data
   },
 
+  // Reagendar agendamento
+  async rescheduleBooking(id: number, data: { start_time: Date; chair_id?: number }): Promise<Booking> {
+    const response = await api.put(`/api/bookings/${id}/reschedule`, data)
+    return response.data
+  },
+
   // Cancelar agendamento
   async cancelBooking(id: number, reason?: string): Promise<Booking> {
     const response = await api.patch(`/api/bookings/${id}/cancel`, { reason })

@@ -89,19 +89,20 @@ func (r *bookingRepositoryImpl) List(limit, offset int, filters map[string]inter
 
 // GetByUser busca agendamentos de um usuário
 func (r *bookingRepositoryImpl) GetByUser(userID uint, limit, offset int) ([]*entities.Booking, int64, error) {
-	var bookings []*entities.Booking
 	var total int64
+	var bookings []*entities.Booking
 
-	query := r.db.Model(&entities.Booking{}).Preload("Chair").Where("user_id = ?", userID)
-
-	// Contar total
-	if err := query.Count(&total).Error; err != nil {
+	// Contar total de agendamentos do usuário
+	if err := r.db.Model(&entities.Booking{}).Where("user_id = ? AND deleted_at IS NULL", userID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Buscar com paginação
-	err := query.Limit(limit).Offset(offset).Order("start_time DESC").Find(&bookings).Error
-	return bookings, total, err
+	// Buscar agendamentos do usuário com preload das relações
+	if err := r.db.Preload("User").Preload("Chair").Where("user_id = ? AND deleted_at IS NULL", userID).Order("start_time DESC").Limit(limit).Offset(offset).Find(&bookings).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return bookings, total, nil
 }
 
 // GetByChair busca agendamentos de uma cadeira

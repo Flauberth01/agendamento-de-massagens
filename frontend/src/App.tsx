@@ -17,6 +17,7 @@ import { AttendantDashboardPage } from './pages/dashboard/AttendantDashboardPage
 import { AdminDashboardPage } from './pages/dashboard/AdminDashboardPage'
 import { BookingCreatePage } from './pages/bookings/BookingCreatePage'
 import { BookingListPage } from './pages/bookings/BookingListPage'
+import { BookingReschedulePage } from './pages/bookings/BookingReschedulePage'
 import { UserListPage } from './pages/users/UserListPage'
 import { UserCreatePage } from './pages/users/UserCreatePage'
 import { UserDetailPage } from './pages/users/UserDetailPage'
@@ -157,6 +158,13 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <BookingCreatePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bookings/reschedule/:id" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <BookingReschedulePage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

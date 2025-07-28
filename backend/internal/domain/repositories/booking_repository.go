@@ -1,8 +1,8 @@
 package repositories
 
 import (
-	"time"
 	"agendamento-backend/internal/domain/entities"
+	"time"
 )
 
 type BookingRepository interface {

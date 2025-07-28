@@ -57,7 +57,7 @@ export const MinimalLayout: React.FC<MinimalLayoutProps> = ({
       show: true
     },
     {
-      label: 'Agendamentos',
+      label: 'Gerenciamento de Sessões',
       href: '/bookings',
       icon: Calendar,
       show: true

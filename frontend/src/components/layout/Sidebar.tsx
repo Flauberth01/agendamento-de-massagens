@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
       show: !isAttendant && !isAdmin
     },
     {
-      label: 'Meus Agendamentos',
+      label: 'Gerenciamento de Sessões',
       href: '/bookings',
       icon: Calendar,
       show: isAttendant || isAdmin
