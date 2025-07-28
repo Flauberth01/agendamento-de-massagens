@@ -230,7 +230,21 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if user.Status != "aprovado" {
 		// Log de tentativa de login com usuário não aprovado
 		h.auditLogUseCase.LogUserAction(user.ID, entities.ActionLogin, entities.ResourceAuth, user.ID, "Tentativa de login com usuário não aprovado. Status: "+user.Status, c.ClientIP(), c.GetHeader("User-Agent"))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não está aprovado. Status: " + user.Status})
+		
+		// Mensagem amigável baseada no status
+		var message string
+		switch user.Status {
+		case "pendente":
+			message = "Seu cadastro ainda não foi aprovado. Por favor, aguarde a aprovação de um administrador ou atendente."
+		case "rejeitado":
+			message = "Seu cadastro foi rejeitado. Entre em contato com o administrador para mais informações."
+		case "suspenso":
+			message = "Sua conta está suspensa. Entre em contato com o administrador para mais informações."
+		default:
+			message = "Seu cadastro ainda não foi aprovado. Por favor, aguarde a aprovação."
+		}
+		
+		c.JSON(http.StatusUnauthorized, gin.H{"error": message})
 		return
 	}
 

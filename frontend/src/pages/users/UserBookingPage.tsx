@@ -190,12 +190,14 @@ export const UserBookingPage: React.FC = () => {
     }
   }
 
-  const formatTime = (date: Date) => {
-    return format(date, 'HH:mm', { locale: ptBR })
+  const formatTime = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    return format(dateObj, 'HH:mm', { locale: ptBR })
   }
 
-  const formatDate = (date: Date) => {
-    return format(date, 'dd/MM/yyyy', { locale: ptBR })
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    return format(dateObj, 'dd/MM/yyyy', { locale: ptBR })
   }
 
   const getDayName = (date: Date) => {

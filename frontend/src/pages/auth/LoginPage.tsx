@@ -70,7 +70,16 @@ export const LoginPage: React.FC = () => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-sm text-red-700">{error}</span>
+              <div className="flex-1">
+                <span className="text-sm text-red-700">{error}</span>
+                {error.includes('não foi aprovado') && (
+                  <div className="mt-2 text-xs text-red-600">
+                    <p>• Seu cadastro está sendo analisado</p>
+                    <p>• Você receberá uma notificação quando for aprovado</p>
+                    <p>• Em caso de dúvidas, entre em contato com o administrador</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

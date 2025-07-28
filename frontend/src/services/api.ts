@@ -99,8 +99,9 @@ api.interceptors.response.use(
 export const handleApiError = (error: any): ApiError => {
   if (error.response) {
     // Erro da API com resposta
+    const errorMessage = error.response.data?.error || error.response.data?.message || 'Erro na requisição';
     return {
-      message: error.response.data?.message || 'Erro na requisição',
+      message: errorMessage,
       error: error.response.data?.error,
       status: error.response.status,
     };

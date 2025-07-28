@@ -17,16 +17,16 @@ export const useBookings = () => {
         // Se for atendente ou admin, buscar todos os agendamentos
         // Se for usuário regular, buscar apenas os próprios agendamentos
         if (user?.role === 'atendente' || user?.role === 'admin') {
-          console.log('Usuário é atendente/admin - buscando todos os agendamentos')
           const response = await bookingService.getAllBookings()
           return response
         } else {
-          console.log('Usuário é regular - buscando apenas seus agendamentos')
           const response = await bookingService.getUserBookings()
           return response
         }
       },
       enabled: !!user,
+      retry: 1,
+      retryDelay: 1000,
     })
   }
 

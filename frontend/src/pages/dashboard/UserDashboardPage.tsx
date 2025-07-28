@@ -87,12 +87,14 @@ export const UserDashboardPage: React.FC = () => {
     }
   }
 
-  const formatDateTime = (dateTime: Date) => {
-    return format(dateTime, 'dd/MM, HH:mm', { locale: ptBR })
+  const formatDateTime = (dateTime: Date | string) => {
+    const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime
+    return format(date, 'dd/MM, HH:mm', { locale: ptBR })
   }
 
-  const formatDate = (dateTime: Date) => {
-    return format(dateTime, 'dd/MM/yyyy', { locale: ptBR })
+  const formatDate = (dateTime: Date | string) => {
+    const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime
+    return format(date, 'dd/MM/yyyy', { locale: ptBR })
   }
 
   const handleNewBooking = () => {

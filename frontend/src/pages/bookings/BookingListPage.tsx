@@ -38,7 +38,7 @@ export const BookingListPage: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   // Buscar agendamentos do usuário (sem filtro de status para buscar todos)
-  const { data: bookingsResponse, isLoading } = useUserBookings()
+  const { data: bookingsResponse, isLoading, error } = useUserBookings()
 
   // Mutações
   const cancelBookingMutation = useCancelBooking()
@@ -63,7 +63,7 @@ export const BookingListPage: React.FC = () => {
     
     // Filtro por data
     if (dateFilter) {
-      const bookingDate = format(booking.start_time, 'yyyy-MM-dd')
+      const bookingDate = format(new Date(booking.start_time), 'yyyy-MM-dd')
       if (bookingDate !== dateFilter) {
         return false
       }
@@ -94,17 +94,19 @@ export const BookingListPage: React.FC = () => {
     }
   }
 
-  const formatDate = (dateTime: Date) => {
-    return format(dateTime, 'dd/MM/yyyy', { locale: ptBR })
+  const formatDate = (dateTime: Date | string) => {
+    const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime
+    return format(date, 'dd/MM/yyyy', { locale: ptBR })
   }
 
-  const formatTime = (dateTime: Date) => {
-    return format(dateTime, 'HH:mm', { locale: ptBR })
+  const formatTime = (dateTime: Date | string) => {
+    const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime
+    return format(date, 'HH:mm', { locale: ptBR })
   }
 
   const canCancelBooking = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = booking.start_time
+    const bookingTime = new Date(booking.start_time)
     const threeHoursBefore = new Date(bookingTime.getTime() - 3 * 60 * 60 * 1000)
     
     return booking.status === 'agendado' && now < threeHoursBefore
@@ -112,7 +114,7 @@ export const BookingListPage: React.FC = () => {
 
   const canRescheduleBooking = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = booking.start_time
+    const bookingTime = new Date(booking.start_time)
     
     // Pode reagendar se o agendamento está agendado e ainda não aconteceu
     // ou se aconteceu há menos de 2 horas (para permitir reagendamento de sessões recentes)
@@ -123,7 +125,7 @@ export const BookingListPage: React.FC = () => {
 
   const canConfirmPresence = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = booking.start_time
+    const bookingTime = new Date(booking.start_time)
     
     // Pode confirmar presença se o agendamento está confirmado e a sessão já começou
     // (permite marcar presença mesmo após o horário da sessão)
@@ -132,7 +134,7 @@ export const BookingListPage: React.FC = () => {
 
   const isUpcoming = (booking: Booking) => {
     const now = new Date()
-    const bookingTime = booking.start_time
+    const bookingTime = new Date(booking.start_time)
     return bookingTime > now
   }
 
@@ -191,6 +193,25 @@ export const BookingListPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Erro ao carregar agendamentos
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {error instanceof Error ? error.message : 'Erro desconhecido'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Tentar Novamente
+          </Button>
+        </div>
       </div>
     )
   }
