@@ -60,7 +60,7 @@ export const bookingService = {
 
   // Confirmar agendamento (atendente)
   async confirmBooking(id: number): Promise<Booking> {
-    const response = await api.patch(`/api/bookings/${id}/confirm`)
+    const response = await api.post(`/api/bookings/${id}/confirm`)
     return response.data
   },
 

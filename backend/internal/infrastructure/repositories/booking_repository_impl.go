@@ -176,10 +176,9 @@ func (r *bookingRepositoryImpl) GetByDate(date time.Time) ([]*entities.Booking, 
 	var bookings []*entities.Booking
 	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	endOfDay := startOfDay.Add(24 * time.Hour)
-	now := time.Now()
 
 	err := r.db.Preload("User").Preload("Chair").
-		Where("start_time >= ? AND start_time < ? AND start_time > ?", startOfDay, endOfDay, now).
+		Where("start_time >= ? AND start_time < ?", startOfDay, endOfDay).
 		Order("start_time ASC").Find(&bookings).Error
 	return bookings, err
 }

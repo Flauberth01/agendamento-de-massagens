@@ -20,7 +20,8 @@ import {
   Building,
   Clock,
   UserCheck,
-  CalendarDays
+  CalendarDays,
+  CheckCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -28,7 +29,7 @@ import { ptBR } from 'date-fns/locale'
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
   const { isAttendant, user, isAuthenticated } = useAuth()
-  const { useUserBookings, useCancelBooking, useMarkAttendance } = useBookings()
+  const { useUserBookings, useCancelBooking, useMarkAttendance, useConfirmBooking } = useBookings()
 
   // Verificar se usuário está autenticado
   if (!isAuthenticated) {
@@ -43,7 +44,9 @@ export const BookingListPage: React.FC = () => {
   const [chairFilter, setChairFilter] = useState<string>('')
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showAttendanceDialog, setShowAttendanceDialog] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [confirmedBookingId, setConfirmedBookingId] = useState<number | null>(null)
 
   // Buscar agendamentos do usuário (sem filtro de status para buscar todos)
   const { data: bookingsResponse, isLoading, error } = useUserBookings()
@@ -51,6 +54,7 @@ export const BookingListPage: React.FC = () => {
   // Mutações
   const cancelBookingMutation = useCancelBooking()
   const markAttendanceMutation = useMarkAttendance()
+  const confirmBookingMutation = useConfirmBooking()
 
   const bookings = bookingsResponse?.data || []
   
@@ -59,8 +63,11 @@ export const BookingListPage: React.FC = () => {
   // Aplicar filtros
   const filteredBookings = bookings.filter(booking => {
     // Filtro por termo de busca
-    if (searchTerm && !booking.chair?.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !booking.chair?.location?.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && 
+        !booking.chair?.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !booking.chair?.location?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !booking.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !booking.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false
     }
     
@@ -90,7 +97,7 @@ export const BookingListPage: React.FC = () => {
       case 'agendado':
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
       case 'confirmado':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Confirmado</Badge>
+        return <Badge variant="default" className="bg-green-500 text-white font-medium">✓ Confirmado</Badge>
       case 'concluido':
         return <Badge variant="default" className="bg-green-500 text-white">Concluído</Badge>
       case 'falta':
@@ -117,6 +124,12 @@ export const BookingListPage: React.FC = () => {
     const bookingTime = new Date(booking.start_time)
     const threeHoursBefore = new Date(bookingTime.getTime() - 3 * 60 * 60 * 1000)
     
+    // Atendentes e admins podem cancelar agendamentos
+    // Usuários regulares só podem cancelar até 3 horas antes
+    if (isAttendant || user?.role === 'admin') {
+      return booking.status === 'agendado' || booking.status === 'confirmado'
+    }
+    
     return booking.status === 'agendado' && now < threeHoursBefore
   }
 
@@ -140,6 +153,12 @@ export const BookingListPage: React.FC = () => {
     return booking.status === 'confirmado' && now >= bookingTime
   }
 
+  const canConfirmBooking = (booking: Booking) => {
+    // Atendentes e admins podem confirmar agendamentos
+    // E apenas agendamentos com status 'agendado' podem ser confirmados
+    return (isAttendant || user?.role === 'admin') && booking.status === 'agendado'
+  }
+
   const isUpcoming = (booking: Booking) => {
     const now = new Date()
     const bookingTime = new Date(booking.start_time)
@@ -161,11 +180,15 @@ export const BookingListPage: React.FC = () => {
     setShowAttendanceDialog(true)
   }
 
-
+  const handleConfirmBooking = (booking: Booking) => {
+    setSelectedBooking(booking)
+    setShowConfirmDialog(true)
+  }
 
   const handleNewBooking = () => {
     navigate('/bookings/create')
   }
+
 
   const handleCancelConfirm = async () => {
     if (!selectedBooking) return
@@ -194,6 +217,26 @@ export const BookingListPage: React.FC = () => {
       setSelectedBooking(null)
     } catch (error) {
       console.error('Erro ao confirmar presença:', error)
+    }
+  }
+
+  const handleConfirmBookingConfirm = async () => {
+    if (!selectedBooking) return
+    
+    try {
+      await confirmBookingMutation.mutateAsync(selectedBooking.id)
+      setShowConfirmDialog(false)
+      setSelectedBooking(null)
+      
+      // Adicionar efeito visual de confirmação
+      setConfirmedBookingId(selectedBooking.id)
+      
+      // Remover o efeito após 3 segundos
+      setTimeout(() => {
+        setConfirmedBookingId(null)
+      }, 3000)
+    } catch (error) {
+      console.error('Erro ao confirmar agendamento:', error)
     }
   }
 
@@ -230,14 +273,48 @@ export const BookingListPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Sessões</h1>
           <p className="text-gray-600">Gerencie suas sessões de massagem</p>
+          {!isAttendant && user?.role !== 'admin' && (
+            <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <h3 className="text-sm font-medium text-green-800 mb-1">ℹ️ Status dos Agendamentos:</h3>
+              <ul className="text-xs text-green-700 space-y-1">
+                <li>• <strong>Agendado:</strong> Aguardando confirmação do atendente</li>
+                <li>• <strong>Confirmado:</strong> Sessão confirmada - você receberá um email</li>
+                <li>• <strong>Concluído:</strong> Sessão realizada com sucesso</li>
+                <li>• <strong>Cancelado:</strong> Agendamento cancelado</li>
+              </ul>
+            </div>
+          )}
         </div>
         {!isAttendant && (
-          <Button onClick={handleNewBooking}>
+          <Button onClick={() => handleNewBooking()}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Agendamento
           </Button>
         )}
       </div>
+
+      {/* Notificação de Confirmação */}
+      {confirmedBookingId && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 transition-all duration-300 ease-in-out">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-green-800">Agendamento Confirmado!</h3>
+              <p className="text-sm text-green-700 mt-1">
+                O status foi alterado para "Confirmado". O cliente receberá um email de confirmação.
+              </p>
+            </div>
+            <button
+              onClick={() => setConfirmedBookingId(null)}
+              className="text-green-400 hover:text-green-600"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <Card>
@@ -256,7 +333,7 @@ export const BookingListPage: React.FC = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Buscar por cadeira, localização..."
+                  placeholder="Buscar por cadeira, localização, cliente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -331,7 +408,7 @@ export const BookingListPage: React.FC = () => {
                 }
               </p>
               {!searchTerm && statusFilter === 'all' && !dateFilter && !chairFilter && !isAttendant && (
-                <Button onClick={handleNewBooking}>
+                <Button onClick={() => handleNewBooking()}>
                   <Plus className="h-4 w-4 mr-2" />
                   Agendar Primeira Sessão
                 </Button>
@@ -340,7 +417,11 @@ export const BookingListPage: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {filteredBookings.map((booking) => (
-                                 <div key={booking.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                 <div key={booking.id} className={`border rounded-lg p-4 hover:bg-gray-50 transition-colors ${
+                                   confirmedBookingId === booking.id 
+                                     ? 'ring-2 ring-green-500 bg-green-50' 
+                                     : ''
+                                 }`}>
                    <div className="flex items-start gap-4">
                      <div className="flex-1">
                        <div className="flex items-center gap-3 mb-3">
@@ -355,6 +436,20 @@ export const BookingListPage: React.FC = () => {
                              Próxima
                            </Badge>
                          )}
+                       </div>
+                       
+                       {/* Informações do Usuário */}
+                       <div className="mb-3 p-2 bg-gray-50 rounded-md">
+                         <div className="flex items-center gap-2 mb-1">
+                           <UserCheck className="h-4 w-4 text-gray-500" />
+                           <span className="text-sm font-medium text-gray-700">Cliente</span>
+                         </div>
+                         <div className="text-sm">
+                           <p className="font-medium text-gray-900">
+                             {booking.user?.name?.split(' ').slice(0, 2).join(' ') || 'Usuário não informado'}
+                           </p>
+                           <p className="text-gray-600 text-xs">{booking.user?.email || 'Email não informado'}</p>
+                         </div>
                        </div>
                        
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
@@ -408,6 +503,18 @@ export const BookingListPage: React.FC = () => {
                              Reagendar
                            </Button>
                          )}
+
+                         {canConfirmBooking(booking) && (
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handleConfirmBooking(booking)}
+                             className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                           >
+                             <CheckCircle className="h-4 w-4 mr-1" />
+                             Confirmar
+                           </Button>
+                         )}
                        </div>
 
                        {canConfirmPresence(booking) && (
@@ -449,6 +556,18 @@ export const BookingListPage: React.FC = () => {
         onConfirm={handleAttendanceConfirm}
         title="Confirmar Presença"
         message="Confirmar que o cliente compareceu à sessão?"
+        confirmText="Sim, Confirmar"
+        cancelText="Cancelar"
+        variant="default"
+      />
+
+      {/* Diálogo de Confirmação de Agendamento */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={handleConfirmBookingConfirm}
+        title="Confirmar Agendamento"
+        message="Tem certeza que deseja confirmar este agendamento? Esta ação mudará o status para 'confirmado'."
         confirmText="Sim, Confirmar"
         cancelText="Cancelar"
         variant="default"

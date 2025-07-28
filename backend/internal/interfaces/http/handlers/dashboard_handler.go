@@ -381,12 +381,17 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 	// Calcular estatísticas de comparecimento e cancelamento
 	completedSessions := 0
 	cancelledSessions := 0
+	confirmedSessions := 0
+	totalSessions := len(bookings)
+
 	for _, booking := range bookings {
 		switch booking.Status {
 		case "concluido":
 			completedSessions++
 		case "cancelado":
 			cancelledSessions++
+		case "confirmado":
+			confirmedSessions++
 		}
 	}
 
@@ -458,8 +463,8 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 
 	// Calcular estatísticas gerais
 	stats := gin.H{
-		"totalSessionsToday":     len(bookings),
-		"confirmedSessionsToday": 0,
+		"totalSessionsToday":     totalSessions,
+		"confirmedSessionsToday": confirmedSessions,
 		"pendingApprovals":       len(pendingUsers),
 		"totalChairs":            len(chairs),
 		"activeChairs":           len(chairs),
@@ -467,17 +472,10 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 		"cancellationRate":       0,
 	}
 
-	// Calcular sessões confirmadas
-	for _, booking := range bookings {
-		if booking.Status == "confirmado" {
-			stats["confirmedSessionsToday"] = stats["confirmedSessionsToday"].(int) + 1
-		}
-	}
-
-	// Calcular taxas (simplificado)
-	if len(bookings) > 0 {
-		attendanceRate := float64(completedSessions) / float64(len(bookings)) * 100
-		cancellationRate := float64(cancelledSessions) / float64(len(bookings)) * 100
+	// Calcular taxas (apenas se houver agendamentos)
+	if totalSessions > 0 {
+		attendanceRate := float64(completedSessions) / float64(totalSessions) * 100
+		cancellationRate := float64(cancelledSessions) / float64(totalSessions) * 100
 		stats["attendanceRate"] = int(attendanceRate)
 		stats["cancellationRate"] = int(cancellationRate)
 	}

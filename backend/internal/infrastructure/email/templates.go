@@ -1,10 +1,10 @@
 package email
 
 import (
+	"agendamento-backend/internal/domain/entities"
 	"bytes"
 	"fmt"
 	"html/template"
-	"agendamento-backend/internal/domain/entities"
 )
 
 // EmailTemplate representa um template de email
@@ -216,7 +216,6 @@ func GetUserApprovalTemplate() *EmailTemplate {
             <h3 style="margin-top: 0; color: #28a745;">Próximos Passos:</h3>
             <ul>
                 <li>Acesse o sistema com seu CPF e senha</li>
-                <li>Complete seu perfil se necessário</li>
                 <li>Faça seu primeiro agendamento</li>
             </ul>
         </div>
@@ -234,7 +233,6 @@ Parabéns! Seu cadastro foi aprovado e você já pode utilizar o sistema.
 
 Próximos Passos:
 - Acesse o sistema com seu CPF e senha
-- Complete seu perfil se necessário
 - Faça seu primeiro agendamento
 
 Bem-vindo(a) ao Sistema de agendamento!
@@ -299,7 +297,7 @@ func RenderTemplate(tmpl *EmailTemplate, data *TemplateData) (subject, htmlBody,
 	if err != nil {
 		return "", "", "", fmt.Errorf("erro ao parsear template do subject: %v", err)
 	}
-	
+
 	var subjectBuf bytes.Buffer
 	if err := subjectTmpl.Execute(&subjectBuf, data); err != nil {
 		return "", "", "", fmt.Errorf("erro ao renderizar subject: %v", err)
@@ -311,7 +309,7 @@ func RenderTemplate(tmpl *EmailTemplate, data *TemplateData) (subject, htmlBody,
 	if err != nil {
 		return "", "", "", fmt.Errorf("erro ao parsear template HTML: %v", err)
 	}
-	
+
 	var htmlBuf bytes.Buffer
 	if err := htmlTmpl.Execute(&htmlBuf, data); err != nil {
 		return "", "", "", fmt.Errorf("erro ao renderizar HTML: %v", err)
@@ -323,7 +321,7 @@ func RenderTemplate(tmpl *EmailTemplate, data *TemplateData) (subject, htmlBody,
 	if err != nil {
 		return "", "", "", fmt.Errorf("erro ao parsear template de texto: %v", err)
 	}
-	
+
 	var textBuf bytes.Buffer
 	if err := textTmpl.Execute(&textBuf, data); err != nil {
 		return "", "", "", fmt.Errorf("erro ao renderizar texto: %v", err)
@@ -336,10 +334,10 @@ func RenderTemplate(tmpl *EmailTemplate, data *TemplateData) (subject, htmlBody,
 // PrepareTemplateData prepara os dados para renderização do template
 func PrepareTemplateData(user *entities.User, booking *entities.Booking, chair *entities.Chair, reason string) *TemplateData {
 	data := &TemplateData{
-		User:   user,
+		User:    user,
 		Booking: booking,
-		Chair:  chair,
-		Reason: reason,
+		Chair:   chair,
+		Reason:  reason,
 	}
 
 	if booking != nil {
@@ -347,6 +345,11 @@ func PrepareTemplateData(user *entities.User, booking *entities.Booking, chair *
 		data.DateTime = booking.StartTime.Format("02/01/2006 15:04")
 		data.Date = booking.StartTime.Format("02/01/2006")
 		data.Time = booking.StartTime.Format("15:04")
+
+		// Se não temos chair separado, usar o relacionamento do booking
+		if chair == nil && booking.Chair.ID != 0 {
+			data.Chair = &booking.Chair
+		}
 	}
 
 	return data

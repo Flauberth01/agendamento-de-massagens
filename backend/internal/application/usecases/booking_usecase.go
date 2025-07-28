@@ -247,6 +247,28 @@ func (uc *BookingUseCase) ConfirmBooking(bookingID, confirmedBy uint) error {
 	auditLog.SetDescription("Agendamento confirmado")
 	uc.auditRepo.Create(auditLog)
 
+	// Enviar email de confirmação (não bloquear se falhar)
+	go func() {
+		// Buscar dados completos para o email
+		user, err := uc.userRepo.GetByID(booking.UserID)
+		if err != nil {
+			return
+		}
+
+		chair, err := uc.chairRepo.GetByID(booking.ChairID)
+		if err != nil {
+			return
+		}
+
+		booking.User = *user
+		booking.Chair = *chair
+
+		if err := uc.emailRepo.SendBookingConfirmation(user, booking); err != nil {
+			// Log do erro mas não falha a operação
+			fmt.Printf("Erro ao enviar email de confirmação: %v\n", err)
+		}
+	}()
+
 	return nil
 }
 

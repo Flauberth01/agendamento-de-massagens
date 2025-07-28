@@ -28,19 +28,20 @@ export const AdminDashboardPage: React.FC = () => {
   // Buscar dados do dashboard
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ['admin-dashboard'],
-    queryFn: dashboardService.getAdminDashboard,
+    queryFn: dashboardService.getOperationalDashboard,
     staleTime: 2 * 60 * 1000, // 2 minutos
     refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
   })
 
-  const systemStats: DashboardStats = dashboardData?.stats || {
-    totalUsers: 0,
-    totalChairs: 0,
-    totalBookings: 0,
-    activeBookings: 0,
-    pendingApprovals: 0,
-    todaySessions: 0,
-    monthlyGrowth: 0
+  // Mapear dados do dashboard operacional para o formato esperado
+  const mappedStats: DashboardStats = {
+    totalUsers: 0, // Será calculado separadamente se necessário
+    totalChairs: dashboardData?.stats?.totalChairs || 0,
+    totalBookings: dashboardData?.stats?.totalSessionsToday || 0,
+    activeBookings: dashboardData?.stats?.confirmedSessionsToday || 0,
+    pendingApprovals: dashboardData?.stats?.pendingApprovals || 0,
+    todaySessions: dashboardData?.stats?.totalSessionsToday || 0,
+    monthlyGrowth: 0 // Será calculado separadamente se necessário
   }
 
   if (error) {
@@ -87,7 +88,7 @@ export const AdminDashboardPage: React.FC = () => {
             <UserCheck className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{systemStats.pendingApprovals}</div>
+            <div className="text-2xl font-bold text-orange-600">{mappedStats.pendingApprovals}</div>
             <p className="text-xs text-muted-foreground">Aguardando aprovação</p>
           </CardContent>
         </Card>
@@ -98,7 +99,7 @@ export const AdminDashboardPage: React.FC = () => {
             <Building className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemStats.totalChairs}</div>
+            <div className="text-2xl font-bold">{mappedStats.totalChairs}</div>
             <p className="text-xs text-muted-foreground">Disponíveis para agendamento</p>
           </CardContent>
         </Card>
@@ -109,7 +110,7 @@ export const AdminDashboardPage: React.FC = () => {
             <Calendar className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemStats.todaySessions}</div>
+            <div className="text-2xl font-bold">{mappedStats.todaySessions}</div>
             <p className="text-xs text-muted-foreground">Agendamentos para hoje</p>
           </CardContent>
         </Card>
@@ -120,7 +121,7 @@ export const AdminDashboardPage: React.FC = () => {
             <Users className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemStats.totalUsers}</div>
+            <div className="text-2xl font-bold">{mappedStats.totalUsers}</div>
             <p className="text-xs text-muted-foreground">Usuários cadastrados</p>
           </CardContent>
         </Card>
@@ -144,7 +145,7 @@ export const AdminDashboardPage: React.FC = () => {
               <UserCheck className="h-6 w-6 text-orange-500" />
               <span className="text-sm font-medium">Aprovar Usuários</span>
               <span className="text-xs text-muted-foreground">
-                {systemStats.pendingApprovals} pendente(s)
+                {mappedStats.pendingApprovals} pendente(s)
               </span>
             </Button>
 
@@ -156,7 +157,7 @@ export const AdminDashboardPage: React.FC = () => {
               <Building className="h-6 w-6 text-blue-500" />
               <span className="text-sm font-medium">Gerenciar Cadeiras</span>
               <span className="text-xs text-muted-foreground">
-                {systemStats.totalChairs} cadeira(s)
+                {mappedStats.totalChairs} cadeira(s)
               </span>
             </Button>
 
@@ -180,7 +181,7 @@ export const AdminDashboardPage: React.FC = () => {
               <Clock className="h-6 w-6 text-purple-500" />
               <span className="text-sm font-medium">Ver Sessões</span>
               <span className="text-xs text-muted-foreground">
-                {systemStats.todaySessions} hoje
+                {mappedStats.todaySessions} hoje
               </span>
             </Button>
 
@@ -221,12 +222,12 @@ export const AdminDashboardPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {systemStats.pendingApprovals > 0 ? (
+            {mappedStats.pendingApprovals > 0 ? (
               <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-orange-500 flex-shrink-0" />
                 <div className="flex-1">
                   <div className="font-medium text-sm">
-                    {systemStats.pendingApprovals} usuário(s) aguardando aprovação
+                    {mappedStats.pendingApprovals} usuário(s) aguardando aprovação
                   </div>
                   <div className="text-xs text-orange-700 mt-1">
                     Clique em "Aprovar Usuários" para revisar as solicitações
@@ -251,12 +252,12 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
             )}
 
-            {systemStats.todaySessions > 0 && (
+            {mappedStats.todaySessions > 0 && (
               <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <Calendar className="h-5 w-5 text-blue-500 flex-shrink-0" />
                 <div className="flex-1">
                   <div className="font-medium text-sm">
-                    {systemStats.todaySessions} sessão(ões) agendada(s) para hoje
+                    {mappedStats.todaySessions} sessão(ões) agendada(s) para hoje
                   </div>
                   <div className="text-xs text-blue-700 mt-1">
                     Verifique a disponibilidade das cadeiras
