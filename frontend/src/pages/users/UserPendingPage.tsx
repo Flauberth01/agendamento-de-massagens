@@ -17,10 +17,12 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import type { User, UserApprovalRequest } from '../../types/user'
 
 export const UserPendingPage: React.FC = () => {
   const queryClient = useQueryClient()
+  const { user: currentUser } = useAuth()
 
   // Buscar usuários pendentes
   const { data: pendingUsers, isLoading, error } = useQuery({
@@ -82,7 +84,24 @@ export const UserPendingPage: React.FC = () => {
     })
   }
 
-  const formatDate = (date: Date) => {
+  // Função para verificar se o usuário atual pode aprovar/rejeitar o usuário pendente
+  const canApproveRejectUser = (pendingUser: User): boolean => {
+    if (!currentUser) return false
+    
+    // Administrador pode aprovar/rejeitar qualquer tipo de usuário
+    if (currentUser.role === 'admin') {
+      return true
+    }
+    
+    // Atendente só pode aprovar/rejeitar usuários/clientes
+    if (currentUser.role === 'atendente') {
+      return pendingUser.requested_role === 'usuario'
+    }
+    
+    return false
+  }
+
+  const formatDate = (date: string | Date) => {
     return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: ptBR })
   }
 
@@ -226,33 +245,42 @@ export const UserPendingPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleApproveUser(user.id)}
-                      disabled={approveMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {approveMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <UserCheck className="h-4 w-4" />
-                      )}
-                      Aprovar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleRejectUser(user.id)}
-                      disabled={rejectMutation.isPending}
-                      className="border-red-300 text-red-700 hover:bg-red-50"
-                    >
-                      {rejectMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <UserX className="h-4 w-4" />
-                      )}
-                      Rejeitar
-                    </Button>
+                    {canApproveRejectUser(user) && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => handleApproveUser(user.id)}
+                          disabled={approveMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {approveMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserCheck className="h-4 w-4" />
+                          )}
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRejectUser(user.id)}
+                          disabled={rejectMutation.isPending}
+                          className="border-red-300 text-red-700 hover:bg-red-50"
+                        >
+                          {rejectMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserX className="h-4 w-4" />
+                          )}
+                          Rejeitar
+                        </Button>
+                      </>
+                    )}
+                    {!canApproveRejectUser(user) && (
+                      <Badge variant="secondary">
+                        Permissão insuficiente
+                      </Badge>
+                    )}
                   </div>
                 </div>
               ))}

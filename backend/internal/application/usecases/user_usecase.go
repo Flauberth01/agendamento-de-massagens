@@ -258,6 +258,25 @@ func (uc *UserUseCase) GetPendingUsers() ([]*entities.User, error) {
 	return users, err
 }
 
+// GetPendingUsersByRole busca usuários pendentes de aprovação por role específico
+func (uc *UserUseCase) GetPendingUsersByRole(role string) ([]*entities.User, error) {
+	// Filtrar usuários pendentes por role
+	users, _, err := uc.userRepo.GetByStatus("pendente", 100, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filtrar por role
+	var filteredUsers []*entities.User
+	for _, user := range users {
+		if user.Role == role {
+			filteredUsers = append(filteredUsers, user)
+		}
+	}
+
+	return filteredUsers, nil
+}
+
 // UpdateLastLogin atualiza o último login do usuário
 func (uc *UserUseCase) UpdateLastLogin(userID uint) error {
 	return uc.userRepo.UpdateLastLogin(userID)

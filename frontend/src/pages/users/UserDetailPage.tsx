@@ -24,12 +24,14 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import type { User, UserApprovalRequest } from '../../types/user'
 
 export const UserDetailPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
+  const { user: currentUser } = useAuth()
 
   // Buscar dados do usuário
   const { data: user, isLoading, error } = useQuery({
@@ -75,6 +77,23 @@ export const UserDetailPage: React.FC = () => {
       })
     }
   })
+
+  // Função para verificar se o usuário atual pode aprovar/rejeitar o usuário pendente
+  const canApproveRejectUser = (pendingUser: User): boolean => {
+    if (!currentUser) return false
+    
+    // Administrador pode aprovar/rejeitar qualquer tipo de usuário
+    if (currentUser.role === 'admin') {
+      return true
+    }
+    
+    // Atendente só pode aprovar/rejeitar usuários/clientes
+    if (currentUser.role === 'atendente') {
+      return pendingUser.requested_role === 'usuario'
+    }
+    
+    return false
+  }
 
   const handleBack = () => {
     navigate('/users')
@@ -220,7 +239,7 @@ export const UserDetailPage: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {user.status === 'pendente' && (
+          {user.status === 'pendente' && canApproveRejectUser(user) && (
             <>
               <Button
                 onClick={handleApprove}
@@ -248,6 +267,11 @@ export const UserDetailPage: React.FC = () => {
                 Rejeitar
               </Button>
             </>
+          )}
+          {user.status === 'pendente' && !canApproveRejectUser(user) && (
+            <Badge variant="secondary">
+              Permissão insuficiente
+            </Badge>
           )}
         </div>
       </div>

@@ -101,6 +101,27 @@ func AdminOrAttendantMiddleware() gin.HandlerFunc {
 	})
 }
 
+// UserApprovalMiddleware middleware para permissões de aprovação de usuários
+func UserApprovalMiddleware() gin.HandlerFunc {
+	return gin.HandlerFunc(func(c *gin.Context) {
+		userRole, exists := c.Get("user_role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+			c.Abort()
+			return
+		}
+
+		// Apenas admin e atendente podem aprovar usuários
+		if userRole != "admin" && userRole != "atendente" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Acesso negado. Apenas administradores e atendentes podem aprovar usuários"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	})
+}
+
 // GenerateToken gera um token JWT para o usuário
 func GenerateToken(user *entities.User) (string, time.Time, error) {
 	expirationTime := time.Now().Add(24 * time.Hour) // 24 horas

@@ -340,10 +340,18 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 		return
 	}
 
-	// Buscar usuários pendentes de aprovação (apenas para admin)
+	// Buscar usuários pendentes de aprovação baseado no role
 	var pendingUsers []*entities.User
 	if userClaims.Role == "admin" {
+		// Admin pode ver todas as pendências
 		pendingUsers, err = h.userUseCase.GetPendingUsers()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuários pendentes"})
+			return
+		}
+	} else if userClaims.Role == "atendente" {
+		// Atendente só pode ver pendências de usuários/clientes
+		pendingUsers, err = h.userUseCase.GetPendingUsersByRole("usuario")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuários pendentes"})
 			return

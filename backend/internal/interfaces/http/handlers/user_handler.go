@@ -249,6 +249,19 @@ func (h *UserHandler) ApproveUser(c *gin.Context) {
 		return
 	}
 
+	// Verificar permissões de aprovação
+	if currentUser.Role == "atendente" {
+		// Atendente só pode aprovar usuários/clientes
+		if targetUser.Role != "usuario" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Atendentes só podem aprovar usuários/clientes"})
+			return
+		}
+	} else if currentUser.Role != "admin" {
+		// Apenas admin e atendente podem aprovar
+		c.JSON(http.StatusForbidden, gin.H{"error": "Apenas administradores e atendentes podem aprovar usuários"})
+		return
+	}
+
 	err = h.userUseCase.ApproveUser(uint(id), currentUser.ID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -294,6 +307,19 @@ func (h *UserHandler) RejectUser(c *gin.Context) {
 	targetUser, err := h.userUseCase.GetUserByID(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
+		return
+	}
+
+	// Verificar permissões de rejeição
+	if currentUser.Role == "atendente" {
+		// Atendente só pode rejeitar usuários/clientes
+		if targetUser.Role != "usuario" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Atendentes só podem rejeitar usuários/clientes"})
+			return
+		}
+	} else if currentUser.Role != "admin" {
+		// Apenas admin e atendente podem rejeitar
+		c.JSON(http.StatusForbidden, gin.H{"error": "Apenas administradores e atendentes podem rejeitar usuários"})
 		return
 	}
 

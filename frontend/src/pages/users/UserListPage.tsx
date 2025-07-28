@@ -24,12 +24,14 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import type { User, UserApprovalRequest } from '../../types/user'
 
 
 export const UserListPage: React.FC = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { user: currentUser } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [roleFilter, setRoleFilter] = useState<string>('all')
@@ -82,6 +84,22 @@ export const UserListPage: React.FC = () => {
     }
   })
 
+  // Função para verificar se o usuário atual pode aprovar/rejeitar o usuário pendente
+  const canApproveRejectUser = (pendingUser: User): boolean => {
+    if (!currentUser) return false
+    
+    // Administrador pode aprovar/rejeitar qualquer tipo de usuário
+    if (currentUser.role === 'admin') {
+      return true
+    }
+    
+    // Atendente só pode aprovar/rejeitar usuários/clientes
+    if (currentUser.role === 'atendente') {
+      return pendingUser.requested_role === 'usuario'
+    }
+    
+    return false
+  }
 
 
   const users = usersResponse?.data || []
@@ -317,7 +335,7 @@ export const UserListPage: React.FC = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {user.status === 'pendente' && (
+                          {user.status === 'pendente' && canApproveRejectUser(user) && (
                             <>
                               <Button
                                 variant="ghost"
@@ -348,6 +366,11 @@ export const UserListPage: React.FC = () => {
                                 )}
                               </Button>
                             </>
+                          )}
+                          {user.status === 'pendente' && !canApproveRejectUser(user) && (
+                            <Badge variant="secondary" className="text-xs">
+                              Permissão insuficiente
+                            </Badge>
                           )}
                         </div>
                       </td>

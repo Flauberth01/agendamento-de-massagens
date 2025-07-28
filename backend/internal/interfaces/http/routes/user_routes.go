@@ -16,12 +16,12 @@ func SetupUserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler)
 		users.GET("", userHandler.ListUsers)
 
 		// Rotas para atendentes e admins (aprovações)
-		attendantOrAdmin := users.Group("/")
-		attendantOrAdmin.Use(middleware.AdminOrAttendantMiddleware())
+		approvalRoutes := users.Group("/")
+		approvalRoutes.Use(middleware.UserApprovalMiddleware())
 		{
-			attendantOrAdmin.GET("/pending", userHandler.GetPendingApprovals)
-			attendantOrAdmin.POST("/:id/approve", userHandler.ApproveUser)
-			attendantOrAdmin.POST("/:id/reject", userHandler.RejectUser)
+			approvalRoutes.GET("/pending", userHandler.GetPendingApprovals)
+			approvalRoutes.POST("/:id/approve", userHandler.ApproveUser)
+			approvalRoutes.POST("/:id/reject", userHandler.RejectUser)
 		}
 
 		// Rotas restritas a admin (CRUD completo)
