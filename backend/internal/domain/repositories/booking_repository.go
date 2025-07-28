@@ -47,6 +47,7 @@ type BookingRepository interface {
 	// Relatórios
 	GetBookingsByPeriod(startDate, endDate time.Time) ([]*entities.Booking, error)
 	GetBookingsByDateRange(startDate, endDate time.Time) ([]*entities.Booking, error)
+	GetBookingsByDateRangeIncludingPast(startDate, endDate time.Time) ([]*entities.Booking, error)
 	GetOccupancyRate(chairID uint, startDate, endDate time.Time) (float64, error)
 	GetUserBookingHistory(userID uint, limit, offset int) ([]*entities.Booking, int64, error)
 
@@ -54,4 +55,8 @@ type BookingRepository interface {
 	CountByDateRange(startDate, endDate time.Time) (int64, error)
 	CountByChairAndDate(chairID uint, date time.Time) (int64, error)
 	CountByStatusAndDateRange(status string, startDate, endDate time.Time) (int64, error)
+
+	// Métodos incluindo agendamentos passados (para relatórios administrativos)
+	GetByDateIncludingPast(date time.Time) ([]*entities.Booking, error)
+	GetByChairAndDateIncludingPast(chairID uint, date time.Time) ([]*entities.Booking, error)
 }

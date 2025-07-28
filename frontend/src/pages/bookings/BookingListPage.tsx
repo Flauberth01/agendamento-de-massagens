@@ -27,8 +27,14 @@ import { ptBR } from 'date-fns/locale'
 
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
-  const { isAttendant } = useAuth()
+  const { isAttendant, user, isAuthenticated } = useAuth()
   const { useUserBookings, useCancelBooking, useMarkAttendance } = useBookings()
+
+  // Verificar se usuário está autenticado
+  if (!isAuthenticated) {
+    navigate('/login')
+    return null
+  }
 
   // Estados
   const [searchTerm, setSearchTerm] = useState('')
@@ -296,6 +302,7 @@ export const BookingListPage: React.FC = () => {
                 onChange={(e) => setChairFilter(e.target.value)}
               />
             </div>
+            
           </div>
         </CardContent>
       </Card>

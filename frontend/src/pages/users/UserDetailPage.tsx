@@ -1,7 +1,6 @@
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -15,8 +14,6 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  UserCheck,
-  UserX,
   IdCard,
   Loader2
 } from 'lucide-react'
@@ -24,14 +21,11 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
-import { useAuth } from '../../hooks/useAuth'
-import type { User, UserApprovalRequest } from '../../types/user'
+import type { User } from '../../types/user'
 
 export const UserDetailPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const queryClient = useQueryClient()
-  const { user: currentUser } = useAuth()
 
   // Buscar dados do usuário
   const { data: user, isLoading, error } = useQuery({
@@ -40,81 +34,8 @@ export const UserDetailPage: React.FC = () => {
     enabled: !!id,
   })
 
-  // Mutação para aprovar usuário
-  const approveMutation = useMutation({
-    mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
-      userService.approveUser(userId, data),
-    onSuccess: (updatedUser) => {
-      toast.success('Usuário aprovado com sucesso!', {
-        description: `${updatedUser.name} foi aprovado no sistema.`
-      })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      queryClient.invalidateQueries({ queryKey: ['user', id] })
-    },
-    onError: (error) => {
-      const apiError = handleApiError(error)
-      toast.error('Erro ao aprovar usuário', {
-        description: apiError.message
-      })
-    }
-  })
-
-  // Mutação para rejeitar usuário
-  const rejectMutation = useMutation({
-    mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
-      userService.approveUser(userId, data),
-    onSuccess: (updatedUser) => {
-      toast.success('Usuário rejeitado', {
-        description: `${updatedUser.name} foi rejeitado no sistema.`
-      })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      queryClient.invalidateQueries({ queryKey: ['user', id] })
-    },
-    onError: (error) => {
-      const apiError = handleApiError(error)
-      toast.error('Erro ao rejeitar usuário', {
-        description: apiError.message
-      })
-    }
-  })
-
-  // Função para verificar se o usuário atual pode aprovar/rejeitar o usuário pendente
-  const canApproveRejectUser = (pendingUser: User): boolean => {
-    if (!currentUser) return false
-    
-    // Administrador pode aprovar/rejeitar qualquer tipo de usuário
-    if (currentUser.role === 'admin') {
-      return true
-    }
-    
-    // Atendente só pode aprovar/rejeitar usuários/clientes
-    if (currentUser.role === 'atendente') {
-      return pendingUser.requested_role === 'usuario'
-    }
-    
-    return false
-  }
-
   const handleBack = () => {
     navigate('/users')
-  }
-
-  const handleApprove = () => {
-    if (user) {
-      approveMutation.mutate({
-        userId: user.id,
-        data: { status: 'aprovado' }
-      })
-    }
-  }
-
-  const handleReject = () => {
-    if (user) {
-      rejectMutation.mutate({
-        userId: user.id,
-        data: { status: 'reprovado' }
-      })
-    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -234,45 +155,9 @@ export const UserDetailPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
             <p className="text-muted-foreground">
-              Detalhes completos do usuário
+              Visualize as informações completas do usuário
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {user.status === 'pendente' && canApproveRejectUser(user) && (
-            <>
-              <Button
-                onClick={handleApprove}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                disabled={approveMutation.isPending}
-              >
-                {approveMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <UserCheck className="h-4 w-4" />
-                )}
-                Aprovar
-              </Button>
-              <Button
-                onClick={handleReject}
-                variant="destructive"
-                className="flex items-center gap-2"
-                disabled={rejectMutation.isPending}
-              >
-                {rejectMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <UserX className="h-4 w-4" />
-                )}
-                Rejeitar
-              </Button>
-            </>
-          )}
-          {user.status === 'pendente' && !canApproveRejectUser(user) && (
-            <Badge variant="secondary">
-              Permissão insuficiente
-            </Badge>
-          )}
         </div>
       </div>
 
@@ -382,11 +267,6 @@ export const UserDetailPage: React.FC = () => {
                 <label className="text-sm font-medium text-muted-foreground">Função no Sistema</label>
                 <div className="mt-1">
                   {getRoleBadge(user.role)}
-                  {user.role !== user.requested_role && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Solicitou: {user.requested_role}
-                    </div>
-                  )}
                 </div>
               </div>
               <div>

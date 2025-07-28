@@ -60,6 +60,7 @@ func SetupBookingRoutes(router *gin.RouterGroup, bookingHandler *handlers.Bookin
 		{
 			adminOnly.PUT("/:id", bookingHandler.UpdateBooking)
 			adminOnly.PUT("/:id/reschedule", bookingHandler.RescheduleBooking)
+			adminOnly.GET("/date/:date/including-past", bookingHandler.GetBookingsByDateIncludingPast)
 		}
 	}
 }

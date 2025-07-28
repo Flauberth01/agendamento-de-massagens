@@ -362,6 +362,15 @@ func (h *BookingHandler) ListBookings(c *gin.Context) {
 		}
 	}
 
+	// Parâmetro para incluir agendamentos passados (apenas para admins/atendentes)
+	if includePast := c.Query("include_past"); includePast == "true" {
+		// Verificar se é admin ou atendente
+		userClaims, exists := middleware.GetUserFromContext(c)
+		if exists && (userClaims.Role == "admin" || userClaims.Role == "atendente") {
+			filters["exclude_past"] = false
+		}
+	}
+
 	bookings, total, err := h.bookingUseCase.ListBookings(limit, offset, filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -633,6 +642,43 @@ func (h *BookingHandler) GetBookingsByDate(c *gin.Context) {
 	}
 
 	bookings, err := h.bookingUseCase.GetBookingsByDate(date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": bookings})
+}
+
+// GetBookingsByDateIncludingPast busca agendamentos de uma data específica incluindo passados
+// @Summary Agendamentos por data (incluindo passados)
+// @Description Lista agendamentos de uma data específica incluindo passados (apenas admins)
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param date path string true "Data para buscar agendamentos (formato: YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{} "Lista de agendamentos da data incluindo passados"
+// @Failure 400 {object} map[string]string "Formato de data inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Router /bookings/date/{date}/including-past [get]
+func (h *BookingHandler) GetBookingsByDateIncludingPast(c *gin.Context) {
+	// Verificar se é admin
+	userClaims, exists := middleware.GetUserFromContext(c)
+	if !exists || userClaims.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Acesso negado. Apenas administradores podem acessar agendamentos passados"})
+		return
+	}
+
+	dateParam := c.Param("date")
+	date, err := time.Parse("2006-01-02", dateParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de data inválido. Use YYYY-MM-DD"})
+		return
+	}
+
+	bookings, err := h.bookingUseCase.GetBookingsByDateIncludingPast(date)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

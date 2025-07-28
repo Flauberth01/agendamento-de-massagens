@@ -74,7 +74,18 @@ func (r *bookingRepositoryImpl) List(limit, offset int, filters map[string]inter
 			if date, ok := value.(time.Time); ok {
 				query = query.Where("start_time <= ?", date)
 			}
+		case "exclude_past":
+			if exclude, ok := value.(bool); ok && exclude {
+				now := time.Now()
+				query = query.Where("start_time > ?", now)
+			}
 		}
+	}
+
+	// Por padrão, excluir agendamentos passados (a menos que explicitamente solicitado)
+	if _, hasExcludePast := filters["exclude_past"]; !hasExcludePast {
+		now := time.Now()
+		query = query.Where("start_time > ?", now)
 	}
 
 	// Contar total
@@ -91,14 +102,15 @@ func (r *bookingRepositoryImpl) List(limit, offset int, filters map[string]inter
 func (r *bookingRepositoryImpl) GetByUser(userID uint, limit, offset int) ([]*entities.Booking, int64, error) {
 	var total int64
 	var bookings []*entities.Booking
+	now := time.Now()
 
-	// Contar total de agendamentos do usuário
-	if err := r.db.Model(&entities.Booking{}).Where("user_id = ? AND deleted_at IS NULL", userID).Count(&total).Error; err != nil {
+	// Contar total de agendamentos do usuário (excluindo passados)
+	if err := r.db.Model(&entities.Booking{}).Where("user_id = ? AND deleted_at IS NULL AND start_time > ?", userID, now).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Buscar agendamentos do usuário com preload das relações
-	if err := r.db.Preload("User").Preload("Chair").Where("user_id = ? AND deleted_at IS NULL", userID).Order("start_time DESC").Limit(limit).Offset(offset).Find(&bookings).Error; err != nil {
+	// Buscar agendamentos do usuário com preload das relações (excluindo passados)
+	if err := r.db.Preload("User").Preload("Chair").Where("user_id = ? AND deleted_at IS NULL AND start_time > ?", userID, now).Order("start_time DESC").Limit(limit).Offset(offset).Find(&bookings).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -109,8 +121,9 @@ func (r *bookingRepositoryImpl) GetByUser(userID uint, limit, offset int) ([]*en
 func (r *bookingRepositoryImpl) GetByChair(chairID uint, limit, offset int) ([]*entities.Booking, int64, error) {
 	var bookings []*entities.Booking
 	var total int64
+	now := time.Now()
 
-	query := r.db.Model(&entities.Booking{}).Preload("User").Where("chair_id = ?", chairID)
+	query := r.db.Model(&entities.Booking{}).Preload("User").Where("chair_id = ? AND start_time > ?", chairID, now)
 
 	// Contar total
 	if err := query.Count(&total).Error; err != nil {
@@ -126,8 +139,9 @@ func (r *bookingRepositoryImpl) GetByChair(chairID uint, limit, offset int) ([]*
 func (r *bookingRepositoryImpl) GetByStatus(status string, limit, offset int) ([]*entities.Booking, int64, error) {
 	var bookings []*entities.Booking
 	var total int64
+	now := time.Now()
 
-	query := r.db.Model(&entities.Booking{}).Preload("User").Preload("Chair").Where("status = ?", status)
+	query := r.db.Model(&entities.Booking{}).Preload("User").Preload("Chair").Where("status = ? AND start_time > ?", status, now)
 
 	// Contar total
 	if err := query.Count(&total).Error; err != nil {
@@ -162,6 +176,19 @@ func (r *bookingRepositoryImpl) GetByDate(date time.Time) ([]*entities.Booking, 
 	var bookings []*entities.Booking
 	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	endOfDay := startOfDay.Add(24 * time.Hour)
+	now := time.Now()
+
+	err := r.db.Preload("User").Preload("Chair").
+		Where("start_time >= ? AND start_time < ? AND start_time > ?", startOfDay, endOfDay, now).
+		Order("start_time ASC").Find(&bookings).Error
+	return bookings, err
+}
+
+// GetByDateIncludingPast busca agendamentos de uma data específica incluindo passados
+func (r *bookingRepositoryImpl) GetByDateIncludingPast(date time.Time) ([]*entities.Booking, error) {
+	var bookings []*entities.Booking
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
 
 	err := r.db.Preload("User").Preload("Chair").
 		Where("start_time >= ? AND start_time < ?", startOfDay, endOfDay).
@@ -171,6 +198,19 @@ func (r *bookingRepositoryImpl) GetByDate(date time.Time) ([]*entities.Booking, 
 
 // GetByChairAndDate busca agendamentos de uma cadeira em uma data
 func (r *bookingRepositoryImpl) GetByChairAndDate(chairID uint, date time.Time) ([]*entities.Booking, error) {
+	var bookings []*entities.Booking
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+	now := time.Now()
+
+	err := r.db.Preload("User").
+		Where("chair_id = ? AND start_time >= ? AND start_time < ? AND start_time > ?", chairID, startOfDay, endOfDay, now).
+		Order("start_time ASC").Find(&bookings).Error
+	return bookings, err
+}
+
+// GetByChairAndDateIncludingPast busca agendamentos de uma cadeira em uma data incluindo passados
+func (r *bookingRepositoryImpl) GetByChairAndDateIncludingPast(chairID uint, date time.Time) ([]*entities.Booking, error) {
 	var bookings []*entities.Booking
 	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	endOfDay := startOfDay.Add(24 * time.Hour)
@@ -333,9 +373,11 @@ func (r *bookingRepositoryImpl) CountTotal() (int64, error) {
 // GetBookingsByPeriod busca agendamentos por período
 func (r *bookingRepositoryImpl) GetBookingsByPeriod(startDate, endDate time.Time) ([]*entities.Booking, error) {
 	var bookings []*entities.Booking
+	now := time.Now()
 	err := r.db.Preload("User").Preload("Chair").
-		Where("start_time >= ? AND start_time <= ?", startDate, endDate).
-		Order("start_time ASC").Find(&bookings).Error
+		Where("start_time >= ? AND start_time <= ? AND start_time > ?", startDate, endDate, now).
+		Order("start_time ASC").
+		Find(&bookings).Error
 	return bookings, err
 }
 
@@ -370,8 +412,9 @@ func (r *bookingRepositoryImpl) GetOccupancyRate(chairID uint, startDate, endDat
 func (r *bookingRepositoryImpl) GetUserBookingHistory(userID uint, limit, offset int) ([]*entities.Booking, int64, error) {
 	var bookings []*entities.Booking
 	var total int64
+	now := time.Now()
 
-	query := r.db.Model(&entities.Booking{}).Preload("Chair").Where("user_id = ?", userID)
+	query := r.db.Model(&entities.Booking{}).Preload("Chair").Where("user_id = ? AND start_time > ?", userID, now)
 
 	// Contar total
 	if err := query.Count(&total).Error; err != nil {
@@ -415,6 +458,17 @@ func (r *bookingRepositoryImpl) CountByStatusAndDateRange(status string, startDa
 
 // GetBookingsByDateRange busca agendamentos em um período específico
 func (r *bookingRepositoryImpl) GetBookingsByDateRange(startDate, endDate time.Time) ([]*entities.Booking, error) {
+	var bookings []*entities.Booking
+	now := time.Now()
+	err := r.db.Preload("User").Preload("Chair").
+		Where("start_time >= ? AND start_time <= ? AND start_time > ?", startDate, endDate, now).
+		Order("start_time ASC").
+		Find(&bookings).Error
+	return bookings, err
+}
+
+// GetBookingsByDateRangeIncludingPast busca agendamentos em um período específico incluindo passados
+func (r *bookingRepositoryImpl) GetBookingsByDateRangeIncludingPast(startDate, endDate time.Time) ([]*entities.Booking, error) {
 	var bookings []*entities.Booking
 	err := r.db.Preload("User").Preload("Chair").
 		Where("start_time >= ? AND start_time <= ?", startDate, endDate).

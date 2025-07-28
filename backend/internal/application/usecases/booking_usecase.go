@@ -376,6 +376,11 @@ func (uc *BookingUseCase) GetBookingsByDate(date time.Time) ([]*entities.Booking
 	return uc.bookingRepo.GetByDate(date)
 }
 
+// GetBookingsByDateIncludingPast busca agendamentos de uma data específica incluindo passados
+func (uc *BookingUseCase) GetBookingsByDateIncludingPast(date time.Time) ([]*entities.Booking, error) {
+	return uc.bookingRepo.GetByDateIncludingPast(date)
+}
+
 // GetChairBookingsByDate busca agendamentos de uma cadeira em uma data específica
 func (uc *BookingUseCase) GetChairBookingsByDate(chairID uint, date time.Time) ([]*entities.Booking, error) {
 	return uc.bookingRepo.GetByChairAndDate(chairID, date)

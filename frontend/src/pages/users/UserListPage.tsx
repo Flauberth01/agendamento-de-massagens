@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -16,22 +15,17 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  UserCheck,
-  UserX,
   Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
-import { useAuth } from '../../hooks/useAuth'
-import type { User, UserApprovalRequest } from '../../types/user'
+import type { User } from '../../types/user'
 
 
 export const UserListPage: React.FC = () => {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { user: currentUser } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [roleFilter, setRoleFilter] = useState<string>('all')
@@ -47,59 +41,6 @@ export const UserListPage: React.FC = () => {
     }),
     staleTime: 5 * 60 * 1000, // 5 minutos
   })
-
-  // Mutação para aprovar usuário
-  const approveMutation = useMutation({
-    mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
-      userService.approveUser(userId, data),
-    onSuccess: (updatedUser) => {
-      toast.success('Usuário aprovado com sucesso!', {
-        description: `${updatedUser.name} foi aprovado no sistema.`
-      })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-    },
-    onError: (error) => {
-      const apiError = handleApiError(error)
-      toast.error('Erro ao aprovar usuário', {
-        description: apiError.message
-      })
-    }
-  })
-
-  // Mutação para rejeitar usuário
-  const rejectMutation = useMutation({
-    mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
-      userService.approveUser(userId, data),
-    onSuccess: (updatedUser) => {
-      toast.success('Usuário rejeitado', {
-        description: `${updatedUser.name} foi rejeitado no sistema.`
-      })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-    },
-    onError: (error) => {
-      const apiError = handleApiError(error)
-      toast.error('Erro ao rejeitar usuário', {
-        description: apiError.message
-      })
-    }
-  })
-
-  // Função para verificar se o usuário atual pode aprovar/rejeitar o usuário pendente
-  const canApproveRejectUser = (pendingUser: User): boolean => {
-    if (!currentUser) return false
-    
-    // Administrador pode aprovar/rejeitar qualquer tipo de usuário
-    if (currentUser.role === 'admin') {
-      return true
-    }
-    
-    // Atendente só pode aprovar/rejeitar usuários/clientes
-    if (currentUser.role === 'atendente') {
-      return pendingUser.requested_role === 'usuario'
-    }
-    
-    return false
-  }
 
 
   const users = usersResponse?.data || []
@@ -134,20 +75,6 @@ export const UserListPage: React.FC = () => {
 
   const handleViewUser = (userId: number) => {
     navigate(`/users/${userId}`)
-  }
-
-  const handleApproveUser = (userId: number) => {
-    approveMutation.mutate({
-      userId,
-      data: { status: 'aprovado' }
-    })
-  }
-
-  const handleRejectUser = (userId: number) => {
-    rejectMutation.mutate({
-      userId,
-      data: { status: 'reprovado' }
-    })
   }
 
   const formatDate = (date: Date) => {
@@ -193,7 +120,7 @@ export const UserListPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestão de Usuários</h1>
           <p className="text-muted-foreground">
-            Aprove ou reprove cadastros de usuários pendentes
+            Visualize e gerencie informações dos usuários do sistema
           </p>
         </div>
       </div>
@@ -335,43 +262,6 @@ export const UserListPage: React.FC = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {user.status === 'pendente' && canApproveRejectUser(user) && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleApproveUser(user.id)}
-                                className="text-green-600 hover:text-green-700"
-                                disabled={approveMutation.isPending}
-                                title="Aprovar usuário"
-                              >
-                                {approveMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <UserCheck className="h-4 w-4" />
-                                )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRejectUser(user.id)}
-                                className="text-red-600 hover:text-red-700"
-                                disabled={rejectMutation.isPending}
-                                title="Reprovar usuário"
-                              >
-                                {rejectMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <UserX className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </>
-                          )}
-                          {user.status === 'pendente' && !canApproveRejectUser(user) && (
-                            <Badge variant="secondary" className="text-xs">
-                              Permissão insuficiente
-                            </Badge>
-                          )}
                         </div>
                       </td>
                     </tr>

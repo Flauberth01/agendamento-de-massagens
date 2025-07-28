@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
 	"agendamento-backend/internal/domain/entities"
 	"agendamento-backend/internal/domain/repositories"
+
+	"gorm.io/gorm"
 )
 
 type userRepositoryImpl struct {
@@ -43,8 +44,6 @@ func (r *userRepositoryImpl) GetByEmail(email string) (*entities.User, error) {
 	}
 	return &user, nil
 }
-
-
 
 // GetByCPF busca usuário por CPF
 func (r *userRepositoryImpl) GetByCPF(cpf string) (*entities.User, error) {
@@ -152,9 +151,16 @@ func (r *userRepositoryImpl) GetByStatus(status string, limit, offset int) ([]*e
 
 // Approve aprova um usuário
 func (r *userRepositoryImpl) Approve(id uint, approvedBy uint) error {
+	// Primeiro, buscar o usuário para obter o requested_role
+	var user entities.User
+	if err := r.db.Where("id = ?", id).First(&user).Error; err != nil {
+		return err
+	}
+
+	// Atualizar status e role
 	return r.db.Model(&entities.User{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"status": "aprovado",
-		"role":   r.db.Raw("requested_role"),
+		"role":   user.RequestedRole,
 	}).Error
 }
 
@@ -187,7 +193,6 @@ func (r *userRepositoryImpl) ExistsByEmail(email string) (bool, error) {
 }
 
 // ExistsByLogin verifica se login já existe
-
 
 // ExistsByCPF verifica se CPF já existe
 func (r *userRepositoryImpl) ExistsByCPF(cpf string) (bool, error) {
