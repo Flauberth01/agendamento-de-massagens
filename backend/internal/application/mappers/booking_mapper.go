@@ -8,11 +8,11 @@ import (
 // ToBookingEntity converte CreateBookingRequest para entidade Booking
 func ToBookingEntity(req *dtos.CreateBookingRequest) *entities.Booking {
 	return &entities.Booking{
-		UserID:    req.UserID,
 		ChairID:   req.ChairID,
 		StartTime: req.StartTime,
-		EndTime:   req.EndTime,
 		Notes:     req.Notes,
+		// UserID deve ser definido pelo handler a partir do contexto de autenticação
+		// EndTime será definido automaticamente pelos hooks da entidade (30 minutos após StartTime)
 	}
 }
 

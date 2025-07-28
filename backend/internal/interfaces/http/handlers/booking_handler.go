@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"agendamento-backend/internal/application/dtos"
 	"agendamento-backend/internal/application/usecases"
 	"agendamento-backend/internal/domain/entities"
 	"agendamento-backend/internal/interfaces/http/middleware"
@@ -24,19 +25,19 @@ func NewBookingHandler(bookingUseCase *usecases.BookingUseCase) *BookingHandler 
 
 // CreateBooking cria um novo agendamento
 // @Summary Criar agendamento
-// @Description Cria um novo agendamento para uma cadeira de massagem
+// @Description Cria um novo agendamento de massagem
 // @Tags bookings
 // @Accept json
 // @Produce json
 // @Security Bearer
-// @Param booking body entities.Booking true "Dados do agendamento"
-// @Success 201 {object} entities.Booking "Agendamento criado com sucesso"
+// @Param booking body dtos.CreateBookingRequest true "Dados do agendamento"
+// @Success 201 {object} dtos.CreateBookingResponse "Agendamento criado com sucesso"
 // @Failure 400 {object} map[string]string "Dados inválidos"
 // @Failure 401 {object} map[string]string "Token inválido"
 // @Router /bookings [post]
 func (h *BookingHandler) CreateBooking(c *gin.Context) {
-	var booking entities.Booking
-	if bindErr := c.ShouldBindJSON(&booking); bindErr != nil {
+	var req dtos.CreateBookingRequest
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + bindErr.Error()})
 		return
 	}
@@ -48,22 +49,36 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
-	err := h.bookingUseCase.CreateBooking(&booking, userID)
+	// Criar entidade Booking a partir do DTO
+	booking := &entities.Booking{
+		UserID:    userID,
+		ChairID:   req.ChairID,
+		StartTime: req.StartTime,
+		Notes:     req.Notes,
+		Status:    "agendado", // Status padrão
+	}
+
+	err := h.bookingUseCase.CreateBooking(booking, userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Buscar o booking criado para retornar
-	createdBooking, err := h.bookingUseCase.GetBookingByID(booking.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar agendamento criado"})
-		return
+	// Converter para DTO de resposta
+	response := dtos.CreateBookingResponse{
+		ID:        booking.ID,
+		UserID:    booking.UserID,
+		ChairID:   booking.ChairID,
+		StartTime: booking.StartTime,
+		EndTime:   booking.EndTime,
+		Status:    booking.Status,
+		Notes:     booking.Notes,
+		CreatedAt: booking.CreatedAt,
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Agendamento criado com sucesso",
-		"data":    createdBooking,
+		"data":    response,
 	})
 }
 

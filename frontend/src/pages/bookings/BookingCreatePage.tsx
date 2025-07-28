@@ -13,6 +13,7 @@ import { createBookingSchema, type CreateBookingForm } from '../../utils/validat
 
 import { bookingService } from '../../services/bookingService'
 import { chairService } from '../../services/chairService'
+import { availabilityService } from '../../services/availabilityService'
 import { handleApiError } from '../../services/api'
 import type { Chair } from '../../types/chair'
 import type { CreateBookingRequest } from '../../types/booking'
@@ -75,7 +76,7 @@ export const BookingCreatePage: React.FC = () => {
     queryKey: ['availability', selectedChair?.id, selectedDate],
     queryFn: () => {
       if (!selectedChair || !selectedDate) return null
-      return bookingService.getChairAvailability({
+      return availabilityService.getAvailableSlots({
         chairId: selectedChair.id,
         date: format(selectedDate, 'yyyy-MM-dd')
       })
@@ -115,12 +116,22 @@ export const BookingCreatePage: React.FC = () => {
   // Processar dados de disponibilidade
   useEffect(() => {
     if (availabilityData && selectedDate) {
-      const slots: TimeSlot[] = availabilityData.timeSlots.map(slot => ({
-        startTime: new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${slot.startTime}`),
-        endTime: new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${slot.endTime}`),
-        available: slot.available,
-        bookingId: slot.bookingId
-      }))
+      const slots: TimeSlot[] = availabilityData.data.map(timeSlot => {
+        const [hours, minutes] = timeSlot.split(':')
+        
+        // Criar data no timezone local para evitar conversão UTC
+        const startTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), parseInt(hours), parseInt(minutes), 0, 0)
+        
+        const endTime = new Date(startTime)
+        endTime.setMinutes(endTime.getMinutes() + 30) // 30 minutos de duração
+        
+        return {
+          startTime,
+          endTime,
+          available: true,
+          bookingId: undefined
+        }
+      })
       setAvailableTimeSlots(slots)
     }
   }, [availabilityData, selectedDate])

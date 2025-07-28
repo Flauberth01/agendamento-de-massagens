@@ -375,10 +375,10 @@ func (h *AvailabilityHandler) GetChairAvailabilities(c *gin.Context) {
 // @Security Bearer
 // @Param chair_id path int true "ID da cadeira"
 // @Param date query string true "Data para buscar horários (formato: YYYY-MM-DD)"
-// @Success 200 {array} string "Lista de horários disponíveis"
+// @Success 200 {object} map[string]interface{} "Horários disponíveis"
 // @Failure 400 {object} map[string]string "Parâmetros inválidos"
 // @Failure 401 {object} map[string]string "Token inválido"
-// @Router /chairs/{chair_id}/available-slots [get]
+// @Router /availabilities/chair/{chair_id}/available-slots [get]
 func (h *AvailabilityHandler) GetAvailableTimeSlots(c *gin.Context) {
 	chairIDParam := c.Param("chair_id")
 	chairID, err := strconv.ParseUint(chairIDParam, 10, 32)
@@ -405,7 +405,43 @@ func (h *AvailabilityHandler) GetAvailableTimeSlots(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": timeSlots})
+	// Retornar no formato solicitado
+	response := dtos.AvailableSlotsResponse{
+		ChairID: uint(chairID),
+		Date:    dateParam,
+		Data:    timeSlots,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// GetNext15DaysAvailableSlots busca horários disponíveis para os próximos 15 dias
+// @Summary Buscar horários disponíveis para próximos 15 dias
+// @Description Retorna os horários disponíveis para agendamento em uma cadeira específica para os próximos 15 dias
+// @Tags availabilities
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param chair_id path int true "ID da cadeira"
+// @Success 200 {object} map[string][]string "Horários disponíveis por data"
+// @Failure 400 {object} map[string]string "ID da cadeira inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /availabilities/chair/{chair_id}/next-15-days [get]
+func (h *AvailabilityHandler) GetNext15DaysAvailableSlots(c *gin.Context) {
+	chairIDParam := c.Param("chair_id")
+	chairID, err := strconv.ParseUint(chairIDParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID da cadeira inválido"})
+		return
+	}
+
+	slotsByDate, err := h.availabilityUseCase.GetNext15DaysAvailableSlots(uint(chairID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, slotsByDate)
 }
 
 // ActivateAvailability ativa uma disponibilidade

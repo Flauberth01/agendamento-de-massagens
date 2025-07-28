@@ -4,11 +4,9 @@ import "time"
 
 // CreateBookingRequest representa os dados para criar um agendamento
 type CreateBookingRequest struct {
-	UserID    uint      `json:"user_id" validate:"required"`
 	ChairID   uint      `json:"chair_id" validate:"required"`
 	StartTime time.Time `json:"start_time" validate:"required"`
-	EndTime   time.Time `json:"end_time" validate:"required"`
-	Notes     string    `json:"notes" validate:"max=1000"`
+	Notes     string    `json:"notes"`
 }
 
 // CreateBookingResponse representa a resposta da criação de agendamento
@@ -30,7 +28,7 @@ type UpdateBookingRequest struct {
 	Notes     string    `json:"notes" validate:"max=1000"`
 }
 
-// BookingResponse representa a resposta de dados de agendamento
+// BookingResponse representa um agendamento completo
 type BookingResponse struct {
 	ID        uint      `json:"id"`
 	UserID    uint      `json:"user_id"`
@@ -41,6 +39,10 @@ type BookingResponse struct {
 	Notes     string    `json:"notes"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	// Relacionamentos
+	User  UserResponse  `json:"user,omitempty"`
+	Chair ChairResponse `json:"chair,omitempty"`
 }
 
 // BookingWithRelationsResponse representa agendamento com relacionamentos

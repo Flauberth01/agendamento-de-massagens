@@ -16,6 +16,8 @@ func SetupAvailabilityRoutes(router *gin.RouterGroup, availabilityHandler *handl
 		availabilities.GET("", availabilityHandler.ListAvailabilities)
 		availabilities.GET("/chair/:chair_id", availabilityHandler.GetChairAvailabilities)
 		availabilities.GET("/chair/:chair_id/slots", availabilityHandler.GetAvailableTimeSlots)
+		availabilities.GET("/chair/:chair_id/available-slots", availabilityHandler.GetAvailableTimeSlots)
+		availabilities.GET("/chair/:chair_id/next-15-days", availabilityHandler.GetNext15DaysAvailableSlots)
 		availabilities.GET("/stats", availabilityHandler.GetAvailabilityStats)
 
 		// Rotas restritas a admin (gerenciamento de disponibilidade)

@@ -7,11 +7,16 @@ import (
 
 // ToChairEntity converte CreateChairRequest para entidade Chair
 func ToChairEntity(req *dtos.CreateChairRequest) *entities.Chair {
+	status := req.Status
+	if status == "" {
+		status = "ativa"
+	}
+
 	return &entities.Chair{
 		Name:        req.Name,
 		Description: req.Description,
 		Location:    req.Location,
-		Status:      req.Status,
+		Status:      status,
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 
 	"agendamento-backend/internal/domain/entities"
 	"agendamento-backend/internal/domain/repositories"
+
 	"gorm.io/gorm"
 )
 
@@ -240,20 +241,20 @@ func (r *bookingRepositoryImpl) CanBook(userID, chairID uint, startTime time.Tim
 		return false, "Já existe um agendamento para este horário nesta cadeira", nil
 	}
 
-	// Verificar se usuário já tem outro agendamento futuro
+	// Verificar se usuário já tem outro agendamento futuro (excluindo cancelados)
 	now := time.Now()
 	var futureCount int64
 	err = r.db.Model(&entities.Booking{}).
-		Where("user_id = ? AND status IN (?, ?) AND start_time > ?", 
+		Where("user_id = ? AND status IN (?, ?) AND start_time > ?",
 			userID, "agendado", "confirmado", now).
 		Count(&futureCount).Error
 	if err != nil {
 		return false, "Erro ao verificar agendamentos futuros", err
 	}
+
 	if futureCount > 0 {
 		return false, "Usuário já possui um agendamento futuro. Apenas um agendamento por vez é permitido", nil
 	}
-
 	return true, "", nil
 }
 
@@ -262,7 +263,7 @@ func (r *bookingRepositoryImpl) HasActiveBooking(userID uint) (bool, error) {
 	now := time.Now()
 	var count int64
 	err := r.db.Model(&entities.Booking{}).
-		Where("user_id = ? AND status IN (?, ?) AND start_time <= ? AND end_time > ?", 
+		Where("user_id = ? AND status IN (?, ?) AND start_time <= ? AND end_time > ?",
 			userID, "agendado", "confirmado", now, now).
 		Count(&count).Error
 	return count > 0, err

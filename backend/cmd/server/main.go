@@ -128,7 +128,7 @@ func main() {
 	)
 	chairUseCase := usecases.NewChairUseCase(chairRepo, auditLogRepo, validatorAdapter)
 	bookingUseCase := usecases.NewBookingUseCase(bookingRepo, chairRepo, userRepo, availabilityRepo, auditLogRepo, emailService, validatorAdapter)
-	availabilityUseCase := usecases.NewAvailabilityUseCase(availabilityRepo, chairRepo, auditLogRepo, validatorAdapter)
+	availabilityUseCase := usecases.NewAvailabilityUseCase(availabilityRepo, bookingRepo, chairRepo, auditLogRepo, validatorAdapter)
 	auditLogUseCase := usecases.NewAuditLogUseCase(auditLogRepo, userRepo, validatorAdapter)
 	notificationUseCase := usecases.NewNotificationUseCase(emailService, bookingRepo, userRepo, chairRepo)
 

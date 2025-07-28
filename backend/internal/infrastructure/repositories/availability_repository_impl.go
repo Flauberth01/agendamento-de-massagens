@@ -153,8 +153,12 @@ func (r *availabilityRepositoryImpl) HasConflict(chairID uint, dayOfWeek int, st
 
 // IsChairAvailableAtTime verifica se uma cadeira está disponível em um horário
 func (r *availabilityRepositoryImpl) IsChairAvailableAtTime(chairID uint, dateTime time.Time) (bool, error) {
-	dayOfWeek := int(dateTime.Weekday())
-	timeStr := dateTime.Format("15:04")
+	// Converter UTC para horário local (GMT-3)
+	// Como estamos no Brasil (GMT-3), subtraímos 3 horas do UTC
+	localDateTime := dateTime.Add(-3 * time.Hour)
+
+	dayOfWeek := int(localDateTime.Weekday())
+	timeStr := localDateTime.Format("15:04")
 
 	var count int64
 	query := r.db.Model(&entities.Availability{}).
@@ -162,7 +166,7 @@ func (r *availabilityRepositoryImpl) IsChairAvailableAtTime(chairID uint, dateTi
 			chairID, dayOfWeek, true, timeStr, timeStr)
 
 	// Filtrar por período de validade
-	date := time.Date(dateTime.Year(), dateTime.Month(), dateTime.Day(), 0, 0, 0, 0, dateTime.Location())
+	date := time.Date(localDateTime.Year(), localDateTime.Month(), localDateTime.Day(), 0, 0, 0, 0, time.UTC)
 	query = query.Where("(valid_from IS NULL OR valid_from <= ?) AND (valid_to IS NULL OR valid_to >= ?)", date, date)
 
 	err := query.Count(&count).Error

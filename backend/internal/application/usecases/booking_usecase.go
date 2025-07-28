@@ -42,29 +42,51 @@ func NewBookingUseCase(
 
 // CreateBooking cria um novo agendamento
 func (uc *BookingUseCase) CreateBooking(booking *entities.Booking, createdBy uint) error {
-	// Validar dados
-	if err := uc.validator.ValidateStruct(booking); err != nil {
-		return fmt.Errorf("dados inválidos: %w", err)
-	}
-
 	// Verificar se usuário existe e está aprovado
 	user, err := uc.userRepo.GetByID(booking.UserID)
 	if err != nil {
 		return fmt.Errorf("usuário não encontrado: %w", err)
 	}
-	if !user.IsApproved() {
-		return errors.New("usuário não está aprovado para fazer agendamentos")
+
+	if user.Status != "aprovado" {
+		return fmt.Errorf("usuário não está aprovado")
 	}
 
-	// Verificar se cadeira existe e está disponível
+	// Verificar se cadeira existe e está ativa
 	chair, err := uc.chairRepo.GetByID(booking.ChairID)
 	if err != nil {
 		return fmt.Errorf("cadeira não encontrada: %w", err)
 	}
-	if !chair.IsAvailable() {
-		return errors.New("cadeira não está disponível")
+
+	if chair.Status != "ativa" {
+		return fmt.Errorf("cadeira não está disponível")
 	}
 
+	// Verificar disponibilidade
+	if err := uc.checkAvailability(booking); err != nil {
+		return err
+	}
+
+	// Criar agendamento
+	if err := uc.bookingRepo.Create(booking); err != nil {
+		return fmt.Errorf("erro ao criar agendamento: %w", err)
+	}
+
+	// Log de auditoria
+	auditLog := entities.NewAuditLog(&createdBy, entities.ActionCreate, entities.ResourceBooking, &booking.ID)
+	auditLog.SetDescription(fmt.Sprintf("Agendamento criado para %s na cadeira %s", user.Name, chair.Name))
+	uc.auditRepo.Create(auditLog)
+
+	// Enviar email de confirmação
+	if err := uc.emailRepo.SendBookingConfirmation(user, booking); err != nil {
+		// Não falhar se o email falhar
+	}
+
+	return nil
+}
+
+// checkAvailability verifica se o agendamento é possível
+func (uc *BookingUseCase) checkAvailability(booking *entities.Booking) error {
 	// Garantir que a sessão seja de 30 minutos
 	booking.EndTime = booking.StartTime.Add(30 * time.Minute)
 
@@ -90,32 +112,6 @@ func (uc *BookingUseCase) CreateBooking(booking *entities.Booking, createdBy uin
 	if !isAvailable {
 		return errors.New("cadeira não tem disponibilidade configurada para este horário")
 	}
-
-	// Criar agendamento
-	if err := uc.bookingRepo.Create(booking); err != nil {
-		return fmt.Errorf("erro ao criar agendamento: %w", err)
-	}
-
-	// Log de auditoria
-	auditLog := entities.NewAuditLog(&createdBy, entities.ActionCreate, entities.ResourceBooking, &booking.ID)
-	auditLog.SetDescription(fmt.Sprintf("Agendamento criado para %s na cadeira %s", user.Name, chair.Name))
-	uc.auditRepo.Create(auditLog)
-
-	// Enviar email de confirmação (não bloquear se falhar)
-	go func() {
-		// Buscar dados completos para o email
-		bookingWithRelations, err := uc.bookingRepo.GetByID(booking.ID)
-		if err != nil {
-			return
-		}
-		bookingWithRelations.User = *user
-		bookingWithRelations.Chair = *chair
-
-		if err := uc.emailRepo.SendBookingConfirmation(user, bookingWithRelations); err != nil {
-			// Log do erro mas não falha a operação
-			fmt.Printf("Erro ao enviar email de confirmação: %v\n", err)
-		}
-	}()
 
 	return nil
 }

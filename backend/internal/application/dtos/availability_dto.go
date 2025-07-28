@@ -111,3 +111,10 @@ type TimeSlotResponse struct {
 	EndTime   time.Time `json:"end_time"`
 	Available bool      `json:"available"`
 }
+
+// AvailableSlotsResponse representa a resposta de slots disponíveis para uma cadeira em uma data
+type AvailableSlotsResponse struct {
+	ChairID uint     `json:"chair_id"`
+	Date    string   `json:"date"`
+	Data    []string `json:"data"`
+}

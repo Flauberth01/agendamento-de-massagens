@@ -4,7 +4,7 @@ import "time"
 
 // CreateChairRequest representa os dados para criar uma cadeira
 type CreateChairRequest struct {
-	Name        string `json:"name" validate:"required,min=2,max=60"`
+	Name        string `json:"name" validate:"required,min=2,max=100"`
 	Description string `json:"description" validate:"max=500"`
 	Location    string `json:"location" validate:"required,min=2,max=100"`
 	Status      string `json:"status" validate:"oneof=ativa inativa"`
@@ -22,7 +22,7 @@ type CreateChairResponse struct {
 
 // UpdateChairRequest representa os dados para atualizar uma cadeira
 type UpdateChairRequest struct {
-	Name        string `json:"name" validate:"required,min=2,max=60"`
+	Name        string `json:"name" validate:"required,min=2,max=100"`
 	Description string `json:"description" validate:"max=500"`
 	Location    string `json:"location" validate:"required,min=2,max=100"`
 	Status      string `json:"status" validate:"oneof=ativa inativa"`

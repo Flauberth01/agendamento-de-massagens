@@ -17,12 +17,14 @@ import {
   Building,
   ArrowLeft,
   MapPin,
-  XCircle
+  XCircle,
+  AlertCircle
 } from 'lucide-react'
 import { format, addDays, startOfDay, isBefore } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { bookingService } from '../../services/bookingService'
 import { chairService } from '../../services/chairService'
+import { availabilityService } from '../../services/availabilityService'
 import { handleApiError } from '../../services/api'
 import type { Booking, CreateBookingRequest } from '../../types/booking'
 import type { Chair } from '../../types/chair'
@@ -71,7 +73,7 @@ export const UserBookingPage: React.FC = () => {
     queryKey: ['availability', selectedChair?.id, selectedDate],
     queryFn: () => {
       if (!selectedChair || !selectedDate) return null
-      return bookingService.getChairAvailability({
+      return availabilityService.getAvailableSlots({
         chairId: selectedChair.id,
         date: format(selectedDate, 'yyyy-MM-dd')
       })
@@ -171,6 +173,11 @@ export const UserBookingPage: React.FC = () => {
       start_time: selectedTimeSlot.startTime,
       notes: bookingNotes
     }
+
+    // Log para debug
+    console.log('Dados do agendamento:', bookingData)
+    console.log('Data de início:', selectedTimeSlot.startTime)
+    console.log('Data de início (ISO):', selectedTimeSlot.startTime.toISOString())
 
     createBookingMutation.mutate(bookingData)
   }
@@ -379,7 +386,15 @@ export const UserBookingPage: React.FC = () => {
                     <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                     <span className="ml-3 text-muted-foreground">Carregando horários...</span>
                   </div>
-                ) : availabilityData?.timeSlots.length === 0 ? (
+                ) : !availabilityData ? (
+                  <div className="text-center py-12">
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                      <AlertCircle className="h-8 w-8 text-orange-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Erro ao carregar horários</h3>
+                    <p className="text-muted-foreground">Não foi possível carregar os horários disponíveis. Tente novamente.</p>
+                  </div>
+                ) : !availabilityData.data || availabilityData.data.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                       <Clock className="h-8 w-8 text-purple-400" />
@@ -389,36 +404,39 @@ export const UserBookingPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
-                    {availabilityData?.timeSlots.map((slot, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleTimeSlotSelect({
-                          startTime: new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${slot.startTime}`),
-                          endTime: new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${slot.endTime}`),
-                          available: slot.available,
-                          bookingId: slot.bookingId
-                        })}
-                        disabled={!slot.available}
-                        className={`
-                          p-4 border rounded-lg text-center transition-all duration-200
-                          ${!slot.available
-                            ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                            : 'hover:bg-purple-50 hover:border-purple-200 cursor-pointer bg-white border-gray-200'
-                          }
-                          ${selectedTimeSlot && 
-                            format(selectedTimeSlot.startTime, 'HH:mm') === slot.startTime
-                            ? 'bg-purple-100 border-purple-300 text-purple-900 shadow-sm'
-                            : ''
-                          }
-                        `}
-                      >
-                        <div className="font-semibold text-lg">{slot.startTime}</div>
-                        <div className="text-xs text-muted-foreground">30 minutos</div>
-                        {!slot.available && (
-                          <div className="text-xs text-red-500 mt-1 font-medium">Ocupado</div>
-                        )}
-                      </button>
-                    ))}
+                    {availabilityData.data.map((timeSlot: string, index: number) => {
+                      const [hours, minutes] = timeSlot.split(':')
+                      
+                      // Criar data no timezone local para evitar conversão UTC
+                      const startTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), parseInt(hours), parseInt(minutes), 0, 0)
+                      
+                      const endTime = new Date(startTime)
+                      endTime.setMinutes(endTime.getMinutes() + 30) // 30 minutos de duração
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleTimeSlotSelect({
+                            startTime,
+                            endTime,
+                            available: true,
+                            bookingId: undefined
+                          })}
+                          className={`
+                            p-4 border rounded-lg text-center transition-all duration-200
+                            hover:bg-purple-50 hover:border-purple-200 cursor-pointer bg-white border-gray-200
+                            ${selectedTimeSlot && 
+                              format(selectedTimeSlot.startTime, 'HH:mm') === timeSlot
+                              ? 'bg-purple-100 border-purple-300 text-purple-900 shadow-sm'
+                              : ''
+                            }
+                          `}
+                        >
+                          <div className="font-semibold text-lg">{timeSlot}</div>
+                          <div className="text-xs text-muted-foreground">30 minutos</div>
+                        </button>
+                      )
+                    })}
                   </div>
                 )
               ) : (

@@ -28,6 +28,7 @@ func SetupBookingRoutes(router *gin.RouterGroup, bookingHandler *handlers.Bookin
 		bookings.GET("/user/:user_id", bookingHandler.GetUserBookings) // Rota com parâmetro depois
 		bookings.GET("/:id", bookingHandler.GetBooking)
 		bookings.POST("/:id/cancel", bookingHandler.CancelBooking)
+		bookings.PATCH("/:id/cancel", bookingHandler.CancelBooking)
 
 		// Rotas para atendentes e admins (controle de sessões)
 		attendantOrAdmin := bookings.Group("/")

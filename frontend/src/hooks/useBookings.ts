@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingService } from '../services/bookingService'
+import { availabilityService } from '../services/availabilityService'
 import type { CreateBookingRequest } from '../types/booking'
 import { toast } from 'sonner'
 
@@ -85,7 +86,7 @@ export const useBookings = () => {
   }) => {
     return useQuery({
       queryKey: ['chair-availability', params],
-      queryFn: () => bookingService.getChairAvailability(params),
+      queryFn: () => availabilityService.getAvailableSlots(params),
       enabled: !!params.chairId && !!params.date,
       staleTime: 1 * 60 * 1000, // 1 minuto
     })

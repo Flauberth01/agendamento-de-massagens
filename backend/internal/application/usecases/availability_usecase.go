@@ -13,6 +13,7 @@ import (
 
 type AvailabilityUseCase struct {
 	availabilityRepo repositories.AvailabilityRepository
+	bookingRepo      repositories.BookingRepository
 	chairRepo        repositories.ChairRepository
 	auditRepo        repositories.AuditLogRepository
 	validator        ports.Validator
@@ -20,12 +21,14 @@ type AvailabilityUseCase struct {
 
 func NewAvailabilityUseCase(
 	availabilityRepo repositories.AvailabilityRepository,
+	bookingRepo repositories.BookingRepository,
 	chairRepo repositories.ChairRepository,
 	auditRepo repositories.AuditLogRepository,
 	validator ports.Validator,
 ) *AvailabilityUseCase {
 	return &AvailabilityUseCase{
 		availabilityRepo: availabilityRepo,
+		bookingRepo:      bookingRepo,
 		chairRepo:        chairRepo,
 		auditRepo:        auditRepo,
 		validator:        validator,
@@ -42,7 +45,7 @@ func (uc *AvailabilityUseCase) CreateAvailability(availability *entities.Availab
 	// Verificar se cadeira existe
 	chair, err := uc.chairRepo.GetByID(availability.ChairID)
 	if err != nil {
-		return fmt.Errorf("cadeira não encontrada: %w", err)
+		return fmt.Errorf("Cadeira não encontrada: %w", err)
 	}
 
 	// Validar horários
@@ -62,7 +65,7 @@ func (uc *AvailabilityUseCase) CreateAvailability(availability *entities.Availab
 		return fmt.Errorf("erro ao verificar conflitos: %w", err)
 	}
 	if hasConflict {
-		return errors.New("já existe disponibilidade configurada para este horário")
+		return errors.New("Já existe horário cadastrado para este intervalo")
 	}
 
 	// Criar disponibilidade
@@ -118,7 +121,7 @@ func (uc *AvailabilityUseCase) UpdateAvailability(availability *entities.Availab
 			return fmt.Errorf("erro ao verificar conflitos: %w", err)
 		}
 		if hasConflict {
-			return errors.New("já existe disponibilidade configurada para este horário")
+			return errors.New("Já existe horário cadastrado para este intervalo")
 		}
 	}
 
@@ -169,7 +172,7 @@ func (uc *AvailabilityUseCase) GetAvailableTimeSlots(chairID uint, date time.Tim
 	// Verificar se cadeira existe e está ativa
 	chair, err := uc.chairRepo.GetByID(chairID)
 	if err != nil {
-		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
+		return nil, fmt.Errorf("Cadeira não encontrada: %w", err)
 	}
 	if !chair.IsAvailable() {
 		return nil, errors.New("cadeira não está disponível")
@@ -181,18 +184,72 @@ func (uc *AvailabilityUseCase) GetAvailableTimeSlots(chairID uint, date time.Tim
 		return nil, fmt.Errorf("erro ao buscar disponibilidades: %w", err)
 	}
 
-	var allSlots []string
+	// Buscar agendamentos existentes para a cadeira na data
+	bookings, err := uc.bookingRepo.GetByChairAndDate(chairID, date)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar agendamentos: %w", err)
+	}
+
+	// Criar mapa de horários já agendados (apenas agendamentos não cancelados)
+	bookedSlots := make(map[string]bool)
+	for _, booking := range bookings {
+		if booking.Status != "cancelado" && booking.Status != "falta" {
+			slotTime := booking.StartTime.Format("15:04")
+			bookedSlots[slotTime] = true
+		}
+	}
+
+	// Gerar todos os slots disponíveis e remover os já agendados
+	var availableSlots []string
 	for _, availability := range availabilities {
 		if availability.IsValidForDate(date) {
 			slots, err := availability.GetTimeSlots()
 			if err != nil {
 				continue
 			}
-			allSlots = append(allSlots, slots...)
+
+			// Filtrar apenas slots não agendados
+			for _, slot := range slots {
+				if !bookedSlots[slot] {
+					availableSlots = append(availableSlots, slot)
+				}
+			}
 		}
 	}
 
-	return allSlots, nil
+	return availableSlots, nil
+}
+
+// GetNext15DaysAvailableSlots retorna os horários disponíveis para os próximos 15 dias
+func (uc *AvailabilityUseCase) GetNext15DaysAvailableSlots(chairID uint) (map[string][]string, error) {
+	// Verificar se cadeira existe e está ativa
+	chair, err := uc.chairRepo.GetByID(chairID)
+	if err != nil {
+		return nil, fmt.Errorf("Cadeira não encontrada: %w", err)
+	}
+	if !chair.IsAvailable() {
+		return nil, errors.New("cadeira não está disponível")
+	}
+
+	result := make(map[string][]string)
+
+	// Gerar próximos 15 dias
+	for i := 0; i < 15; i++ {
+		date := time.Now().AddDate(0, 0, i)
+		dateStr := date.Format("2006-01-02")
+
+		slots, err := uc.GetAvailableTimeSlots(chairID, date)
+		if err != nil {
+			// Se houver erro, continuar com próximo dia
+			continue
+		}
+
+		if len(slots) > 0 {
+			result[dateStr] = slots
+		}
+	}
+
+	return result, nil
 }
 
 // ActivateAvailability ativa uma disponibilidade
@@ -283,23 +340,23 @@ func (uc *AvailabilityUseCase) validateTimeRange(startTime, endTime string) erro
 	// Validar formato
 	startParsed, err := time.Parse("15:04", startTime)
 	if err != nil {
-		return errors.New("horário de início inválido (use formato HH:MM)")
+		return errors.New("Horário de início inválido. Use o formato HH:MM (exemplo: 09:00)")
 	}
 
 	endParsed, err := time.Parse("15:04", endTime)
 	if err != nil {
-		return errors.New("horário de fim inválido (use formato HH:MM)")
+		return errors.New("Horário de fim inválido. Use o formato HH:MM (exemplo: 17:00)")
 	}
 
 	// Verificar se horário de fim é posterior ao de início
 	if !endParsed.After(startParsed) {
-		return errors.New("horário de fim deve ser posterior ao horário de início")
+		return errors.New("Horário de fim deve ser posterior ao horário de início")
 	}
 
 	// Verificar se a duração é múltipla de 30 minutos
 	duration := endParsed.Sub(startParsed)
 	if duration.Minutes() < 30 || int(duration.Minutes())%30 != 0 {
-		return errors.New("a duração deve ser múltipla de 30 minutos")
+		return errors.New("A duração deve ser múltipla de 30 minutos")
 	}
 
 	return nil
@@ -310,19 +367,19 @@ func (uc *AvailabilityUseCase) CreateMultipleAvailabilities(chairID uint, select
 	// Verificar se cadeira existe
 	chair, err := uc.chairRepo.GetByID(chairID)
 	if err != nil {
-		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
+		return nil, fmt.Errorf("Cadeira não encontrada: %w", err)
 	}
 
 	// Validar dias da semana
 	for _, day := range selectedDays {
 		if day < 0 || day > 6 {
-			return nil, errors.New("dia da semana inválido (deve ser entre 0 e 6)")
+			return nil, errors.New("Dia da semana inválido (deve ser entre 0 e 6)")
 		}
 	}
 
 	// Validar arrays de horários
 	if len(startTimes) != len(endTimes) {
-		return nil, errors.New("arrays de horários devem ter o mesmo tamanho")
+		return nil, errors.New("Arrays de horários devem ter o mesmo tamanho")
 	}
 
 	// Validar horários
@@ -376,7 +433,7 @@ func (uc *AvailabilityUseCase) CreateMultipleAvailabilities(chairID uint, select
 				continue
 			}
 			if hasConflict {
-				errors = append(errors, fmt.Sprintf("já existe disponibilidade para %s - %s-%s",
+				errors = append(errors, fmt.Sprintf("Já existe horário cadastrado para %s - %s-%s",
 					availability.GetDayOfWeekName(), startTime, endTime))
 				continue
 			}

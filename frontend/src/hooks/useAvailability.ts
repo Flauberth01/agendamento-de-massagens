@@ -50,6 +50,16 @@ export const useAvailability = () => {
     })
   }
 
+  // Próximos 15 dias disponíveis por cadeira
+  const useNext15DaysAvailableSlots = (chairId: number) => {
+    return useQuery({
+      queryKey: ['availability', 'next-15-days', chairId],
+      queryFn: () => availabilityService.getNext15DaysAvailableSlots(chairId),
+      enabled: !!chairId,
+      staleTime: 5 * 60 * 1000, // 5 minutos
+    })
+  }
+
   // Estatísticas de disponibilidade
   const useAvailabilityStats = () => {
     return useQuery({
@@ -120,6 +130,7 @@ export const useAvailability = () => {
     useAvailabilityById,
     useAvailabilitiesByChair,
     useAvailableSlots,
+    useNext15DaysAvailableSlots,
     useAvailabilityStats,
 
     // Mutations

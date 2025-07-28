@@ -33,7 +33,7 @@ func (b *Booking) BeforeCreate(tx *gorm.DB) error {
 	if b.Status == "" {
 		b.Status = "agendado"
 	}
-	
+
 	// Garantir que a sessão seja de 30 minutos
 	if !b.EndTime.IsZero() && !b.StartTime.IsZero() {
 		duration := b.EndTime.Sub(b.StartTime)
@@ -41,7 +41,7 @@ func (b *Booking) BeforeCreate(tx *gorm.DB) error {
 			b.EndTime = b.StartTime.Add(30 * time.Minute)
 		}
 	}
-	
+
 	return nil
 }
 

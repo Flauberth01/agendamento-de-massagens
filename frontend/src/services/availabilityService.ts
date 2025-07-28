@@ -34,23 +34,26 @@ export const availabilityService = {
     return response.data
   },
 
-  // Buscar slots disponíveis para uma cadeira
+  // Buscar slots disponíveis para uma cadeira em data específica
   async getAvailableSlots(params: {
     chairId: number
     date: string
   }): Promise<{
-    chairId: number
+    chair_id: number
     date: string
-    timeSlots: Array<{
-      startTime: string
-      endTime: string
-      available: boolean
-      bookingId?: number
-    }>
+    data: string[]
   }> {
-    const response = await api.get(`/api/availabilities/chair/${params.chairId}/slots`, {
+    const response = await api.get(`/api/availabilities/chair/${params.chairId}/available-slots`, {
       params: { date: params.date }
     })
+    return response.data
+  },
+
+  // Buscar slots disponíveis para os próximos 15 dias
+  async getNext15DaysAvailableSlots(chairId: number): Promise<{
+    [date: string]: string[]
+  }> {
+    const response = await api.get(`/api/availabilities/chair/${chairId}/next-15-days`)
     return response.data
   },
 
