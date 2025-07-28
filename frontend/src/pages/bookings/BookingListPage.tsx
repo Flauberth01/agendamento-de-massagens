@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { ConfirmDialog } from '../../components/ui/confirm-dialog'
 import { useBookings } from '../../hooks/useBookings'
+import { useAuth } from '../../hooks/useAuth'
 import type { Booking } from '../../types/booking'
 
 import { 
@@ -26,6 +27,7 @@ import { ptBR } from 'date-fns/locale'
 
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
+  const { isAttendant } = useAuth()
   const { useUserBookings, useCancelBooking, useMarkAttendance } = useBookings()
 
   // Estados
@@ -223,10 +225,12 @@ export const BookingListPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Sessões</h1>
           <p className="text-gray-600">Gerencie suas sessões de massagem</p>
         </div>
-        <Button onClick={handleNewBooking}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Agendamento
-        </Button>
+        {!isAttendant && (
+          <Button onClick={handleNewBooking}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Agendamento
+          </Button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -319,7 +323,7 @@ export const BookingListPage: React.FC = () => {
                   : 'Você ainda não possui sessões agendadas'
                 }
               </p>
-              {!searchTerm && statusFilter === 'all' && !dateFilter && !chairFilter && (
+              {!searchTerm && statusFilter === 'all' && !dateFilter && !chairFilter && !isAttendant && (
                 <Button onClick={handleNewBooking}>
                   <Plus className="h-4 w-4 mr-2" />
                   Agendar Primeira Sessão

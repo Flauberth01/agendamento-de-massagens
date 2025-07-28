@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { 
-  User, 
+  User as UserIcon, 
   ArrowLeft, 
-  Edit, 
-  Trash2, 
   Mail, 
   Phone, 
   Building,
@@ -17,85 +17,85 @@ import {
   Clock,
   UserCheck,
   UserX,
-  IdCard
+  IdCard,
+  Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-
-interface User {
-  id: number
-  name: string
-  cpf: string
-  email: string
-  phone: string
-  role: 'usuario' | 'atendente' | 'admin'
-  requested_role: 'usuario' | 'atendente' | 'admin'
-  status: 'pendente' | 'aprovado' | 'reprovado'
-  function: string
-  position: string
-  registration: string
-  sector: string
-  gender: 'masculino' | 'feminino' | 'outro'
-  birth_date?: Date
-  created_at: Date
-  updated_at: Date
-  last_login?: Date
-}
+import { userService } from '../../services/userService'
+import { handleApiError } from '../../services/api'
+import type { User, UserApprovalRequest } from '../../types/user'
 
 export const UserDetailPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
 
-  // Simular carregamento de dados do usuário
-  useEffect(() => {
-    setTimeout(() => {
-      const mockUser: User = {
-        id: parseInt(id || '1'),
-        name: 'João Silva',
-        cpf: '123.456.789-01',
-        email: 'joao.silva@empresa.com',
-        phone: '(11) 99999-9999',
-        role: 'usuario',
-        requested_role: 'usuario',
-        status: 'aprovado',
-        function: 'Analista',
-        position: 'Analista de Sistemas',
-        registration: 'EMP001',
-        sector: 'Tecnologia da Informação',
-        gender: 'masculino',
-        birth_date: new Date('1990-05-15'),
-        created_at: new Date('2024-01-15'),
-        updated_at: new Date('2024-01-15'),
-        last_login: new Date('2024-01-20')
-      }
-      setUser(mockUser)
-      setIsLoading(false)
-    }, 1000)
-  }, [id])
+  // Buscar dados do usuário
+  const { data: user, isLoading, error } = useQuery({
+    queryKey: ['user', id],
+    queryFn: () => userService.getUserById(parseInt(id || '0')),
+    enabled: !!id,
+  })
+
+  // Mutação para aprovar usuário
+  const approveMutation = useMutation({
+    mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
+      userService.approveUser(userId, data),
+    onSuccess: (updatedUser) => {
+      toast.success('Usuário aprovado com sucesso!', {
+        description: `${updatedUser.name} foi aprovado no sistema.`
+      })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['user', id] })
+    },
+    onError: (error) => {
+      const apiError = handleApiError(error)
+      toast.error('Erro ao aprovar usuário', {
+        description: apiError.message
+      })
+    }
+  })
+
+  // Mutação para rejeitar usuário
+  const rejectMutation = useMutation({
+    mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
+      userService.approveUser(userId, data),
+    onSuccess: (updatedUser) => {
+      toast.success('Usuário rejeitado', {
+        description: `${updatedUser.name} foi rejeitado no sistema.`
+      })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['user', id] })
+    },
+    onError: (error) => {
+      const apiError = handleApiError(error)
+      toast.error('Erro ao rejeitar usuário', {
+        description: apiError.message
+      })
+    }
+  })
 
   const handleBack = () => {
     navigate('/users')
   }
 
-  const handleEdit = () => {
-    navigate(`/users/edit/${id}`)
-  }
-
-  const handleDelete = () => {
-    // Implementar confirmação e exclusão
-    console.log('Deletar usuário:', id)
-  }
-
   const handleApprove = () => {
-    // Implementar aprovação
-    console.log('Aprovar usuário:', id)
+    if (user) {
+      approveMutation.mutate({
+        userId: user.id,
+        data: { status: 'aprovado' }
+      })
+    }
   }
 
   const handleReject = () => {
-    // Implementar rejeição
-    console.log('Rejeitar usuário:', id)
+    if (user) {
+      rejectMutation.mutate({
+        userId: user.id,
+        data: { status: 'reprovado' }
+      })
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -137,32 +137,51 @@ export const UserDetailPage: React.FC = () => {
     }
   }
 
-  const formatDate = (date: Date) => {
-    return format(date, 'dd/MM/yyyy', { locale: ptBR })
+  const formatDate = (date: string | Date) => {
+    return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR })
   }
 
-  const formatDateTime = (date: Date) => {
-    return format(date, 'dd/MM/yyyy HH:mm', { locale: ptBR })
+  const formatDateTime = (date: string | Date) => {
+    return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: ptBR })
   }
 
-  const calculateAge = (birthDate: Date) => {
+  const calculateAge = (birthDate: string | Date) => {
+    const date = new Date(birthDate)
     const today = new Date()
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
+    let age = today.getFullYear() - date.getFullYear()
+    const monthDiff = today.getMonth() - date.getMonth()
     
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
       age--
     }
     
     return age
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Erro ao carregar usuário</h3>
+          <p className="text-muted-foreground mb-4">
+            {handleApiError(error).message}
+          </p>
+          <Button onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar à Lista
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Carregando dados do usuário...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando dados do usuário...</p>
         </div>
       </div>
     )
@@ -171,7 +190,7 @@ export const UserDetailPage: React.FC = () => {
   if (!user) {
     return (
       <div className="text-center py-8">
-        <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <UserIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">Usuário não encontrado</h3>
         <p className="text-muted-foreground mb-4">
           O usuário que você está procurando não existe ou foi removido.
@@ -206,32 +225,30 @@ export const UserDetailPage: React.FC = () => {
               <Button
                 onClick={handleApprove}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                disabled={approveMutation.isPending}
               >
-                <UserCheck className="h-4 w-4" />
+                {approveMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserCheck className="h-4 w-4" />
+                )}
                 Aprovar
               </Button>
               <Button
                 onClick={handleReject}
                 variant="destructive"
                 className="flex items-center gap-2"
+                disabled={rejectMutation.isPending}
               >
-                <UserX className="h-4 w-4" />
+                {rejectMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserX className="h-4 w-4" />
+                )}
                 Rejeitar
               </Button>
             </>
           )}
-          <Button onClick={handleEdit} className="flex items-center gap-2">
-            <Edit className="h-4 w-4" />
-            Editar
-          </Button>
-          <Button
-            onClick={handleDelete}
-            variant="destructive"
-            className="flex items-center gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            Excluir
-          </Button>
         </div>
       </div>
 
@@ -240,7 +257,7 @@ export const UserDetailPage: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <UserIcon className="h-5 w-5" />
               Informações Pessoais
             </CardTitle>
           </CardHeader>

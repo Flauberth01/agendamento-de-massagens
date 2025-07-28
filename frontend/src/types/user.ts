@@ -17,10 +17,10 @@ export interface User {
   registration: string;
   sector: string;
   gender: UserGender;
-  birth_date?: Date;
-  created_at: Date;
-  updated_at: Date;
-  last_login?: Date;
+  birth_date?: string | Date;
+  created_at: string | Date;
+  updated_at: string | Date;
+  last_login?: string | Date;
   bookings?: any[]; // Usar any para evitar dependência circular
 }
 

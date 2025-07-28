@@ -62,12 +62,7 @@ export const MinimalLayout: React.FC<MinimalLayoutProps> = ({
       icon: Calendar,
       show: true
     },
-    {
-      label: 'Novo',
-      href: '/bookings/create',
-      icon: Plus,
-      show: true
-    },
+
     {
       label: 'Usuários',
       href: '/users',

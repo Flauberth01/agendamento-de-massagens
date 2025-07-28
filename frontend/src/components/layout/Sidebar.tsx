@@ -41,12 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
       icon: Calendar,
       show: isAttendant || isAdmin
     },
-    {
-      label: 'Novo Agendamento',
-      href: '/bookings/create',
-      icon: Plus,
-      show: isAttendant || isAdmin
-    },
+
     // Admin/Atendente only
     {
       label: 'Usuários',

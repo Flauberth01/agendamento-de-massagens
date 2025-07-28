@@ -12,9 +12,6 @@ import {
   Users, 
   Search, 
   Filter, 
-  Plus, 
-  Edit, 
-  Trash2, 
   Eye,
   CheckCircle,
   XCircle,
@@ -28,7 +25,7 @@ import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
 import type { User, UserApprovalRequest } from '../../types/user'
-import { ConfirmDialog } from '../../components/ui/confirm-dialog'
+
 
 export const UserListPage: React.FC = () => {
   const navigate = useNavigate()
@@ -36,8 +33,7 @@ export const UserListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [roleFilter, setRoleFilter] = useState<string>('all')
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [userToDelete, setUserToDelete] = useState<number | null>(null)
+
 
   // Buscar usuários
   const { data: usersResponse, isLoading, error } = useQuery({
@@ -86,22 +82,7 @@ export const UserListPage: React.FC = () => {
     }
   })
 
-  // Mutação para deletar usuário
-  const deleteMutation = useMutation({
-    mutationFn: (userId: number) => userService.deleteUser(userId),
-    onSuccess: () => {
-      toast.success('Usuário deletado com sucesso!')
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      setShowDeleteDialog(false)
-      setUserToDelete(null)
-    },
-    onError: (error) => {
-      const apiError = handleApiError(error)
-      toast.error('Erro ao deletar usuário', {
-        description: apiError.message
-      })
-    }
-  })
+
 
   const users = usersResponse?.data || []
 
@@ -131,29 +112,10 @@ export const UserListPage: React.FC = () => {
     }
   }
 
-  const handleCreateUser = () => {
-    navigate('/users/create')
-  }
 
-  const handleEditUser = (userId: number) => {
-    console.log('Tentando editar usuário:', userId)
-    console.log('URL de destino:', `/users/edit/${userId}`)
-    navigate(`/users/edit/${userId}`)
-  }
 
   const handleViewUser = (userId: number) => {
     navigate(`/users/${userId}`)
-  }
-
-  const handleDeleteUser = (userId: number) => {
-    setUserToDelete(userId)
-    setShowDeleteDialog(true)
-  }
-
-  const confirmDelete = () => {
-    if (userToDelete) {
-      deleteMutation.mutate(userToDelete)
-    }
   }
 
   const handleApproveUser = (userId: number) => {
@@ -213,13 +175,9 @@ export const UserListPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestão de Usuários</h1>
           <p className="text-muted-foreground">
-            Gerencie todos os usuários do sistema
+            Aprove ou reprove cadastros de usuários pendentes
           </p>
         </div>
-        <Button onClick={handleCreateUser} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Usuário
-        </Button>
       </div>
 
       {/* Filtros */}
@@ -293,14 +251,8 @@ export const UserListPage: React.FC = () => {
               <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== 'all' || roleFilter !== 'all'
                   ? 'Tente ajustar os filtros de busca'
-                  : 'Comece criando o primeiro usuário'}
+                  : 'Nenhum usuário encontrado no sistema'}
               </p>
-              {!searchTerm && statusFilter === 'all' && roleFilter === 'all' && (
-                <Button onClick={handleCreateUser}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Primeiro Usuário
-                </Button>
-              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -361,15 +313,9 @@ export const UserListPage: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewUser(user.id)}
+                            title="Visualizar usuário"
                           >
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditUser(user.id)}
-                          >
-                            <Edit className="h-4 w-4" />
                           </Button>
                           {user.status === 'pendente' && (
                             <>
@@ -379,6 +325,7 @@ export const UserListPage: React.FC = () => {
                                 onClick={() => handleApproveUser(user.id)}
                                 className="text-green-600 hover:text-green-700"
                                 disabled={approveMutation.isPending}
+                                title="Aprovar usuário"
                               >
                                 {approveMutation.isPending ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -392,6 +339,7 @@ export const UserListPage: React.FC = () => {
                                 onClick={() => handleRejectUser(user.id)}
                                 className="text-red-600 hover:text-red-700"
                                 disabled={rejectMutation.isPending}
+                                title="Reprovar usuário"
                               >
                                 {rejectMutation.isPending ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -401,19 +349,6 @@ export const UserListPage: React.FC = () => {
                               </Button>
                             </>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-600 hover:text-red-700"
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -424,16 +359,6 @@ export const UserListPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
-      <ConfirmDialog
-        isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onConfirm={confirmDelete}
-        title="Confirmar Exclusão"
-        message="Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita."
-        confirmText="Excluir"
-        cancelText="Cancelar"
-        variant="destructive"
-      />
     </div>
   )
 } 

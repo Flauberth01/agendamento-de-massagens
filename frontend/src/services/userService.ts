@@ -24,7 +24,7 @@ export const userService = {
   // Buscar usuário por ID
   async getUserById(id: number): Promise<User> {
     const response = await api.get(`/api/users/${id}`)
-    return response.data
+    return response.data.data
   },
 
   // Buscar perfil do usuário logado
