@@ -8,14 +8,11 @@ import { Badge } from '../../components/ui/badge'
 import { 
   Clock, 
   Plus, 
-  Edit, 
   Trash2, 
   Eye,
   Loader2,
   XCircle,
   CheckCircle,
-  Power,
-  PowerOff,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -89,22 +86,6 @@ export const AvailabilityListPage: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5 minutos
   })
 
-  // Mutação para ativar/desativar disponibilidade
-  const toggleStatusMutation = useMutation({
-    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
-      active ? availabilityService.activateAvailability(id) : availabilityService.deactivateAvailability(id),
-    onSuccess: (updatedAvailability) => {
-      toast.success(`Disponibilidade ${updatedAvailability.is_active ? 'ativada' : 'desativada'} com sucesso!`)
-      queryClient.invalidateQueries({ queryKey: ['availabilities'] })
-    },
-    onError: (error) => {
-      const apiError = handleApiError(error)
-      toast.error('Erro ao alterar status', {
-        description: apiError.message
-      })
-    }
-  })
-
   // Mutação para deletar disponibilidade
   const deleteMutation = useMutation({
     mutationFn: (id: number) => availabilityService.deleteAvailability(id),
@@ -132,17 +113,13 @@ export const AvailabilityListPage: React.FC = () => {
     navigate('/availability/create')
   }
 
-  const handleEditAvailability = (id: number) => {
-    navigate(`/availability/${id}/edit`)
-  }
+
 
   const handleViewAvailability = (id: number) => {
     navigate(`/availability/${id}`)
   }
 
-  const handleToggleStatus = (id: number, currentStatus: boolean) => {
-    toggleStatusMutation.mutate({ id, active: !currentStatus })
-  }
+
 
   const handleDeleteAvailability = (id: number) => {
     setAvailabilityToDelete(id)
@@ -343,37 +320,18 @@ export const AvailabilityListPage: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleViewAvailability(availability.id)}
+                              title="Visualizar"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditAvailability(availability.id)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleStatus(availability.id, availability.is_active)}
-                              disabled={toggleStatusMutation.isPending}
-                              className={availability.is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}
-                            >
-                              {toggleStatusMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : availability.is_active ? (
-                                <PowerOff className="h-4 w-4" />
-                              ) : (
-                                <Power className="h-4 w-4" />
-                              )}
-                            </Button>
+
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteAvailability(availability.id)}
                               disabled={deleteMutation.isPending}
                               className="text-red-600 hover:text-red-700"
+                              title="Excluir"
                             >
                               {deleteMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />

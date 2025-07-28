@@ -6,7 +6,6 @@ import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { 
   ArrowLeft, 
-  Edit, 
   Loader2,
   Clock,
   Calendar,
@@ -38,8 +37,13 @@ export const AvailabilityDetailPage: React.FC = () => {
   // Buscar disponibilidade por ID
   const { data: availability, isLoading, error } = useQuery({
     queryKey: ['availability', id],
-    queryFn: () => availabilityService.getAvailabilityById(parseInt(id!)),
+    queryFn: async () => {
+      const result = await availabilityService.getAvailabilityById(parseInt(id!))
+      return result
+    },
     enabled: !!id,
+    retry: 2,
+    retryDelay: 1000,
   })
 
   // Buscar informações da cadeira
@@ -70,17 +74,20 @@ export const AvailabilityDetailPage: React.FC = () => {
     )
   }
 
-  const formatDate = (date: Date) => {
-    return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR })
+  const formatDate = (date: Date | string) => {
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date
+      return format(dateObj, 'dd/MM/yyyy', { locale: ptBR })
+    } catch (error) {
+      return 'Data inválida'
+    }
   }
 
   const handleBack = () => {
     navigate('/availability')
   }
 
-  const handleEdit = () => {
-    navigate(`/availability/${id}/edit`)
-  }
+
 
   if (error) {
     return (
@@ -141,10 +148,7 @@ export const AvailabilityDetailPage: React.FC = () => {
             </p>
           </div>
         </div>
-        <Button onClick={handleEdit} className="flex items-center gap-2">
-          <Edit className="h-4 w-4" />
-          Editar
-        </Button>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -158,8 +162,10 @@ export const AvailabilityDetailPage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">ID:</span>
-              <span className="font-medium">#{availability.id}</span>
+              <span className="text-sm font-medium text-muted-foreground">Código:</span>
+              <span className="font-medium font-mono text-sm bg-muted px-2 py-1 rounded">
+                {availability.id.toString().padStart(6, '0')}
+              </span>
             </div>
             
             <div className="flex justify-between items-center">
@@ -174,7 +180,11 @@ export const AvailabilityDetailPage: React.FC = () => {
 
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Dia da Semana:</span>
-              <span className="font-medium">{DAYS_OF_WEEK[availability.day_of_week]}</span>
+              <span className="font-medium">
+                <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                  {DAYS_OF_WEEK[availability.day_of_week] || `Dia ${availability.day_of_week}`}
+                </span>
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -189,29 +199,47 @@ export const AvailabilityDetailPage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">Horário Inicial:</span>
-              <span className="font-medium">{availability.start_time}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">Horário Final:</span>
-              <span className="font-medium">{availability.end_time}</span>
+              <span className="text-sm font-medium text-muted-foreground">Período:</span>
+              <span className="font-medium">
+                {availability.start_time && availability.end_time ? (
+                  <span className="font-mono bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
+                    {availability.start_time} - {availability.end_time}
+                  </span>
+                ) : (
+                  'N/A'
+                )}
+              </span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Duração:</span>
               <span className="font-medium">
                 {(() => {
-                  const start = new Date(`2000-01-01T${availability.start_time}:00`)
-                  const end = new Date(`2000-01-01T${availability.end_time}:00`)
-                  const diffMs = end.getTime() - start.getTime()
-                  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-                  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-                  
-                  if (diffHours > 0) {
-                    return `${diffHours}h ${diffMinutes}min`
-                  }
-                  return `${diffMinutes}min`
+                  try {
+                    if (!availability.start_time || !availability.end_time) {
+                      return 'N/A'
+                    }
+                    const start = new Date(`2000-01-01T${availability.start_time}:00`)
+                    const end = new Date(`2000-01-01T${availability.end_time}:00`)
+                    const diffMs = end.getTime() - start.getTime()
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+                    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+                    
+                    if (diffHours > 0) {
+                      return (
+                        <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-sm">
+                          {diffHours}h {diffMinutes}min
+                        </span>
+                      )
+                    }
+                    return (
+                      <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded text-sm">
+                        {diffMinutes}min
+                      </span>
+                    )
+                                     } catch (error) {
+                     return <span className="text-red-500">Erro</span>
+                   }
                 })()}
               </span>
             </div>
@@ -229,25 +257,35 @@ export const AvailabilityDetailPage: React.FC = () => {
           <CardContent className="space-y-4">
             {availability.valid_from || availability.valid_to ? (
               <>
-                {availability.valid_from && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-foreground">Data de Início:</span>
-                    <span className="font-medium">{formatDate(availability.valid_from)}</span>
-                  </div>
-                )}
-                {availability.valid_to && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-foreground">Data de Fim:</span>
-                    <span className="font-medium">{formatDate(availability.valid_to)}</span>
-                  </div>
-                )}
+                                 {availability.valid_from && (
+                   <div className="flex justify-between items-center">
+                     <span className="text-sm font-medium text-muted-foreground">Data de Início:</span>
+                     <span className="font-medium">
+                       <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-sm">
+                         {formatDate(availability.valid_from)}
+                       </span>
+                     </span>
+                   </div>
+                 )}
+                 {availability.valid_to && (
+                   <div className="flex justify-between items-center">
+                     <span className="text-sm font-medium text-muted-foreground">Data de Fim:</span>
+                     <span className="font-medium">
+                       <span className="bg-red-50 text-red-700 px-2 py-1 rounded text-sm">
+                         {formatDate(availability.valid_to)}
+                       </span>
+                     </span>
+                   </div>
+                 )}
               </>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">Disponibilidade permanente</p>
-                <p className="text-sm text-muted-foreground">Sem período de validade definido</p>
-              </div>
-            )}
+                         ) : (
+               <div className="text-center py-4">
+                 <div className="bg-gray-50 rounded-lg p-4">
+                   <p className="text-gray-600 font-medium">Disponibilidade permanente</p>
+                   <p className="text-sm text-gray-500">Sem período de validade definido</p>
+                 </div>
+               </div>
+             )}
           </CardContent>
         </Card>
 
@@ -260,43 +298,63 @@ export const AvailabilityDetailPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">Criado em:</span>
-              <span className="font-medium">{formatDate(availability.created_at)}</span>
-            </div>
+                         <div className="flex justify-between items-center">
+               <span className="text-sm font-medium text-muted-foreground">Criado em:</span>
+               <span className="font-medium">
+                 <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-sm">
+                   {formatDate(availability.created_at)}
+                 </span>
+               </span>
+             </div>
 
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">Última atualização:</span>
-              <span className="font-medium">{formatDate(availability.updated_at)}</span>
-            </div>
+             <div className="flex justify-between items-center">
+               <span className="text-sm font-medium text-muted-foreground">Última atualização:</span>
+               <span className="font-medium">
+                 <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-sm">
+                   {formatDate(availability.updated_at)}
+                 </span>
+               </span>
+             </div>
 
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">Válida atualmente:</span>
-              <span className="font-medium">
-                {availability.is_active ? 'Sim' : 'Não'}
-              </span>
-            </div>
+             <div className="flex justify-between items-center">
+               <span className="text-sm font-medium text-muted-foreground">Válida atualmente:</span>
+               <span className="font-medium">
+                 {availability.is_active ? (
+                   <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                     ✓ Ativa
+                   </span>
+                 ) : (
+                   <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
+                     ✗ Inativa
+                   </span>
+                 )}
+               </span>
+             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Ações */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ações</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Button onClick={handleEdit} className="flex items-center gap-2">
-              <Edit className="h-4 w-4" />
-              Editar Disponibilidade
-            </Button>
-            <Button variant="outline" onClick={handleBack}>
-              Voltar à Lista
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+             {/* Ações */}
+       <Card>
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2">
+             <ArrowLeft className="h-5 w-5" />
+             Ações
+           </CardTitle>
+         </CardHeader>
+         <CardContent>
+           <div className="flex gap-4">
+             <Button 
+               variant="outline" 
+               onClick={handleBack}
+               className="flex items-center gap-2 hover:bg-gray-50"
+             >
+               <ArrowLeft className="h-4 w-4" />
+               Voltar à Lista
+             </Button>
+           </div>
+         </CardContent>
+       </Card>
     </div>
   )
 } 

@@ -29,7 +29,7 @@ import ChairDetailPage from './pages/chairs/ChairDetailPage'
 import ChairEditPage from './pages/chairs/ChairEditPage'
 import { AvailabilityListPage } from './pages/availability/AvailabilityListPage'
 import { AvailabilityCreatePage } from './pages/availability/AvailabilityCreatePage'
-import { AvailabilityEditPage } from './pages/availability/AvailabilityEditPage'
+
 import { AvailabilityDetailPage } from './pages/availability/AvailabilityDetailPage'
 
 // Protected Route Component
@@ -257,13 +257,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/availability/:id/edit" element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <DashboardLayout>
-                  <AvailabilityEditPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-            } />
+
 
             {/* Default redirect */}
             <Route path="/" element={<DashboardRoute />} />

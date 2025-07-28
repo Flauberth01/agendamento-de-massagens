@@ -25,7 +25,8 @@ export const availabilityService = {
   // Buscar disponibilidade por ID
   async getAvailabilityById(id: number): Promise<Availability> {
     const response = await api.get(`/api/availabilities/${id}`)
-    return response.data
+    // Backend retorna { data: Availability }
+    return response.data.data || response.data
   },
 
   // Buscar disponibilidades por cadeira
