@@ -13,6 +13,9 @@ func SetupDashboardRoutes(router *gin.RouterGroup, dashboardHandler *handlers.Da
 	dashboard := router.Group("/dashboard")
 	dashboard.Use(middleware.AuthMiddleware(userUseCase)) // Requer autenticação
 	{
+		// Dashboard operacional unificado (para admin e atendente)
+		dashboard.GET("/operational", middleware.AdminOrAttendantMiddleware(), dashboardHandler.GetOperationalDashboard)
+
 		// Dashboard para atendentes e admins
 		dashboard.GET("/attendant", middleware.AdminOrAttendantMiddleware(), dashboardHandler.GetAttendantDashboard)
 

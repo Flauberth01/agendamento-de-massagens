@@ -15,6 +15,7 @@ import { RegisterStep2Page } from './pages/auth/RegisterStep2Page'
 import { UserDashboardPage } from './pages/dashboard/UserDashboardPage'
 import { AttendantDashboardPage } from './pages/dashboard/AttendantDashboardPage'
 import { AdminDashboardPage } from './pages/dashboard/AdminDashboardPage'
+import { OperationalDashboardPage } from './pages/dashboard/OperationalDashboardPage'
 import { BookingCreatePage } from './pages/bookings/BookingCreatePage'
 import { BookingListPage } from './pages/bookings/BookingListPage'
 import { BookingReschedulePage } from './pages/bookings/BookingReschedulePage'
@@ -134,14 +135,14 @@ function App() {
             <Route path="/dashboard/attendant" element={
               <ProtectedRoute allowedRoles={['atendente', 'admin']}>
                 <DashboardLayout>
-                  <AttendantDashboardPage />
+                  <OperationalDashboardPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/dashboard/admin" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <DashboardLayout>
-                  <AdminDashboardPage />
+                  <OperationalDashboardPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

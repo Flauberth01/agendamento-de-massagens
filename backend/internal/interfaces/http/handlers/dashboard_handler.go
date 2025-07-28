@@ -304,6 +304,186 @@ func (h *DashboardHandler) GetAttendanceStats(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": stats})
 }
 
+// GetOperationalDashboard retorna dados do dashboard operacional unificado
+// @Summary Dashboard operacional unificado
+// @Description Retorna dados do dashboard operacional para administradores e atendentes
+// @Tags dashboard
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param date query string false "Data para filtrar agendamentos (formato: YYYY-MM-DD)" default(hoje)
+// @Success 200 {object} map[string]interface{} "Dados do dashboard operacional"
+// @Failure 400 {object} map[string]string "Parâmetros inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Acesso negado - apenas atendentes e admins"
+// @Router /dashboard/operational [get]
+func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
+	// Verificar se é atendente ou admin
+	userClaims, _ := middleware.GetUserFromContext(c)
+	if userClaims.Role != "atendente" && userClaims.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Acesso negado"})
+		return
+	}
+
+	// Parâmetro de data (opcional, padrão hoje)
+	dateParam := c.DefaultQuery("date", time.Now().Format("2006-01-02"))
+	date, err := time.Parse("2006-01-02", dateParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de data inválido. Use YYYY-MM-DD"})
+		return
+	}
+
+	// Buscar agendamentos do dia
+	bookings, err := h.bookingUseCase.GetBookingsByDate(date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar agendamentos"})
+		return
+	}
+
+	// Buscar usuários pendentes de aprovação (apenas para admin)
+	var pendingUsers []*entities.User
+	if userClaims.Role == "admin" {
+		pendingUsers, err = h.userUseCase.GetPendingUsers()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuários pendentes"})
+			return
+		}
+	}
+
+	// Buscar cadeiras ativas
+	chairs, _, err := h.chairUseCase.GetActiveChairs(100, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar cadeiras"})
+		return
+	}
+
+	// Calcular ocupação por cadeira
+	chairOccupancy := h.calculateChairOccupancy(bookings, chairs)
+
+	// Calcular indicadores do dia (usado para estatísticas)
+	_ = h.calculateDayIndicators(bookings)
+
+	// Buscar estatísticas gerais (usado para cálculos)
+	_, err = h.bookingUseCase.GetBookingStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar estatísticas"})
+		return
+	}
+
+	// Calcular estatísticas de comparecimento e cancelamento
+	completedSessions := 0
+	cancelledSessions := 0
+	for _, booking := range bookings {
+		switch booking.Status {
+		case "concluido":
+			completedSessions++
+		case "cancelado":
+			cancelledSessions++
+		}
+	}
+
+	// Preparar dados das sessões de hoje
+	todaySessions := make([]gin.H, 0)
+	for _, booking := range bookings {
+		session := gin.H{
+			"id": booking.ID,
+			"user": gin.H{
+				"name": booking.User.Name,
+				"cpf":  booking.User.CPF,
+			},
+			"chair": gin.H{
+				"name":     booking.Chair.Name,
+				"location": booking.Chair.Location,
+			},
+			"start_time": booking.StartTime.Format("15:04"),
+			"end_time":   booking.EndTime.Format("15:04"),
+			"status":     booking.Status,
+		}
+		todaySessions = append(todaySessions, session)
+	}
+
+	// Preparar dados dos usuários pendentes
+	pendingUsersData := make([]gin.H, 0)
+	for _, user := range pendingUsers {
+		userData := gin.H{
+			"id":             user.ID,
+			"name":           user.Name,
+			"email":          user.Email,
+			"requested_role": user.Role,
+			"created_at":     user.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		}
+		pendingUsersData = append(pendingUsersData, userData)
+	}
+
+	// Preparar dados de ocupação das cadeiras
+	chairOccupancyData := make([]gin.H, 0)
+	for _, chair := range chairOccupancy {
+		// Calcular estatísticas da cadeira
+		completedSessions := 0
+		cancelledSessions := 0
+		noShowSessions := 0
+
+		for _, booking := range bookings {
+			if booking.ChairID == chair["chair_id"] {
+				switch booking.Status {
+				case "concluido":
+					completedSessions++
+				case "cancelado":
+					cancelledSessions++
+				case "falta":
+					noShowSessions++
+				}
+			}
+		}
+
+		occupancyData := gin.H{
+			"chair_id":           chair["chair_id"],
+			"chair_name":         chair["chair_name"],
+			"total_sessions":     len(bookings),
+			"completed_sessions": completedSessions,
+			"cancelled_sessions": cancelledSessions,
+			"no_show_sessions":   noShowSessions,
+			"occupancy_rate":     chair["occupancy_rate"],
+		}
+		chairOccupancyData = append(chairOccupancyData, occupancyData)
+	}
+
+	// Calcular estatísticas gerais
+	stats := gin.H{
+		"totalSessionsToday":     len(bookings),
+		"confirmedSessionsToday": 0,
+		"pendingApprovals":       len(pendingUsers),
+		"totalChairs":            len(chairs),
+		"activeChairs":           len(chairs),
+		"attendanceRate":         0,
+		"cancellationRate":       0,
+	}
+
+	// Calcular sessões confirmadas
+	for _, booking := range bookings {
+		if booking.Status == "confirmado" {
+			stats["confirmedSessionsToday"] = stats["confirmedSessionsToday"].(int) + 1
+		}
+	}
+
+	// Calcular taxas (simplificado)
+	if len(bookings) > 0 {
+		attendanceRate := float64(completedSessions) / float64(len(bookings)) * 100
+		cancellationRate := float64(cancelledSessions) / float64(len(bookings)) * 100
+		stats["attendanceRate"] = int(attendanceRate)
+		stats["cancellationRate"] = int(cancellationRate)
+	}
+
+	dashboard := gin.H{
+		"stats":          stats,
+		"todaySessions":  todaySessions,
+		"pendingUsers":   pendingUsersData,
+		"chairOccupancy": chairOccupancyData,
+	}
+
+	c.JSON(http.StatusOK, dashboard)
+}
+
 // calculateChairOccupancy calcula a ocupação de cada cadeira
 func (h *DashboardHandler) calculateChairOccupancy(bookings []*entities.Booking, chairs []*entities.Chair) []gin.H {
 	chairBookings := make(map[uint][]string)
