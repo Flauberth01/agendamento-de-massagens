@@ -1,8 +1,6 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { useAuth } from '../../stores/authStore'
 import { 
@@ -13,8 +11,6 @@ import {
   XCircle, 
   Clock,
   AlertCircle,
-  UserCheck,
-  UserX,
   Loader2,
   BarChart3,
   TrendingUp,
@@ -68,7 +64,6 @@ interface DashboardStats {
 
 export const OperationalDashboardPage: React.FC = () => {
   const { user } = useAuth()
-  const navigate = useNavigate()
 
   // Buscar dados do dashboard operacional
   const { data: dashboardData, isLoading, error } = useQuery({
@@ -91,26 +86,6 @@ export const OperationalDashboardPage: React.FC = () => {
   const todaySessions: Session[] = dashboardData?.todaySessions || []
   const pendingUsers: PendingUser[] = dashboardData?.pendingUsers || []
   const chairOccupancy: ChairOccupancy[] = dashboardData?.chairOccupancy || []
-
-  const handleConfirmSession = (sessionId: number) => {
-    // Implementar confirmação de sessão
-    console.log('Confirmar sessão:', sessionId)
-  }
-
-  const handleMarkAttendance = (sessionId: number) => {
-    // Implementar marcação de presença
-    console.log('Marcar presença:', sessionId)
-  }
-
-  const handleApproveUser = (userId: number) => {
-    // Implementar aprovação de usuário
-    console.log('Aprovar usuário:', userId)
-  }
-
-  const handleRejectUser = (userId: number) => {
-    // Implementar rejeição de usuário
-    console.log('Rejeitar usuário:', userId)
-  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -138,9 +113,6 @@ export const OperationalDashboardPage: React.FC = () => {
           <p className="text-muted-foreground mb-4">
             {handleApiError(error).message}
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Tentar Novamente
-          </Button>
         </div>
       </div>
     )
@@ -246,23 +218,6 @@ export const OperationalDashboardPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(session.status)}
-                      {session.status === 'agendado' && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleConfirmSession(session.id)}
-                        >
-                          Confirmar
-                        </Button>
-                      )}
-                      {session.status === 'confirmado' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleMarkAttendance(session.id)}
-                        >
-                          Marcar Presença
-                        </Button>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -291,24 +246,6 @@ export const OperationalDashboardPage: React.FC = () => {
                       <div className="text-sm text-gray-600">
                         {user.email} • {user.requested_role}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleApproveUser(user.id)}
-                      >
-                        <UserCheck className="h-4 w-4 mr-1" />
-                        Aprovar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRejectUser(user.id)}
-                      >
-                        <UserX className="h-4 w-4 mr-1" />
-                        Rejeitar
-                      </Button>
                     </div>
                   </div>
                 ))}
