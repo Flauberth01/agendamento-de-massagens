@@ -12,7 +12,7 @@ type Booking struct {
 	ChairID   uint           `json:"chair_id" gorm:"not null" validate:"required"`
 	StartTime time.Time      `json:"start_time" gorm:"not null" validate:"required"`
 	EndTime   time.Time      `json:"end_time" gorm:"not null" validate:"required"`
-	Status    string         `json:"status" gorm:"size:20;default:'agendado'" validate:"oneof=agendado confirmado cancelado realizado falta"`
+	Status    string         `json:"status" gorm:"size:20;default:'agendado'" validate:"oneof=agendado cancelado realizado falta"`
 	Notes     string         `json:"notes" gorm:"size:500"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -59,7 +59,7 @@ func (b *Booking) BeforeUpdate(tx *gorm.DB) error {
 
 // IsActive verifica se o agendamento está ativo
 func (b *Booking) IsActive() bool {
-	return b.Status == "agendado" || b.Status == "confirmado"
+	return b.Status == "agendado"
 }
 
 // IsCancelled verifica se o agendamento foi cancelado
@@ -82,11 +82,6 @@ func (b *Booking) CanBeCancelled() bool {
 // Cancel cancela o agendamento
 func (b *Booking) Cancel() {
 	b.Status = "cancelado"
-}
-
-// Confirm confirma o agendamento
-func (b *Booking) Confirm() {
-	b.Status = "confirmado"
 }
 
 // Complete marca o agendamento como concluído

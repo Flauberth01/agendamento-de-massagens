@@ -98,8 +98,6 @@ export const BookingListPage: React.FC = () => {
     switch (status) {
       case 'agendado':
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
-      case 'confirmado':
-        return <Badge variant="default" className="bg-green-500 text-white font-medium">✓ Confirmado</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500 text-white">Realizado</Badge>
       case 'falta':
@@ -134,7 +132,7 @@ export const BookingListPage: React.FC = () => {
     // Atendentes e admins podem cancelar agendamentos ativos
     // Usuários regulares só podem cancelar até 3 horas antes
     if (isAttendant || user?.role === 'admin') {
-      return booking.status === 'agendado' || booking.status === 'confirmado'
+      return booking.status === 'agendado'
     }
     
     return booking.status === 'agendado' && now < threeHoursBefore
@@ -160,11 +158,6 @@ export const BookingListPage: React.FC = () => {
     // Apenas atendentes e admins podem confirmar presença
     if (!(isAttendant || user?.role === 'admin')) {
       return false
-    }
-    
-    // Para agendamentos confirmados: pode confirmar presença mesmo para sessões futuras
-    if (booking.status === 'confirmado') {
-      return true
     }
     
     // Para agendamentos agendados: atendentes e admins podem confirmar presença a qualquer momento
@@ -269,7 +262,6 @@ export const BookingListPage: React.FC = () => {
               <h3 className="text-sm font-medium text-green-800 mb-1">ℹ️ Status dos Agendamentos:</h3>
               <ul className="text-xs text-green-700 space-y-1">
                 <li>• <strong>Agendado:</strong> Aguardando confirmação do atendente</li>
-                <li>• <strong>Confirmado:</strong> Sessão confirmada - aguardando sua presença</li>
                 <li>• <strong>Realizado:</strong> Sessão realizada com sucesso</li>
                 <li>• <strong>Cancelado:</strong> Agendamento cancelado</li>
                 <li>• <strong>Falta:</strong> Não compareceu à sessão</li>
@@ -343,7 +335,6 @@ export const BookingListPage: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="agendado">Agendado</SelectItem>
-                  <SelectItem value="confirmado">Confirmado</SelectItem>
                   <SelectItem value="realizado">Realizado</SelectItem>
                   <SelectItem value="cancelado">Cancelado</SelectItem>
                   <SelectItem value="falta">Falta</SelectItem>

@@ -73,9 +73,7 @@ export const UserDashboardPage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'agendado':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
-      case 'confirmado':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Confirmado</Badge>
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Agendado</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500 text-white">Realizado</Badge>
       case 'falta':

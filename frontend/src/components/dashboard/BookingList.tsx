@@ -112,7 +112,7 @@ export function BookingList({
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      confirmado: { variant: 'default' as const, label: 'Confirmado' },
+      agendado: { variant: 'secondary' as const, label: 'Agendado' },
       cancelado: { variant: 'destructive' as const, label: 'Cancelado' },
       pendente: { variant: 'secondary' as const, label: 'Pendente' },
       realizado: { variant: 'outline' as const, label: 'Realizado' }
@@ -186,7 +186,7 @@ export function BookingList({
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="pendente">Pendente</SelectItem>
-              <SelectItem value="confirmado">Confirmado</SelectItem>
+              <SelectItem value="agendado">Agendado</SelectItem>
               <SelectItem value="cancelado">Cancelado</SelectItem>
               <SelectItem value="realizado">Realizado</SelectItem>
             </SelectContent>

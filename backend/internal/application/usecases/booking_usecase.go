@@ -305,7 +305,7 @@ func (uc *BookingUseCase) GetBookingStats() (map[string]int64, error) {
 	stats["total"] = total
 
 	// Agendamentos por status
-	statuses := []string{"agendado", "confirmado", "realizado", "cancelado", "falta"}
+	statuses := []string{"agendado", "realizado", "cancelado", "falta"}
 	for _, status := range statuses {
 		count, err := uc.bookingRepo.CountByStatus(status)
 		if err != nil {

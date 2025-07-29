@@ -223,8 +223,8 @@ func (r *bookingRepositoryImpl) GetByChairAndDateIncludingPast(chairID uint, dat
 // GetConflictingBookings busca agendamentos que conflitam com um horário
 func (r *bookingRepositoryImpl) GetConflictingBookings(chairID uint, startTime, endTime time.Time) ([]*entities.Booking, error) {
 	var bookings []*entities.Booking
-	err := r.db.Where("chair_id = ? AND status IN (?, ?) AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))",
-		chairID, "agendado", "confirmado", endTime, startTime, startTime, endTime).Find(&bookings).Error
+	err := r.db.Where("chair_id = ? AND status = ? AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))",
+		chairID, "agendado", endTime, startTime, startTime, endTime).Find(&bookings).Error
 	return bookings, err
 }
 
@@ -233,7 +233,7 @@ func (r *bookingRepositoryImpl) GetUpcomingBookings(userID uint, limit int) ([]*
 	var bookings []*entities.Booking
 	now := time.Now()
 	err := r.db.Preload("Chair").
-		Where("user_id = ? AND start_time > ? AND status IN (?, ?)", userID, now, "agendado", "confirmado").
+		Where("user_id = ? AND start_time > ? AND status = ?", userID, now, "agendado").
 		Order("start_time ASC").Limit(limit).Find(&bookings).Error
 	return bookings, err
 }
@@ -247,8 +247,8 @@ func (r *bookingRepositoryImpl) GetTodayBookings() ([]*entities.Booking, error) 
 // HasConflict verifica se há conflito de horário
 func (r *bookingRepositoryImpl) HasConflict(chairID uint, startTime, endTime time.Time, excludeBookingID *uint) (bool, error) {
 	query := r.db.Model(&entities.Booking{}).
-		Where("chair_id = ? AND status IN (?, ?) AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))",
-			chairID, "agendado", "confirmado", endTime, startTime, startTime, endTime)
+		Where("chair_id = ? AND status = ? AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))",
+			chairID, "agendado", endTime, startTime, startTime, endTime)
 
 	if excludeBookingID != nil {
 		query = query.Where("id != ?", *excludeBookingID)
@@ -285,8 +285,8 @@ func (r *bookingRepositoryImpl) CanBook(userID, chairID uint, startTime time.Tim
 	now := time.Now()
 	var futureCount int64
 	err = r.db.Model(&entities.Booking{}).
-		Where("user_id = ? AND status IN (?, ?) AND start_time > ?",
-			userID, "agendado", "confirmado", now).
+		Where("user_id = ? AND status = ? AND start_time > ?",
+			userID, "agendado", now).
 		Count(&futureCount).Error
 	if err != nil {
 		return false, "Erro ao verificar agendamentos futuros", err
@@ -303,8 +303,8 @@ func (r *bookingRepositoryImpl) HasActiveBooking(userID uint) (bool, error) {
 	now := time.Now()
 	var count int64
 	err := r.db.Model(&entities.Booking{}).
-		Where("user_id = ? AND status IN (?, ?) AND start_time <= ? AND end_time > ?",
-			userID, "agendado", "confirmado", now, now).
+		Where("user_id = ? AND status = ? AND start_time <= ? AND end_time > ?",
+			userID, "agendado", now, now).
 		Count(&count).Error
 	return count > 0, err
 }

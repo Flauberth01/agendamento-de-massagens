@@ -31,7 +31,7 @@ interface Session {
   }
   start_time: string
   end_time: string
-  status: 'agendado' | 'confirmado' | 'cancelado' | 'realizado' | 'falta'
+  status: 'agendado' | 'cancelado' | 'realizado' | 'falta'
 }
 
 interface PendingUser {
@@ -91,8 +91,6 @@ export const OperationalDashboardPage: React.FC = () => {
     switch (status) {
       case 'agendado':
         return <Badge variant="secondary">Agendado</Badge>
-      case 'confirmado':
-        return <Badge variant="default">Confirmado</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500">Realizado</Badge>
       case 'falta':

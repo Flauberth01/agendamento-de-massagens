@@ -25,7 +25,7 @@ interface TodaySession {
   }
   start_time: string
   end_time: string
-  status: 'agendado' | 'confirmado' | 'cancelado' | 'realizado' | 'falta'
+  status: 'agendado' | 'cancelado' | 'realizado' | 'falta'
 }
 
 interface PendingUser {
@@ -66,7 +66,7 @@ export const AttendantDashboardPage: React.FC = () => {
           chair: { name: 'Cadeira 2' },
           start_time: '10:00',
           end_time: '10:30',
-          status: 'confirmado'
+          status: 'agendado'
         }
       ])
 
@@ -102,8 +102,6 @@ export const AttendantDashboardPage: React.FC = () => {
     switch (status) {
       case 'agendado':
         return <Badge variant="secondary">Agendado</Badge>
-      case 'confirmado':
-        return <Badge variant="default">Confirmado</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500">Realizado</Badge>
       case 'falta':
@@ -238,7 +236,7 @@ export const AttendantDashboardPage: React.FC = () => {
                           Confirmar
                         </Button>
                       )} */}
-                      {session.status === 'confirmado' && (
+                      {session.status === 'agendado' && (
                         <Button
                           size="sm"
                           variant="outline"

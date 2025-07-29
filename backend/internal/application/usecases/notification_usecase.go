@@ -1,10 +1,10 @@
 package usecases
 
 import (
+	"agendamento-backend/internal/domain/repositories"
 	"fmt"
 	"log"
 	"time"
-	"agendamento-backend/internal/domain/repositories"
 )
 
 // NotificationUseCase gerencia o envio de notificações
@@ -192,8 +192,8 @@ func (uc *NotificationUseCase) SendDailyReminders() error {
 
 	// Enviar lembrete para cada agendamento
 	for _, booking := range bookings {
-		// Apenas para agendamentos confirmados
-		if booking.Status == "confirmado" {
+		// Apenas para agendamentos agendados
+		if booking.Status == "agendado" {
 			if err := uc.SendBookingReminder(booking.ID); err != nil {
 				log.Printf("Erro ao enviar lembrete para agendamento %d: %v", booking.ID, err)
 				errorCount++
