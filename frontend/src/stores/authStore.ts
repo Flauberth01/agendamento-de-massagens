@@ -21,6 +21,7 @@ interface AuthState {
   setError: (error: string | null) => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  clearErrorOnInput: () => void; // Nova função para limpar erro quando usuário digita
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -161,6 +162,14 @@ export const useAuthStore = create<AuthState>()(
       // Limpar erro
       clearError: () => {
         set({ error: null });
+      },
+
+      // Limpar erro quando usuário começa a digitar
+      clearErrorOnInput: () => {
+        const { error } = get();
+        if (error) {
+          set({ error: null });
+        }
       },
 
       // Definir loading

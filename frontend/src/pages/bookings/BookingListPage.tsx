@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { toast } from 'sonner'
 
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
@@ -38,9 +39,11 @@ export const BookingListPage: React.FC = () => {
 
   // Estados
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [dateFilter, setDateFilter] = useState<string>('')
-  const [chairFilter, setChairFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('')
+  const [chairFilter, setChairFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showAttendanceDialog, setShowAttendanceDialog] = useState(false)
   const [showNoShowDialog, setShowNoShowDialog] = useState(false)
@@ -66,6 +69,7 @@ export const BookingListPage: React.FC = () => {
 
   // Aplicar filtros
   const filteredBookings = sortedBookings.filter(booking => {
+    
     // Filtro por termo de busca
     if (searchTerm && 
         !booking.chair?.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -95,6 +99,17 @@ export const BookingListPage: React.FC = () => {
     
     return true
   })
+
+  // Paginação
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedBookings = filteredBookings.slice(startIndex, endIndex)
+
+  // Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, dateFilter, chairFilter])
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -225,17 +240,34 @@ export const BookingListPage: React.FC = () => {
   }
 
   const handleCancelConfirm = async () => {
-    if (!selectedBooking) return
+    if (!selectedBooking || !user) return
     
     try {
       await cancelBookingMutation.mutateAsync({ 
         id: selectedBooking.id, 
-        reason: 'Cancelado pelo usuário' 
+        reason: 'Cancelado pelo usuário'
       })
       setShowCancelDialog(false)
       setSelectedBooking(null)
-    } catch (error) {
+      toast.success('Agendamento cancelado com sucesso!')
+    } catch (error: any) {
       console.error('Erro ao cancelar agendamento:', error)
+      
+      let errorMessage = 'Erro ao cancelar agendamento. Tente novamente.'
+      
+      if (error?.response?.data?.error) {
+        const backendError = error.response.data.error
+        
+        if (backendError.includes('não encontrado')) {
+          errorMessage = '❌ Agendamento não encontrado. Tente recarregar a página.'
+        } else if (backendError.includes('não pode ser cancelado')) {
+          errorMessage = '⚠️ Este agendamento não pode ser cancelado. Verifique as regras de cancelamento.'
+        } else {
+          errorMessage = `❌ ${backendError}`
+        }
+      }
+      
+      toast.error(errorMessage)
     }
   }
 
@@ -250,8 +282,25 @@ export const BookingListPage: React.FC = () => {
       })
       setShowAttendanceDialog(false)
       setSelectedBooking(null)
-    } catch (error) {
+      toast.success('Presença confirmada com sucesso!')
+    } catch (error: any) {
       console.error('Erro ao confirmar presença:', error)
+      
+      let errorMessage = 'Erro ao confirmar presença. Tente novamente.'
+      
+      if (error?.response?.data?.error) {
+        const backendError = error.response.data.error
+        
+        if (backendError.includes('não encontrado')) {
+          errorMessage = '❌ Agendamento não encontrado. Tente recarregar a página.'
+        } else if (backendError.includes('já foi confirmada')) {
+          errorMessage = '⚠️ A presença já foi confirmada para este agendamento.'
+        } else {
+          errorMessage = `❌ ${backendError}`
+        }
+      }
+      
+      toast.error(errorMessage)
     }
   }
 
@@ -265,8 +314,26 @@ export const BookingListPage: React.FC = () => {
       })
       setShowNoShowDialog(false)
       setSelectedBooking(null)
-    } catch (error) {
+      toast.success('Falta marcada com sucesso!')
+    } catch (error: any) {
       console.error('Erro ao marcar falta:', error)
+      
+      // Mensagem amigável baseada no erro
+      let errorMessage = 'Erro ao marcar falta. Tente novamente.'
+      
+      if (error?.response?.data?.error) {
+        const backendError = error.response.data.error
+        
+        if (backendError.includes('já passaram')) {
+          errorMessage = '⚠️ Só é possível marcar como falta agendamentos que já passaram. Aguarde o horário da sessão para marcar a falta.'
+        } else if (backendError.includes('não encontrado')) {
+          errorMessage = '❌ Agendamento não encontrado. Tente recarregar a página.'
+        } else {
+          errorMessage = `❌ ${backendError}`
+        }
+      }
+      
+      toast.error(errorMessage)
     }
   }
 
@@ -423,6 +490,11 @@ export const BookingListPage: React.FC = () => {
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Todas as Sessões ({filteredBookings.length})
+            {totalPages > 1 && (
+              <span className="text-sm font-normal text-gray-500">
+                - Página {currentPage} de {totalPages}
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -447,7 +519,7 @@ export const BookingListPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredBookings.map((booking) => (
+              {paginatedBookings.map((booking) => (
                 <div key={booking.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start gap-4">
                      <div className="flex-1">
@@ -572,6 +644,52 @@ export const BookingListPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Controles de Paginação */}
+      {totalPages > 1 && (
+        <Card className="mt-4">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredBookings.length)} de {filteredBookings.length} agendamentos
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Diálogo de Confirmação de Cancelamento */}
       <ConfirmDialog

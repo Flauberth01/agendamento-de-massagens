@@ -300,3 +300,25 @@ func (uc *UserUseCase) DeleteUser(userID, deletedBy uint) error {
 
 	return nil
 }
+
+// CheckCPFExists verifica se um CPF já está cadastrado
+func (uc *UserUseCase) CheckCPFExists(cpf string) (bool, error) {
+	uc.logger.Info("Verificando se CPF já existe", map[string]interface{}{
+		"cpf": cpf,
+	})
+
+	exists, err := uc.userRepo.ExistsByCPF(cpf)
+	if err != nil {
+		uc.logger.Error("Erro ao verificar CPF existente", err, map[string]interface{}{
+			"cpf": cpf,
+		})
+		return false, fmt.Errorf("erro ao verificar CPF: %w", err)
+	}
+
+	uc.logger.Info("Verificação de CPF concluída", map[string]interface{}{
+		"cpf":    cpf,
+		"exists": exists,
+	})
+
+	return exists, nil
+}

@@ -93,8 +93,8 @@ func (r *bookingRepositoryImpl) List(limit, offset int, filters map[string]inter
 		return nil, 0, err
 	}
 
-	// Buscar com paginação
-	err := query.Limit(limit).Offset(offset).Order("start_time DESC").Find(&bookings).Error
+	// Buscar com paginação - ordenar por data de criação (mais recente primeiro)
+	err := query.Limit(limit).Offset(offset).Order("created_at DESC").Find(&bookings).Error
 	return bookings, total, err
 }
 
@@ -110,7 +110,7 @@ func (r *bookingRepositoryImpl) GetByUser(userID uint, limit, offset int) ([]*en
 	}
 
 	// Buscar agendamentos do usuário com preload das relações (excluindo passados)
-	if err := r.db.Preload("User").Preload("Chair").Where("user_id = ? AND deleted_at IS NULL AND start_time > ?", userID, now).Order("start_time DESC").Limit(limit).Offset(offset).Find(&bookings).Error; err != nil {
+	if err := r.db.Preload("User").Preload("Chair").Where("user_id = ? AND deleted_at IS NULL AND start_time > ?", userID, now).Order("created_at DESC").Limit(limit).Offset(offset).Find(&bookings).Error; err != nil {
 		return nil, 0, err
 	}
 

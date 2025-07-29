@@ -10,7 +10,12 @@ export const bookingService = {
     page?: number
     limit?: number
   }): Promise<BookingListResponse> {
-    const response = await api.get('/api/bookings/user', { params })
+    // Definir limite padrão como 50 para garantir que agendamentos recentes apareçam
+    const requestParams = {
+      limit: 50, // Aumentar o limite para 50
+      ...params
+    }
+    const response = await api.get('/api/bookings/user', { params: requestParams })
     return response.data
   },
 
@@ -24,7 +29,12 @@ export const bookingService = {
     page?: number
     limit?: number
   }): Promise<BookingListResponse> {
-    const response = await api.get('/api/bookings', { params })
+    // Definir limite padrão como 50 para garantir que agendamentos recentes apareçam
+    const requestParams = {
+      limit: 50, // Aumentar o limite para 50
+      ...params
+    }
+    const response = await api.get('/api/bookings', { params: requestParams })
     return response.data
   },
 

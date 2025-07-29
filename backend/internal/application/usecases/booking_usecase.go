@@ -819,7 +819,7 @@ func (uc *BookingUseCase) MarkCompletedSessions() error {
 			}
 
 			// Log de auditoria
-			auditLog := entities.NewAuditLog(nil, entities.ActionUpdate, entities.ResourceBooking, &booking.ID)
+			auditLog := entities.NewAuditLog(&booking.UserID, entities.ActionUpdate, entities.ResourceBooking, &booking.ID)
 			auditLog.SetDescription("Agendamento marcado como realizado automaticamente após término da sessão")
 			uc.auditRepo.Create(auditLog)
 

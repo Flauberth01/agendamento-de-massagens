@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, Link } from 'react-router-dom'
@@ -7,7 +7,8 @@ import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { registerStep1Schema, type RegisterStep1Form } from '../../utils/validation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, User, Mail, Building, IdCard, Users, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { formatCPF } from '../../utils/formatters'
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate()
@@ -15,11 +16,25 @@ export const RegisterPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isValid },
   } = useForm<RegisterStep1Form>({
     resolver: zodResolver(registerStep1Schema),
     mode: 'onChange',
   })
+
+  // Observar mudanças no CPF para aplicar formatação
+  const cpfValue = watch('cpf');
+  
+  useEffect(() => {
+    if (cpfValue && cpfValue.length > 0) {
+      const formatted = formatCPF(cpfValue);
+      if (formatted !== cpfValue) {
+        setValue('cpf', formatted);
+      }
+    }
+  }, [cpfValue, setValue]);
 
   const onSubmit = (data: RegisterStep1Form) => {
     // Salvar dados da etapa 1 no localStorage
@@ -29,148 +44,228 @@ export const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <Card>
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-between mb-4">
-            <Link 
-              to="/login" 
-              className="flex items-center text-blue-600 hover:text-blue-800"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Voltar ao Login
-            </Link>
-            <div className="flex-1"></div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+            <User className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Conta</h1>
           <p className="text-gray-600">Etapa 1 de 2 - Dados Pessoais e Profissionais</p>
-          
-          {/* Progress bar */}
-          <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full w-1/2"></div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Nome Completo *</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  {...register('name')}
-                  className={errors.name ? 'border-red-500' : ''}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
-                )}
-              </div>
+        </div>
 
-              <div>
-                <Label htmlFor="cpf">CPF *</Label>
-                <Input
-                  id="cpf"
-                  type="text"
-                  placeholder="000.000.000-00"
-                  {...register('cpf')}
-                  className={errors.cpf ? 'border-red-500' : ''}
-                />
-                {errors.cpf && (
-                  <p className="text-sm text-red-500 mt-1">{errors.cpf.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="function">Função *</Label>
-                <Input
-                  id="function"
-                  type="text"
-                  placeholder="Ex: Analista"
-                  {...register('function')}
-                  className={errors.function ? 'border-red-500' : ''}
-                />
-                {errors.function && (
-                  <p className="text-sm text-red-500 mt-1">{errors.function.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="position">Cargo *</Label>
-                <Input
-                  id="position"
-                  type="text"
-                  placeholder="Ex: Analista de Sistemas"
-                  {...register('position')}
-                  className={errors.position ? 'border-red-500' : ''}
-                />
-                {errors.position && (
-                  <p className="text-sm text-red-500 mt-1">{errors.position.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="registration">Matrícula *</Label>
-                <Input
-                  id="registration"
-                  type="text"
-                  placeholder="Sua matrícula"
-                  {...register('registration')}
-                  className={errors.registration ? 'border-red-500' : ''}
-                />
-                {errors.registration && (
-                  <p className="text-sm text-red-500 mt-1">{errors.registration.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="sector">Setor *</Label>
-                <Input
-                  id="sector"
-                  type="text"
-                  placeholder="Ex: Tecnologia da Informação"
-                  {...register('sector')}
-                  className={errors.sector ? 'border-red-500' : ''}
-                />
-                {errors.sector && (
-                  <p className="text-sm text-red-500 mt-1">{errors.sector.message}</p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu.email@empresa.com"
-                  {...register('email')}
-                  className={errors.email ? 'border-red-500' : ''}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center pt-4">
+        {/* Card de Registro */}
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-8">
+            {/* Navegação */}
+            <div className="flex items-center justify-between mb-6">
               <Link 
                 to="/login" 
-                className="text-blue-600 hover:text-blue-800"
+                className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
               >
-                Já tem uma conta? Entrar
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar ao Login
               </Link>
               
-              <Button 
-                type="submit" 
-                disabled={!isValid}
-                className="px-8"
-              >
-                Próxima Etapa
-              </Button>
+              {/* Progress bar */}
+              <div className="flex-1 mx-8">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full w-1/2 transition-all duration-300"></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                  <span className="font-medium text-blue-600">Etapa 1</span>
+                  <span>Etapa 2</span>
+                </div>
+              </div>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-6">
+                {/* Nome Completo */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    Nome Completo *
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      className={`pl-10 h-12 text-base ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                      {...register('name')}
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* CPF */}
+                <div className="space-y-2">
+                  <Label htmlFor="cpf" className="text-sm font-medium text-gray-700">
+                    CPF *
+                  </Label>
+                  <div className="relative">
+                    <IdCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="cpf"
+                      type="text"
+                      placeholder="123.456.789-09"
+                      maxLength={14}
+                      className={`pl-10 h-12 text-base ${errors.cpf ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                      {...register('cpf')}
+                    />
+                  </div>
+                  {errors.cpf && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.cpf.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                    Email *
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu.email@empresa.com"
+                      className={`pl-10 h-12 text-base ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                      {...register('email')}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Função */}
+                <div className="space-y-2">
+                  <Label htmlFor="function" className="text-sm font-medium text-gray-700">
+                    Função *
+                  </Label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="function"
+                      type="text"
+                      placeholder="Ex: Analista"
+                      className={`pl-10 h-12 text-base ${errors.function ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                      {...register('function')}
+                    />
+                  </div>
+                  {errors.function && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.function.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Cargo */}
+                <div className="space-y-2">
+                  <Label htmlFor="position" className="text-sm font-medium text-gray-700">
+                    Cargo *
+                  </Label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="position"
+                      type="text"
+                      placeholder="Ex: Analista de Sistemas"
+                      className={`pl-10 h-12 text-base ${errors.position ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                      {...register('position')}
+                    />
+                  </div>
+                  {errors.position && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.position.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Matrícula */}
+                <div className="space-y-2">
+                  <Label htmlFor="registration" className="text-sm font-medium text-gray-700">
+                    Matrícula *
+                  </Label>
+                  <div className="relative">
+                    <IdCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="registration"
+                      type="text"
+                      placeholder="Sua matrícula"
+                      className={`pl-10 h-12 text-base ${errors.registration ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                      {...register('registration')}
+                    />
+                  </div>
+                  {errors.registration && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.registration.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Setor */}
+                <div className="space-y-2">
+                  <Label htmlFor="sector" className="text-sm font-medium text-gray-700">
+                    Setor *
+                  </Label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="sector"
+                      type="text"
+                      placeholder="Ex: Tecnologia da Informação"
+                      className={`pl-10 h-12 text-base ${errors.sector ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
+                      {...register('sector')}
+                    />
+                  </div>
+                  {errors.sector && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.sector.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-between items-center pt-6">
+                <Link 
+                  to="/login" 
+                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Já tem uma conta? Entrar
+                </Link>
+                
+                <Button 
+                  type="submit" 
+                  disabled={!isValid}
+                  className="h-12 px-8 text-base font-medium bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                >
+                  Próxima Etapa
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 } 

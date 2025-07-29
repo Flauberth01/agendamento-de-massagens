@@ -1,6 +1,5 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,37 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, User, Shield } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useEffect } from 'react';
+import { formatPhone } from '@/utils/formatters';
+import { useAuth } from '@/stores/authStore';
+import { registerStep2Schema, type RegisterStep2Form } from '@/utils/validation';
 
-// Schema de validação para Etapa 2
-const registerStep2Schema = z.object({
-  phone: z
-    .string()
-    .min(1, 'Telefone é obrigatório')
-    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, 'Telefone deve estar no formato (11) 99999-9999'),
-  gender: z.enum(['masculino', 'feminino', 'outro']),
-  birth_date: z
-    .string()
-    .min(1, 'Data de nascimento é obrigatória')
-    .refine((date) => {
-      const birthDate = new Date(date);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      return age >= 18 && age <= 100;
-    }, 'Data de nascimento deve ser válida (idade entre 18 e 100 anos)'),
-  requested_role: z.enum(['usuario', 'atendente', 'admin']),
-  password: z
-    .string()
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .max(50, 'Senha deve ter no máximo 50 caracteres'),
-  confirm_password: z
-    .string()
-    .min(1, 'Confirmação de senha é obrigatória'),
-}).refine((data) => data.password === data.confirm_password, {
-  message: 'Senhas não coincidem',
-  path: ['confirm_password'],
-});
-
-type RegisterStep2Data = z.infer<typeof registerStep2Schema>;
+type RegisterStep2Data = RegisterStep2Form;
 
 interface RegisterStep2FormProps {
   onSubmit: (data: RegisterStep2Data) => Promise<void>;
@@ -56,14 +30,31 @@ export function RegisterStep2Form({
   error, 
   className 
 }: RegisterStep2FormProps) {
+  const { clearErrorOnInput } = useAuth();
+  
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<RegisterStep2Data>({
     resolver: zodResolver(registerStep2Schema),
   });
+
+  // Observar mudanças no telefone para aplicar formatação
+  const phoneValue = watch('phone');
+  
+  useEffect(() => {
+    if (phoneValue && phoneValue.length > 0) {
+      const formatted = formatPhone(phoneValue);
+      if (formatted !== phoneValue) {
+        setValue('phone', formatted);
+      }
+      // Limpar erro quando usuário digita
+      clearErrorOnInput();
+    }
+  }, [phoneValue, setValue, clearErrorOnInput]);
 
   const handleFormSubmit = async (data: RegisterStep2Data) => {
     try {
@@ -75,10 +66,12 @@ export function RegisterStep2Form({
 
   const handleGenderChange = (value: string) => {
     setValue('gender', value as 'masculino' | 'feminino' | 'outro');
+    clearErrorOnInput();
   };
 
   const handleRoleChange = (value: string) => {
     setValue('requested_role', value as 'usuario' | 'atendente' | 'admin');
+    clearErrorOnInput();
   };
 
   return (
@@ -101,7 +94,10 @@ export function RegisterStep2Form({
               id="phone"
               type="tel"
               placeholder="(11) 99999-9999"
-              {...register('phone')}
+              maxLength={15}
+              {...register('phone', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.phone ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -134,7 +130,9 @@ export function RegisterStep2Form({
             <Input
               id="birth_date"
               type="date"
-              {...register('birth_date')}
+              {...register('birth_date', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.birth_date ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -168,7 +166,9 @@ export function RegisterStep2Form({
               id="password"
               type="password"
               placeholder="Digite sua senha"
-              {...register('password')}
+              {...register('password', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.password ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -184,7 +184,9 @@ export function RegisterStep2Form({
               id="confirm_password"
               type="password"
               placeholder="Confirme sua senha"
-              {...register('confirm_password')}
+              {...register('confirm_password', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.confirm_password ? 'border-red-500' : ''}
               disabled={isLoading}
             />

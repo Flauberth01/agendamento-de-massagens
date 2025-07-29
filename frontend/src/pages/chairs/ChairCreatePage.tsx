@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -11,16 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Label } from '../../components/ui/label';
 import { useChairs } from '../../hooks/useChairs';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
+import { createChairSchema, type CreateChairForm } from '../../utils/validation';
 
-
-const createChairSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
-  description: z.string().optional(),
-  location: z.string().min(1, 'Localização é obrigatória').max(100, 'Localização deve ter no máximo 100 caracteres'),
-  status: z.enum(['ativa', 'inativa'])
-});
-
-type CreateChairFormData = z.infer<typeof createChairSchema>;
+type CreateChairFormData = CreateChairForm;
 
 export default function ChairCreatePage() {
   const navigate = useNavigate();

@@ -117,9 +117,9 @@ export const userService = {
   },
 
   // Verificar se CPF já existe
-  // TODO: Implementar endpoint /users/check-cpf no backend
-  async checkCpfExists(_cpf: string): Promise<{ exists: boolean }> {
-    throw new Error('Endpoint /users/check-cpf não implementado no backend')
+  async checkCPFExists(cpf: string): Promise<{ exists: boolean }> {
+    const response = await api.get(`/api/users/check-cpf?cpf=${encodeURIComponent(cpf)}`)
+    return response.data
   },
 
   // Verificar se email já existe

@@ -1,6 +1,5 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,40 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, User, Building } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useEffect, useState } from 'react';
+import { formatCPF } from '@/utils/formatters';
+import { useAuth } from '@/stores/authStore';
+import { registerStep1Schema, type RegisterStep1Form } from '@/utils/validation';
+import { userService } from '@/services/userService';
 
-// Schema de validação para Etapa 1
-const registerStep1Schema = z.object({
-  name: z
-    .string()
-    .min(2, 'Nome deve ter pelo menos 2 caracteres')
-    .max(100, 'Nome deve ter no máximo 100 caracteres'),
-  cpf: z
-    .string()
-    .min(1, 'CPF é obrigatório')
-    .regex(/^\d{11}$/, 'CPF deve ter 11 dígitos numéricos'),
-  function: z
-    .string()
-    .min(1, 'Função é obrigatória')
-    .max(50, 'Função deve ter no máximo 50 caracteres'),
-  position: z
-    .string()
-    .min(1, 'Cargo é obrigatório')
-    .max(100, 'Cargo deve ter no máximo 100 caracteres'),
-  registration: z
-    .string()
-    .min(1, 'Matrícula é obrigatória')
-    .max(20, 'Matrícula deve ter no máximo 20 caracteres'),
-  sector: z
-    .string()
-    .min(1, 'Setor é obrigatório')
-    .max(100, 'Setor deve ter no máximo 100 caracteres'),
-  email: z
-    .string()
-    .min(1, 'Email é obrigatório')
-    .email('Email deve ter um formato válido'),
-});
-
-type RegisterStep1Data = z.infer<typeof registerStep1Schema>;
+type RegisterStep1Data = RegisterStep1Form;
 
 interface RegisterStep1FormProps {
   onSubmit: (data: RegisterStep1Data) => Promise<void>;
@@ -56,15 +28,77 @@ export function RegisterStep1Form({
   error, 
   className 
 }: RegisterStep1FormProps) {
+  const { clearErrorOnInput } = useAuth();
+  const [cpfError, setCpfError] = useState<string>('');
+  const [isCheckingCpf, setIsCheckingCpf] = useState(false);
+  
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<RegisterStep1Data>({
     resolver: zodResolver(registerStep1Schema),
   });
 
+  // Observar mudanças no CPF para aplicar formatação e validação
+  const cpfValue = watch('cpf');
+  
+  useEffect(() => {
+    if (cpfValue && cpfValue.length > 0) {
+      const formatted = formatCPF(cpfValue);
+      if (formatted !== cpfValue) {
+        setValue('cpf', formatted);
+      }
+      // Limpar erro quando usuário digita
+      clearErrorOnInput();
+      setCpfError('');
+      
+      // Validar CPF único quando o CPF estiver completo
+      if (formatted.length === 14) {
+        validateCPFUnique(formatted);
+      }
+    }
+  }, [cpfValue, setValue, clearErrorOnInput]);
+
+  const validateCPFUnique = async (cpf: string) => {
+    setIsCheckingCpf(true);
+    setCpfError('');
+    
+    try {
+      const { exists } = await userService.checkCPFExists(cpf);
+      if (exists) {
+        setCpfError('CPF já está cadastrado no sistema');
+        setError('cpf', { message: 'CPF já está cadastrado no sistema' });
+      } else {
+        clearErrors('cpf');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar CPF:', error);
+      // Em caso de erro, permitir que o backend valide
+    } finally {
+      setIsCheckingCpf(false);
+    }
+  };
+
   const handleFormSubmit = async (data: RegisterStep1Data) => {
+    // Verificar CPF novamente antes de submeter
+    if (data.cpf) {
+      try {
+        const { exists } = await userService.checkCPFExists(data.cpf);
+        if (exists) {
+          setCpfError('CPF já está cadastrado no sistema');
+          setError('cpf', { message: 'CPF já está cadastrado no sistema' });
+          return;
+        }
+      } catch (error) {
+        console.error('Erro ao verificar CPF:', error);
+      }
+    }
+    
     try {
       await onSubmit(data);
     } catch (err) {
@@ -92,7 +126,9 @@ export function RegisterStep1Form({
               id="name"
               type="text"
               placeholder="Digite seu nome completo"
-              {...register('name')}
+              {...register('name', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.name ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -104,16 +140,29 @@ export function RegisterStep1Form({
           {/* CPF */}
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF</Label>
-            <Input
-              id="cpf"
-              type="text"
-              placeholder="12345678909"
-              {...register('cpf')}
-              className={errors.cpf ? 'border-red-500' : ''}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Input
+                id="cpf"
+                type="text"
+                placeholder="123.456.789-09"
+                maxLength={14}
+                {...register('cpf', {
+                  onChange: () => clearErrorOnInput()
+                })}
+                className={errors.cpf ? 'border-red-500' : ''}
+                disabled={isLoading}
+              />
+              {isCheckingCpf && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                </div>
+              )}
+            </div>
             {errors.cpf && (
               <p className="text-sm text-red-500">{errors.cpf.message}</p>
+            )}
+            {cpfError && (
+              <p className="text-sm text-red-500">{cpfError}</p>
             )}
           </div>
 
@@ -124,7 +173,9 @@ export function RegisterStep1Form({
               id="email"
               type="email"
               placeholder="seu.email@empresa.com"
-              {...register('email')}
+              {...register('email', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.email ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -140,7 +191,9 @@ export function RegisterStep1Form({
               id="function"
               type="text"
               placeholder="Ex: Analista"
-              {...register('function')}
+              {...register('function', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.function ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -156,7 +209,9 @@ export function RegisterStep1Form({
               id="position"
               type="text"
               placeholder="Ex: Analista de Sistemas"
-              {...register('position')}
+              {...register('position', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.position ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -172,7 +227,9 @@ export function RegisterStep1Form({
               id="registration"
               type="text"
               placeholder="Digite sua matrícula"
-              {...register('registration')}
+              {...register('registration', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.registration ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -188,7 +245,9 @@ export function RegisterStep1Form({
               id="sector"
               type="text"
               placeholder="Ex: Tecnologia da Informação"
-              {...register('sector')}
+              {...register('sector', {
+                onChange: () => clearErrorOnInput()
+              })}
               className={errors.sector ? 'border-red-500' : ''}
               disabled={isLoading}
             />
@@ -209,7 +268,7 @@ export function RegisterStep1Form({
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || isCheckingCpf}
           >
             {isLoading ? (
               <>

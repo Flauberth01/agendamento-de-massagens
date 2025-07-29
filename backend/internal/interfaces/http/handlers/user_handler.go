@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"agendamento-backend/internal/application/dtos"
 	"agendamento-backend/internal/application/mappers"
@@ -443,4 +444,43 @@ func (h *UserHandler) GetPendingApprovals(c *gin.Context) {
 			"offset": offset,
 		},
 	})
+}
+
+// CheckCPFExists verifica se um CPF já está cadastrado
+// @Summary Verificar CPF existente
+// @Description Verifica se um CPF já está cadastrado no sistema
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param cpf query string true "CPF a verificar"
+// @Success 200 {object} map[string]bool "CPF existe ou não"
+// @Failure 400 {object} map[string]string "CPF inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /users/check-cpf [get]
+func (h *UserHandler) CheckCPFExists(c *gin.Context) {
+	cpf := c.Query("cpf")
+	if cpf == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "CPF é obrigatório"})
+		return
+	}
+
+	// Normalizar CPF (remover pontos, hífen e espaços)
+	cpf = strings.ReplaceAll(cpf, ".", "")
+	cpf = strings.ReplaceAll(cpf, "-", "")
+	cpf = strings.ReplaceAll(cpf, " ", "")
+
+	// Validar formato do CPF
+	if len(cpf) != 11 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "CPF deve ter 11 dígitos"})
+		return
+	}
+
+	// Verificar se CPF já existe
+	exists, err := h.userUseCase.CheckCPFExists(cpf)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao verificar CPF"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"exists": exists})
 }

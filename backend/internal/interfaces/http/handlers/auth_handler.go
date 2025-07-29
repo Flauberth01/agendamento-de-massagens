@@ -230,7 +230,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if user.Status != "aprovado" {
 		// Log de tentativa de login com usuário não aprovado
 		h.auditLogUseCase.LogUserAction(user.ID, entities.ActionLogin, entities.ResourceAuth, user.ID, "Tentativa de login com usuário não aprovado. Status: "+user.Status, c.ClientIP(), c.GetHeader("User-Agent"))
-		
+
 		// Mensagem amigável baseada no status
 		var message string
 		switch user.Status {
@@ -243,7 +243,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		default:
 			message = "Seu cadastro ainda não foi aprovado. Por favor, aguarde a aprovação."
 		}
-		
+
 		c.JSON(http.StatusUnauthorized, gin.H{"error": message})
 		return
 	}
@@ -466,9 +466,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logout realizado com sucesso"})
 }
 
-// normalizeCPF remove pontos e hífen do CPF
+// normalizeCPF remove pontos, hífen e espaços em branco do CPF
 func normalizeCPF(cpf string) string {
 	cpf = strings.ReplaceAll(cpf, ".", "")
 	cpf = strings.ReplaceAll(cpf, "-", "")
+	cpf = strings.ReplaceAll(cpf, " ", "")
 	return cpf
 }

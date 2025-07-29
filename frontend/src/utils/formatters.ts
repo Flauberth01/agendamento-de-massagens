@@ -1,30 +1,92 @@
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Formatação de CPF
-export const formatCPF = (cpf: string): string => {
-  const cleaned = cpf.replace(/\D/g, '');
-  return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-};
-
-export const unformatCPF = (cpf: string): string => {
-  return cpf.replace(/\D/g, '');
-};
-
-// Formatação de telefone
-export const formatPhone = (phone: string): string => {
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length === 11) {
-    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+// Função para formatar CPF
+export const formatCPF = (value: string): string => {
+  // Remove tudo que não é dígito
+  const numbers = value.replace(/\D/g, '');
+  
+  // Aplica a máscara
+  if (numbers.length <= 3) {
+    return numbers;
+  } else if (numbers.length <= 6) {
+    return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+  } else if (numbers.length <= 9) {
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+  } else {
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
   }
-  if (cleaned.length === 10) {
-    return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-  }
-  return phone;
 };
 
-export const unformatPhone = (phone: string): string => {
-  return phone.replace(/\D/g, '');
+// Função para formatar telefone
+export const formatPhone = (value: string): string => {
+  // Remove tudo que não é dígito
+  const numbers = value.replace(/\D/g, '');
+  
+  // Aplica a máscara
+  if (numbers.length <= 2) {
+    return `(${numbers}`;
+  } else if (numbers.length <= 6) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+  } else if (numbers.length <= 10) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+  } else {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  }
+};
+
+// Função para limpar formatação do CPF
+export const cleanCPF = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
+
+// Função para limpar formatação do telefone
+export const cleanPhone = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
+
+// Função para validar CPF
+export const validateCPF = (cpf: string): boolean => {
+  const cleanCpf = cleanCPF(cpf);
+  
+  if (cleanCpf.length !== 11) {
+    return false;
+  }
+
+  // Verifica se todos os dígitos são iguais
+  if (/^(\d)\1{10}$/.test(cleanCpf)) {
+    return false;
+  }
+
+  // Calcula o primeiro dígito verificador
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cleanCpf[i]) * (10 - i);
+  }
+  let remainder = sum % 11;
+  let firstDigit = remainder < 2 ? 0 : 11 - remainder;
+
+  // Verifica o primeiro dígito
+  if (parseInt(cleanCpf[9]) !== firstDigit) {
+    return false;
+  }
+
+  // Calcula o segundo dígito verificador
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cleanCpf[i]) * (11 - i);
+  }
+  remainder = sum % 11;
+  let secondDigit = remainder < 2 ? 0 : 11 - remainder;
+
+  // Verifica o segundo dígito
+  return parseInt(cleanCpf[10]) === secondDigit;
+};
+
+// Função para validar telefone
+export const validatePhone = (phone: string): boolean => {
+  const cleanPhoneNumber = cleanPhone(phone);
+  return cleanPhoneNumber.length >= 10 && cleanPhoneNumber.length <= 11;
 };
 
 // Formatação de datas

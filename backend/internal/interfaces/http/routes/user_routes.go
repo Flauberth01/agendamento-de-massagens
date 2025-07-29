@@ -14,6 +14,7 @@ func SetupUserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler)
 		// Rotas de consulta (todos os usuários autenticados)
 		users.GET("/:id", userHandler.GetUser)
 		users.GET("", userHandler.ListUsers)
+		users.GET("/check-cpf", userHandler.CheckCPFExists) // Verificar CPF existente
 
 		// Rotas para atendentes e admins (aprovações)
 		approvalRoutes := users.Group("/")
