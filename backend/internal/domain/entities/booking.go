@@ -12,7 +12,7 @@ type Booking struct {
 	ChairID   uint           `json:"chair_id" gorm:"not null" validate:"required"`
 	StartTime time.Time      `json:"start_time" gorm:"not null" validate:"required"`
 	EndTime   time.Time      `json:"end_time" gorm:"not null" validate:"required"`
-	Status    string         `json:"status" gorm:"size:20;default:'agendado'" validate:"oneof=agendado cancelado realizado falta"`
+	Status    string         `json:"status" gorm:"size:20;default:'agendado'" validate:"oneof=agendado presenca_confirmada cancelado realizado falta"`
 	Notes     string         `json:"notes" gorm:"size:500"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -59,7 +59,7 @@ func (b *Booking) BeforeUpdate(tx *gorm.DB) error {
 
 // IsActive verifica se o agendamento está ativo
 func (b *Booking) IsActive() bool {
-	return b.Status == "agendado"
+	return b.Status == "agendado" || b.Status == "presenca_confirmada"
 }
 
 // IsCancelled verifica se o agendamento foi cancelado
@@ -72,6 +72,11 @@ func (b *Booking) IsCompleted() bool {
 	return b.Status == "realizado"
 }
 
+// IsPresenceConfirmed verifica se a presença foi confirmada
+func (b *Booking) IsPresenceConfirmed() bool {
+	return b.Status == "presenca_confirmada"
+}
+
 // CanBeCancelled verifica se o agendamento pode ser cancelado
 func (b *Booking) CanBeCancelled() bool {
 	// Pode ser cancelado até 3 horas antes do horário
@@ -82,6 +87,11 @@ func (b *Booking) CanBeCancelled() bool {
 // Cancel cancela o agendamento
 func (b *Booking) Cancel() {
 	b.Status = "cancelado"
+}
+
+// ConfirmPresence marca a presença como confirmada
+func (b *Booking) ConfirmPresence() {
+	b.Status = "presenca_confirmada"
 }
 
 // Complete marca o agendamento como concluído

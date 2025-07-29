@@ -16,8 +16,7 @@ import {
   MapPin,
   User,
   CalendarDays,
-  Sparkles,
-  AlertCircle
+  Sparkles
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -49,13 +48,13 @@ export const UserDashboardPage: React.FC = () => {
   const stats: UserStats = {
     totalBookings: bookings.length,
     completedBookings: bookings.filter(b => b.status === 'realizado').length,
-    upcomingBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'confirmado').length,
-    activeBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'confirmado').length
+    upcomingBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'presenca_confirmada').length,
+    activeBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'presenca_confirmada').length
   }
 
   // Próximo agendamento
   const nextBooking = bookings
-    .filter(b => b.status === 'agendado' || b.status === 'confirmado')
+    .filter(b => b.status === 'agendado' || b.status === 'presenca_confirmada')
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())[0]
 
   // Histórico recente (últimos 3)
@@ -74,6 +73,8 @@ export const UserDashboardPage: React.FC = () => {
     switch (status) {
       case 'agendado':
         return <Badge variant="default" className="bg-blue-100 text-blue-800">Agendado</Badge>
+      case 'presenca_confirmada':
+        return <Badge variant="default" className="bg-orange-500 text-white">Presença Confirmada</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500 text-white">Realizado</Badge>
       case 'falta':
@@ -226,27 +227,20 @@ export const UserDashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="mt-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                      <div className="flex items-center gap-2 text-blue-800">
-                        <AlertCircle className="h-4 w-4" />
-                        <span className="text-sm font-medium">Limite de Agendamento</span>
-                      </div>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Você pode ter apenas um agendamento ativo por vez. Cancele este agendamento para fazer um novo.
-                      </p>
+                  {/* Botão de cancelar apenas para agendamentos agendados */}
+                  {nextBooking.status === 'agendado' && (
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleCancelBooking(nextBooking.id)}
+                        className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Cancelar Agendamento
+                      </Button>
                     </div>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleCancelBooking(nextBooking.id)}
-                      className="w-full border-red-200 text-red-700 hover:bg-red-50"
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Cancelar Agendamento
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </div>
             )}

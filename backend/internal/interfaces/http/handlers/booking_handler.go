@@ -765,7 +765,7 @@ func (h *BookingHandler) MarkAttendance(c *gin.Context) {
 
 	var err2 error
 	if req.Attended {
-		err2 = h.bookingUseCase.CompleteBooking(uint(id), req.MarkedBy)
+		err2 = h.bookingUseCase.ConfirmPresence(uint(id), req.MarkedBy)
 	} else {
 		err2 = h.bookingUseCase.MarkAsNoShow(uint(id), req.MarkedBy)
 	}

@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { ConfirmDialog } from '../../components/ui/confirm-dialog'
+import { useAuth } from '../../hooks/useAuth'
 
 import { 
   Calendar, 
@@ -29,6 +30,19 @@ export const BookingReschedulePage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const bookingId = parseInt(id || '0')
   const queryClient = useQueryClient()
+  const { isAttendant, user, isAuthenticated } = useAuth()
+
+  // Verificar se usuário está autenticado
+  if (!isAuthenticated) {
+    navigate('/login')
+    return null
+  }
+
+  // Verificar se usuário tem permissão (apenas atendentes e admins)
+  if (!(isAttendant || user?.role === 'admin')) {
+    navigate('/dashboard')
+    return null
+  }
 
   // Estados
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -264,7 +278,7 @@ export const BookingReschedulePage: React.FC = () => {
               <Label className="text-sm font-medium text-gray-700">Status</Label>
               <p className="text-lg font-medium">
                 {bookingData.status === 'agendado' ? 'Agendado' : 
-                 bookingData.status === 'confirmado' ? 'Confirmado' : 
+                 bookingData.status === 'presenca_confirmada' ? 'Presença Confirmada' : 
                  bookingData.status === 'realizado' ? 'Realizado' : 
                  bookingData.status === 'cancelado' ? 'Cancelado' : 
                  bookingData.status === 'falta' ? 'Falta' : bookingData.status}
@@ -316,7 +330,7 @@ export const BookingReschedulePage: React.FC = () => {
       </Card>
 
       {/* Seleção de novo horário */}
-      {selectedDate && rescheduleOptions && (
+      {selectedDate && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -329,7 +343,7 @@ export const BookingReschedulePage: React.FC = () => {
               <div className="flex items-center justify-center h-32">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
-            ) : !rescheduleOptions.available_slots || rescheduleOptions.available_slots.length === 0 ? (
+            ) : !rescheduleOptions || !rescheduleOptions.available_slots || rescheduleOptions.available_slots.length === 0 ? (
               <div className="text-center py-8">
                 <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">Nenhum horário disponível para esta data</p>

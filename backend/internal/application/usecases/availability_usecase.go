@@ -45,7 +45,7 @@ func (uc *AvailabilityUseCase) CreateAvailability(availability *entities.Availab
 	// Verificar se cadeira existe
 	chair, err := uc.chairRepo.GetByID(availability.ChairID)
 	if err != nil {
-		return fmt.Errorf("Cadeira não encontrada: %w", err)
+		return fmt.Errorf("cadeira não encontrada: %w", err)
 	}
 
 	// Validar horários
@@ -65,7 +65,7 @@ func (uc *AvailabilityUseCase) CreateAvailability(availability *entities.Availab
 		return fmt.Errorf("erro ao verificar conflitos: %w", err)
 	}
 	if hasConflict {
-		return errors.New("Já existe horário cadastrado para este intervalo")
+		return errors.New("já existe horário cadastrado para este intervalo")
 	}
 
 	// Criar disponibilidade
@@ -121,7 +121,7 @@ func (uc *AvailabilityUseCase) UpdateAvailability(availability *entities.Availab
 			return fmt.Errorf("erro ao verificar conflitos: %w", err)
 		}
 		if hasConflict {
-			return errors.New("Já existe horário cadastrado para este intervalo")
+			return errors.New("já existe horário cadastrado para este intervalo")
 		}
 	}
 
@@ -172,7 +172,7 @@ func (uc *AvailabilityUseCase) GetAvailableTimeSlots(chairID uint, date time.Tim
 	// Verificar se cadeira existe e está ativa
 	chair, err := uc.chairRepo.GetByID(chairID)
 	if err != nil {
-		return nil, fmt.Errorf("Cadeira não encontrada: %w", err)
+		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
 	}
 	if !chair.IsAvailable() {
 		return nil, errors.New("cadeira não está disponível")
@@ -225,7 +225,7 @@ func (uc *AvailabilityUseCase) GetNext15DaysAvailableSlots(chairID uint) (map[st
 	// Verificar se cadeira existe e está ativa
 	chair, err := uc.chairRepo.GetByID(chairID)
 	if err != nil {
-		return nil, fmt.Errorf("Cadeira não encontrada: %w", err)
+		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
 	}
 	if !chair.IsAvailable() {
 		return nil, errors.New("cadeira não está disponível")
@@ -340,23 +340,23 @@ func (uc *AvailabilityUseCase) validateTimeRange(startTime, endTime string) erro
 	// Validar formato
 	startParsed, err := time.Parse("15:04", startTime)
 	if err != nil {
-		return errors.New("Horário de início inválido. Use o formato HH:MM (exemplo: 09:00)")
+		return errors.New("horário de início inválido. Use o formato HH:MM (exemplo: 09:00)")
 	}
 
 	endParsed, err := time.Parse("15:04", endTime)
 	if err != nil {
-		return errors.New("Horário de fim inválido. Use o formato HH:MM (exemplo: 17:00)")
+		return errors.New("horário de fim inválido. Use o formato HH:MM (exemplo: 17:00)")
 	}
 
 	// Verificar se horário de fim é posterior ao de início
 	if !endParsed.After(startParsed) {
-		return errors.New("Horário de fim deve ser posterior ao horário de início")
+		return errors.New("horário de fim deve ser posterior ao horário de início")
 	}
 
 	// Verificar se a duração é múltipla de 30 minutos
 	duration := endParsed.Sub(startParsed)
 	if duration.Minutes() < 30 || int(duration.Minutes())%30 != 0 {
-		return errors.New("A duração deve ser múltipla de 30 minutos")
+		return errors.New("a duração deve ser múltipla de 30 minutos")
 	}
 
 	return nil
@@ -367,19 +367,19 @@ func (uc *AvailabilityUseCase) CreateMultipleAvailabilities(chairID uint, select
 	// Verificar se cadeira existe
 	chair, err := uc.chairRepo.GetByID(chairID)
 	if err != nil {
-		return nil, fmt.Errorf("Cadeira não encontrada: %w", err)
+		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
 	}
 
 	// Validar dias da semana
 	for _, day := range selectedDays {
 		if day < 0 || day > 6 {
-			return nil, errors.New("Dia da semana inválido (deve ser entre 0 e 6)")
+			return nil, errors.New("dia da semana inválido (deve ser entre 0 e 6)")
 		}
 	}
 
 	// Validar arrays de horários
 	if len(startTimes) != len(endTimes) {
-		return nil, errors.New("Arrays de horários devem ter o mesmo tamanho")
+		return nil, errors.New("arrays de horários devem ter o mesmo tamanho")
 	}
 
 	// Validar horários
@@ -433,7 +433,7 @@ func (uc *AvailabilityUseCase) CreateMultipleAvailabilities(chairID uint, select
 				continue
 			}
 			if hasConflict {
-				errors = append(errors, fmt.Sprintf("Já existe horário cadastrado para %s - %s-%s",
+				errors = append(errors, fmt.Sprintf("já existe horário cadastrado para %s - %s-%s",
 					availability.GetDayOfWeekName(), startTime, endTime))
 				continue
 			}

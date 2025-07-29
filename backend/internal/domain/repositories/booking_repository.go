@@ -34,6 +34,7 @@ type BookingRepository interface {
 	// Operações de status
 	Cancel(id uint, cancelledBy uint, reason string) error
 	Complete(id uint, completedBy uint) error
+	ConfirmPresence(id uint, confirmedBy uint) error
 	MarkAsNoShow(id uint, markedBy uint) error
 
 	// Estatísticas

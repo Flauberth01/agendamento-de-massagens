@@ -3,6 +3,7 @@ package usecases
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"agendamento-backend/internal/application/dtos"
@@ -250,6 +251,29 @@ func (uc *BookingUseCase) CompleteBooking(bookingID, completedBy uint) error {
 	return nil
 }
 
+// ConfirmPresence marca a presença como confirmada
+func (uc *BookingUseCase) ConfirmPresence(bookingID, confirmedBy uint) error {
+	booking, err := uc.bookingRepo.GetByID(bookingID)
+	if err != nil {
+		return fmt.Errorf("agendamento não encontrado: %w", err)
+	}
+
+	if booking.Status != "agendado" {
+		return errors.New("apenas agendamentos com status 'agendado' podem ter presença confirmada")
+	}
+
+	if err := uc.bookingRepo.ConfirmPresence(bookingID, confirmedBy); err != nil {
+		return fmt.Errorf("erro ao confirmar presença: %w", err)
+	}
+
+	// Log de auditoria
+	auditLog := entities.NewAuditLog(&confirmedBy, entities.ActionUpdate, entities.ResourceBooking, &bookingID)
+	auditLog.SetDescription("Presença confirmada")
+	uc.auditRepo.Create(auditLog)
+
+	return nil
+}
+
 // MarkAsNoShow marca um agendamento como falta
 func (uc *BookingUseCase) MarkAsNoShow(bookingID, markedBy uint) error {
 	booking, err := uc.bookingRepo.GetByID(bookingID)
@@ -305,7 +329,7 @@ func (uc *BookingUseCase) GetBookingStats() (map[string]int64, error) {
 	stats["total"] = total
 
 	// Agendamentos por status
-	statuses := []string{"agendado", "realizado", "cancelado", "falta"}
+	statuses := []string{"agendado", "presenca_confirmada", "realizado", "cancelado", "falta"}
 	for _, status := range statuses {
 		count, err := uc.bookingRepo.CountByStatus(status)
 		if err != nil {
@@ -442,9 +466,14 @@ func (uc *BookingUseCase) GetRescheduleOptions(bookingID uint, date time.Time) (
 		return nil, fmt.Errorf("agendamento não encontrado: %w", err)
 	}
 
-	// Verificar se pode ser reagendado (não pode estar concluído ou cancelado)
-	if booking.Status == "concluido" || booking.Status == "cancelado" {
-		return nil, errors.New("não é possível reagendar um agendamento concluído ou cancelado")
+	// Verificar se pode ser reagendado (apenas agendamentos com status "agendado")
+	if booking.Status != "agendado" {
+		return nil, errors.New("apenas agendamentos com status 'agendado' podem ser reagendados")
+	}
+
+	// Verificar se o agendamento ainda não passou
+	if booking.StartTime.Before(time.Now()) {
+		return nil, errors.New("não é possível reagendar um agendamento que já passou")
 	}
 
 	// Verificar se a data está no futuro
@@ -465,7 +494,7 @@ func (uc *BookingUseCase) GetRescheduleOptions(bookingID uint, date time.Time) (
 	}
 
 	// Buscar agendamentos existentes para a cadeira na data
-	bookings, err := uc.bookingRepo.GetByChairAndDate(booking.ChairID, date)
+	bookings, err := uc.bookingRepo.GetByChairAndDateIncludingPast(booking.ChairID, date)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar agendamentos: %w", err)
 	}
@@ -530,9 +559,14 @@ func (uc *BookingUseCase) RescheduleBookingDateTime(bookingID uint, newStartTime
 		return fmt.Errorf("agendamento não encontrado: %w", err)
 	}
 
-	// Verificar se pode ser reagendado (não pode estar concluído ou cancelado)
-	if booking.Status == "concluido" || booking.Status == "cancelado" {
-		return errors.New("não é possível reagendar um agendamento concluído ou cancelado")
+	// Verificar se pode ser reagendado (apenas agendamentos com status "agendado")
+	if booking.Status != "agendado" {
+		return errors.New("apenas agendamentos com status 'agendado' podem ser reagendados")
+	}
+
+	// Verificar se o agendamento ainda não passou
+	if booking.StartTime.Before(time.Now()) {
+		return errors.New("não é possível reagendar um agendamento que já passou")
 	}
 
 	// Verificar se o novo horário está no futuro
@@ -763,4 +797,39 @@ func (uc *BookingUseCase) GetUserStats(userID uint) (map[string]interface{}, err
 		"upcoming":        upcoming,
 		"attendance_rate": attendanceRate,
 	}, nil
+}
+
+// MarkCompletedSessions marca automaticamente como realizado as sessões que terminaram
+func (uc *BookingUseCase) MarkCompletedSessions() error {
+	now := time.Now()
+
+	// Buscar agendamentos com presença confirmada que já terminaram
+	bookings, _, err := uc.bookingRepo.GetByStatus("presenca_confirmada", 1000, 0)
+	if err != nil {
+		return fmt.Errorf("erro ao buscar agendamentos com presença confirmada: %w", err)
+	}
+
+	completedCount := 0
+	for _, booking := range bookings {
+		// Se a sessão já terminou (end_time < now), marcar como realizado
+		if booking.EndTime.Before(now) {
+			if err := uc.bookingRepo.Complete(booking.ID, 0); err != nil { // 0 = sistema
+				log.Printf("Erro ao marcar agendamento %d como realizado: %v", booking.ID, err)
+				continue
+			}
+
+			// Log de auditoria
+			auditLog := entities.NewAuditLog(nil, entities.ActionUpdate, entities.ResourceBooking, &booking.ID)
+			auditLog.SetDescription("Agendamento marcado como realizado automaticamente após término da sessão")
+			uc.auditRepo.Create(auditLog)
+
+			completedCount++
+		}
+	}
+
+	if completedCount > 0 {
+		log.Printf("Marcados %d agendamentos como realizado automaticamente", completedCount)
+	}
+
+	return nil
 }

@@ -1,4 +1,4 @@
-export type BookingStatus = 'agendado' | 'cancelado' | 'realizado' | 'falta';
+export type BookingStatus = 'agendado' | 'presenca_confirmada' | 'cancelado' | 'realizado' | 'falta';
 
 export interface Booking {
   id: number;

@@ -12,16 +12,15 @@ import type { Booking } from '../../types/booking'
 
 import { 
   Calendar, 
-  Plus,
-  Search,
-  Filter,
-  Loader2,
-  XCircle,
-  Building,
-  Clock,
+  Clock, 
+  Search, 
+  Filter, 
+  Plus, 
   UserCheck,
-  CalendarDays,
-  CheckCircle
+  XCircle,
+  Loader2,
+  Building,
+  CalendarDays
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -29,7 +28,7 @@ import { ptBR } from 'date-fns/locale'
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
   const { isAttendant, user, isAuthenticated } = useAuth()
-  const { useUserBookings, useCancelBooking, useMarkAttendance } = useBookings()
+  const { useUserBookings, useCancelBooking, useMarkAttendance, useMarkAsNoShow } = useBookings()
 
   // Verificar se usuário está autenticado
   if (!isAuthenticated) {
@@ -44,6 +43,8 @@ export const BookingListPage: React.FC = () => {
   const [chairFilter, setChairFilter] = useState<string>('')
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showAttendanceDialog, setShowAttendanceDialog] = useState(false)
+  const [showNoShowDialog, setShowNoShowDialog] = useState(false)
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   // Buscar agendamentos do usuário (sem filtro de status para buscar todos)
@@ -52,6 +53,7 @@ export const BookingListPage: React.FC = () => {
   // Mutações
   const cancelBookingMutation = useCancelBooking()
   const markAttendanceMutation = useMarkAttendance()
+  const markAsNoShowMutation = useMarkAsNoShow()
 
   const bookings = bookingsResponse?.data || []
 
@@ -98,6 +100,8 @@ export const BookingListPage: React.FC = () => {
     switch (status) {
       case 'agendado':
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
+      case 'presenca_confirmada':
+        return <Badge variant="default" className="bg-orange-500 text-white">Presença Confirmada</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500 text-white">Realizado</Badge>
       case 'falta':
@@ -124,8 +128,8 @@ export const BookingListPage: React.FC = () => {
     const bookingTime = new Date(booking.start_time)
     const threeHoursBefore = new Date(bookingTime.getTime() - 3 * 60 * 60 * 1000)
     
-    // Não pode cancelar se já foi marcada presença (realizado ou falta)
-    if (booking.status === 'realizado' || booking.status === 'falta') {
+    // Não pode cancelar se já foi marcada presença (presenca_confirmada, realizado ou falta)
+    if (booking.status === 'presenca_confirmada' || booking.status === 'realizado' || booking.status === 'falta') {
       return false
     }
     
@@ -142,16 +146,23 @@ export const BookingListPage: React.FC = () => {
     const now = new Date()
     const bookingTime = new Date(booking.start_time)
     
-    // Não pode reagendar se já foi marcada presença (realizado ou falta)
-    if (booking.status === 'realizado' || booking.status === 'falta') {
+    // Apenas atendentes e admins podem reagendar
+    if (!(isAttendant || user?.role === 'admin')) {
+      return false
+    }
+    
+    // Não pode reagendar se já foi marcada presença (presenca_confirmada, realizado ou falta)
+    if (booking.status === 'presenca_confirmada' || booking.status === 'realizado' || booking.status === 'falta') {
+      return false
+    }
+    
+    // Não pode reagendar se já foi cancelado
+    if (booking.status === 'cancelado') {
       return false
     }
     
     // Pode reagendar se o agendamento está agendado e ainda não aconteceu
-    // ou se aconteceu há menos de 2 horas (para permitir reagendamento de sessões recentes)
-    const twoHoursAfter = new Date(bookingTime.getTime() + 2 * 60 * 60 * 1000)
-    
-    return booking.status === 'agendado' && now < twoHoursAfter
+    return booking.status === 'agendado' && now < bookingTime
   }
 
   const canConfirmPresence = (booking: Booking) => {
@@ -160,7 +171,21 @@ export const BookingListPage: React.FC = () => {
       return false
     }
     
-    // Para agendamentos agendados: atendentes e admins podem confirmar presença a qualquer momento
+    // Só pode confirmar presença em agendamentos agendados
+    if (booking.status === 'agendado') {
+      return true
+    }
+    
+    return false
+  }
+
+  const canMarkNoShow = (booking: Booking) => {
+    // Apenas atendentes e admins podem marcar falta
+    if (!(isAttendant || user?.role === 'admin')) {
+      return false
+    }
+    
+    // Só pode marcar falta em agendamentos agendados
     if (booking.status === 'agendado') {
       return true
     }
@@ -180,13 +205,19 @@ export const BookingListPage: React.FC = () => {
   }
 
   const handleRescheduleBooking = (booking: Booking) => {
-    // Navegar para página de reagendamento
+    // Para reagendamento rápido, podemos implementar um modal
+    // Por enquanto, navegar para página de reagendamento
     navigate(`/bookings/reschedule/${booking.id}`)
   }
 
   const handleConfirmPresence = (booking: Booking) => {
     setSelectedBooking(booking)
     setShowAttendanceDialog(true)
+  }
+
+  const handleMarkNoShow = (booking: Booking) => {
+    setSelectedBooking(booking)
+    setShowNoShowDialog(true)
   }
 
   const handleNewBooking = () => {
@@ -221,6 +252,21 @@ export const BookingListPage: React.FC = () => {
       setSelectedBooking(null)
     } catch (error) {
       console.error('Erro ao confirmar presença:', error)
+    }
+  }
+
+  const handleNoShowConfirm = async () => {
+    if (!selectedBooking || !user) return
+    
+    try {
+      await markAsNoShowMutation.mutateAsync({ 
+        id: selectedBooking.id, 
+        markedBy: user.id
+      })
+      setShowNoShowDialog(false)
+      setSelectedBooking(null)
+    } catch (error) {
+      console.error('Erro ao marcar falta:', error)
     }
   }
 
@@ -262,6 +308,7 @@ export const BookingListPage: React.FC = () => {
               <h3 className="text-sm font-medium text-green-800 mb-1">ℹ️ Status dos Agendamentos:</h3>
               <ul className="text-xs text-green-700 space-y-1">
                 <li>• <strong>Agendado:</strong> Aguardando confirmação do atendente</li>
+                <li>• <strong>Presença Confirmada:</strong> Presença confirmada - aguardando término da sessão</li>
                 <li>• <strong>Realizado:</strong> Sessão realizada com sucesso</li>
                 <li>• <strong>Cancelado:</strong> Agendamento cancelado</li>
                 <li>• <strong>Falta:</strong> Não compareceu à sessão</li>
@@ -335,6 +382,7 @@ export const BookingListPage: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="agendado">Agendado</SelectItem>
+                  <SelectItem value="presenca_confirmada">Presença Confirmada</SelectItem>
                   <SelectItem value="realizado">Realizado</SelectItem>
                   <SelectItem value="cancelado">Cancelado</SelectItem>
                   <SelectItem value="falta">Falta</SelectItem>
@@ -456,45 +504,65 @@ export const BookingListPage: React.FC = () => {
                        )}
                      </div>
 
-                     <div className="flex flex-col items-end gap-2 min-w-fit">
-                        {/* Botões de ação baseados no status */}
-                       <div className="flex gap-2">
-                         {canCancelBooking(booking) && (
-                           <Button
-                             size="sm"
-                             variant="outline"
-                             onClick={() => handleCancelBooking(booking)}
-                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                           >
-                             <XCircle className="h-4 w-4 mr-1" />
-                             Cancelar
-                           </Button>
-                         )}
+                     <div className="flex flex-col items-end gap-3 min-w-fit">
+                       {/* Botões de Ação - Organizados por Prioridade */}
+                       
+                       {/* Ações Primárias (Atendentes/Admins) */}
+                       {(canConfirmPresence(booking) || canMarkNoShow(booking)) && (
+                         <div className="flex flex-col gap-2 w-full">
+                           {canConfirmPresence(booking) && (
+                             <Button
+                               size="sm"
+                               variant="default"
+                               onClick={() => handleConfirmPresence(booking)}
+                               className="bg-green-600 hover:bg-green-700 text-white w-full"
+                             >
+                               <UserCheck className="h-4 w-4 mr-2" />
+                               Confirmar Presença
+                             </Button>
+                           )}
 
-                         {canRescheduleBooking(booking) && (
-                           <Button
-                             size="sm"
-                             variant="outline"
-                             onClick={() => handleRescheduleBooking(booking)}
-                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                           >
-                             <CalendarDays className="h-4 w-4 mr-1" />
-                             Reagendar
-                           </Button>
-                         )}
+                           {canMarkNoShow(booking) && (
+                             <Button
+                               size="sm"
+                               variant="destructive"
+                               onClick={() => handleMarkNoShow(booking)}
+                               className="bg-red-600 hover:bg-red-700 text-white w-full"
+                             >
+                               <XCircle className="h-4 w-4 mr-2" />
+                               Marcar Falta
+                             </Button>
+                           )}
+                         </div>
+                       )}
 
-                       </div>
+                       {/* Ações Secundárias (Todos os Usuários) */}
+                       {(canCancelBooking(booking) || canRescheduleBooking(booking)) && (
+                         <div className="flex gap-2">
+                           {canCancelBooking(booking) && (
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handleCancelBooking(booking)}
+                               className="text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50"
+                             >
+                               <XCircle className="h-4 w-4 mr-1" />
+                               Cancelar
+                             </Button>
+                           )}
 
-                       {canConfirmPresence(booking) && (
-                         <Button
-                           size="sm"
-                           variant="default"
-                           onClick={() => handleConfirmPresence(booking)}
-                           className="bg-green-600 hover:bg-green-700 text-white"
-                         >
-                           <UserCheck className="h-4 w-4 mr-1" />
-                           Confirmar Presença
-                         </Button>
+                           {canRescheduleBooking(booking) && (
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handleRescheduleBooking(booking)}
+                               className="text-blue-600 border-blue-200 hover:text-blue-700 hover:bg-blue-50"
+                             >
+                               <CalendarDays className="h-4 w-4 mr-1" />
+                               Reagendar
+                             </Button>
+                           )}
+                         </div>
                        )}
                      </div>
                    </div>
@@ -521,12 +589,23 @@ export const BookingListPage: React.FC = () => {
       <ConfirmDialog
         isOpen={showAttendanceDialog}
         onClose={() => setShowAttendanceDialog(false)}
-        onConfirm={handleAttendanceConfirm}
         title="Confirmar Presença"
-        message="Confirmar que o cliente compareceu à sessão?"
-        confirmText="Sim, Confirmar"
+        message="Tem certeza que deseja confirmar a presença deste cliente?"
+        onConfirm={handleAttendanceConfirm}
+        confirmText="Confirmar Presença"
         cancelText="Cancelar"
-        variant="default"
+      />
+
+      {/* Diálogo de Confirmação de Falta */}
+      <ConfirmDialog
+        isOpen={showNoShowDialog}
+        onClose={() => setShowNoShowDialog(false)}
+        title="Marcar Falta"
+        message="Tem certeza que deseja marcar este cliente como falta?"
+        onConfirm={handleNoShowConfirm}
+        confirmText="Marcar Falta"
+        cancelText="Cancelar"
+        variant="destructive"
       />
 
     </div>

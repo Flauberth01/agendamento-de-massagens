@@ -202,6 +202,8 @@ func TestUser_Validation(t *testing.T) {
 	assert.NotEmpty(t, validUser.Phone)
 	assert.NotEmpty(t, validUser.Password)
 	assert.NotEmpty(t, validUser.Role)
+	assert.NotEmpty(t, validUser.RequestedRole)
+	assert.NotEmpty(t, validUser.Status)
 	assert.NotEmpty(t, validUser.Gender)
 	assert.NotZero(t, validUser.CreatedAt)
 	assert.NotZero(t, validUser.UpdatedAt)

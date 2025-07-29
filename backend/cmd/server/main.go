@@ -204,7 +204,7 @@ func main() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Inicializar scheduler para lembretes
-	schedulerInstance := scheduler.NewScheduler(notificationUseCase)
+	schedulerInstance := scheduler.NewScheduler(notificationUseCase, bookingUseCase)
 	schedulerInstance.Start()
 
 	// Canal para capturar sinais de interrupção

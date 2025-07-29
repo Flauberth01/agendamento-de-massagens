@@ -163,7 +163,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/bookings/reschedule/:id" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['atendente', 'admin']}>
                 <DashboardLayout>
                   <BookingReschedulePage />
                 </DashboardLayout>

@@ -64,6 +64,12 @@ export const bookingService = {
     return response.data
   },
 
+  // Marcar como falta (atendente)
+  async markAsNoShow(id: number, markedBy: number): Promise<Booking> {
+    const response = await api.post(`/api/bookings/${id}/no-show`, { marked_by: markedBy })
+    return response.data
+  },
+
   // Buscar disponibilidade de cadeiras
   async getChairAvailability(params: {
     chairId: number
@@ -175,7 +181,7 @@ export const bookingService = {
     const response = await api.get(`/api/bookings/reschedule-options/${bookingId}`, {
       params: { date }
     })
-    return response.data
+    return response.data.data
   },
 
   // Reagendar apenas data e horário (novo endpoint)

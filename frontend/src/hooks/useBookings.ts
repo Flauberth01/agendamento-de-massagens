@@ -168,6 +168,24 @@ export const useBookings = () => {
     })
   }
 
+  // Marcar como falta (atendente)
+  const useMarkAsNoShow = () => {
+    return useMutation({
+      mutationFn: ({ id, markedBy }: { id: number; markedBy: number }) =>
+        bookingService.markAsNoShow(id, markedBy),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['user-bookings'] })
+        queryClient.invalidateQueries({ queryKey: ['all-bookings'] })
+        queryClient.invalidateQueries({ queryKey: ['today-bookings'] })
+        queryClient.invalidateQueries({ queryKey: ['booking-stats'] })
+        toast.success('Falta marcada com sucesso!')
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao marcar falta')
+      },
+    })
+  }
+
   return {
     useUserBookings,
     useAllBookings,
@@ -180,5 +198,6 @@ export const useBookings = () => {
     useCancelBooking,
     useRescheduleBooking,
     useMarkAttendance,
+    useMarkAsNoShow,
   }
 } 
