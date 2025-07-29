@@ -658,6 +658,7 @@ docker-compose logs -f
 ## 📚 Documentação Adicional
 
 - **[TUTORIAL_PARA_RODAR.md](TUTORIAL_PARA_RODAR.md)** - Tutorial detalhado para executar o projeto
+- **[GUIA_DE_USO.md](GUIA_DE_USO.md)** - Guia completo de uso para Clientes, Atendentes e Administradores
 - **[backend/API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md)** - Documentação completa da API
 - **[backend/DATABASE_MODELING.md](backend/DATABASE_MODELING.md)** - Modelagem do banco de dados
 - **[frontend/FRONTEND_DOCUMENTATION.md](frontend/FRONTEND_DOCUMENTATION.md)** - Documentação do frontend
