@@ -227,52 +227,7 @@ func (uc *BookingUseCase) CancelBooking(bookingID, cancelledBy uint, reason stri
 	return nil
 }
 
-// ConfirmBooking confirma um agendamento
-func (uc *BookingUseCase) ConfirmBooking(bookingID, confirmedBy uint) error {
-	booking, err := uc.bookingRepo.GetByID(bookingID)
-	if err != nil {
-		return fmt.Errorf("agendamento não encontrado: %w", err)
-	}
-
-	if !booking.IsActive() {
-		return errors.New("agendamento não está ativo")
-	}
-
-	if err := uc.bookingRepo.Confirm(bookingID, confirmedBy); err != nil {
-		return fmt.Errorf("erro ao confirmar agendamento: %w", err)
-	}
-
-	// Log de auditoria
-	auditLog := entities.NewAuditLog(&confirmedBy, entities.ActionConfirm, entities.ResourceBooking, &bookingID)
-	auditLog.SetDescription("Agendamento confirmado")
-	uc.auditRepo.Create(auditLog)
-
-	// Enviar email de confirmação (não bloquear se falhar)
-	go func() {
-		// Buscar dados completos para o email
-		user, err := uc.userRepo.GetByID(booking.UserID)
-		if err != nil {
-			return
-		}
-
-		chair, err := uc.chairRepo.GetByID(booking.ChairID)
-		if err != nil {
-			return
-		}
-
-		booking.User = *user
-		booking.Chair = *chair
-
-		if err := uc.emailRepo.SendBookingConfirmation(user, booking); err != nil {
-			// Log do erro mas não falha a operação
-			fmt.Printf("Erro ao enviar email de confirmação: %v\n", err)
-		}
-	}()
-
-	return nil
-}
-
-// CompleteBooking marca um agendamento como concluído
+// CompleteBooking marca um agendamento como realizado
 func (uc *BookingUseCase) CompleteBooking(bookingID, completedBy uint) error {
 	booking, err := uc.bookingRepo.GetByID(bookingID)
 	if err != nil {
@@ -284,12 +239,12 @@ func (uc *BookingUseCase) CompleteBooking(bookingID, completedBy uint) error {
 	}
 
 	if err := uc.bookingRepo.Complete(bookingID, completedBy); err != nil {
-		return fmt.Errorf("erro ao concluir agendamento: %w", err)
+		return fmt.Errorf("erro ao marcar agendamento como realizado: %w", err)
 	}
 
 	// Log de auditoria
 	auditLog := entities.NewAuditLog(&completedBy, entities.ActionUpdate, entities.ResourceBooking, &bookingID)
-	auditLog.SetDescription("Agendamento concluído")
+	auditLog.SetDescription("Agendamento marcado como realizado")
 	uc.auditRepo.Create(auditLog)
 
 	return nil
@@ -350,7 +305,7 @@ func (uc *BookingUseCase) GetBookingStats() (map[string]int64, error) {
 	stats["total"] = total
 
 	// Agendamentos por status
-	statuses := []string{"agendado", "confirmado", "concluido", "cancelado", "falta"}
+	statuses := []string{"agendado", "confirmado", "realizado", "cancelado", "falta"}
 	for _, status := range statuses {
 		count, err := uc.bookingRepo.CountByStatus(status)
 		if err != nil {

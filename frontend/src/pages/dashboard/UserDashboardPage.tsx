@@ -48,7 +48,7 @@ export const UserDashboardPage: React.FC = () => {
   // Calcular estatísticas
   const stats: UserStats = {
     totalBookings: bookings.length,
-    completedBookings: bookings.filter(b => b.status === 'concluido').length,
+    completedBookings: bookings.filter(b => b.status === 'realizado').length,
     upcomingBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'confirmado').length,
     activeBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'confirmado').length
   }
@@ -60,7 +60,7 @@ export const UserDashboardPage: React.FC = () => {
 
   // Histórico recente (últimos 3)
   const recentBookings = bookings
-    .filter(b => b.status === 'concluido' || b.status === 'cancelado')
+    .filter(b => b.status === 'realizado' || b.status === 'cancelado')
     .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
     .slice(0, 3)
 
@@ -76,8 +76,8 @@ export const UserDashboardPage: React.FC = () => {
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
       case 'confirmado':
         return <Badge variant="default" className="bg-green-100 text-green-800">Confirmado</Badge>
-      case 'concluido':
-        return <Badge variant="default" className="bg-green-500 text-white">Concluído</Badge>
+      case 'realizado':
+        return <Badge variant="default" className="bg-green-500 text-white">Realizado</Badge>
       case 'falta':
         return <Badge variant="destructive">Falta</Badge>
       case 'cancelado':

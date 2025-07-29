@@ -215,44 +215,6 @@ func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Agendamento cancelado com sucesso"})
 }
 
-// ConfirmBooking confirma um agendamento
-// @Summary Confirmar agendamento
-// @Description Confirma um agendamento pendente (apenas para atendentes/admins)
-// @Tags bookings
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Param id path int true "ID do agendamento"
-// @Success 200 {object} map[string]string "Agendamento confirmado com sucesso"
-// @Failure 400 {object} map[string]string "Dados inválidos"
-// @Failure 401 {object} map[string]string "Token inválido"
-// @Failure 403 {object} map[string]string "Sem permissão"
-// @Failure 404 {object} map[string]string "Agendamento não encontrado"
-// @Router /bookings/{id}/confirm [patch]
-func (h *BookingHandler) ConfirmBooking(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
-		return
-	}
-
-	// Obter userID do contexto de autenticação
-	userID, exists := middleware.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
-		return
-	}
-
-	err = h.bookingUseCase.ConfirmBooking(uint(id), userID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Agendamento confirmado com sucesso"})
-}
-
 // CompleteBooking completa um agendamento
 func (h *BookingHandler) CompleteBooking(c *gin.Context) {
 	idParam := c.Param("id")

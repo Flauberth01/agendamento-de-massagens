@@ -48,10 +48,11 @@ func SetupBookingRoutes(router *gin.RouterGroup, bookingHandler *handlers.Bookin
 			attendantOrAdmin.GET("/chair/:chair_id/date/:date", bookingHandler.GetChairBookingsByDate)
 
 			// Operações de controle de sessão
-			attendantOrAdmin.POST("/:id/confirm", bookingHandler.ConfirmBooking)
+			// Remover rota de confirmação de agendamento
+			// attendantOrAdmin.POST("/:id/confirm", bookingHandler.ConfirmBooking)
 			attendantOrAdmin.POST("/:id/complete", bookingHandler.CompleteBooking)
 			attendantOrAdmin.POST("/:id/no-show", bookingHandler.MarkAsNoShow)
-			attendantOrAdmin.POST("/:id/attendance", bookingHandler.MarkAttendance)
+			attendantOrAdmin.POST("/:id/attendance", bookingHandler.MarkAttendance) // Marcar presença - apenas atendentes e admins
 		}
 
 		// Rotas restritas a admin (operações administrativas)

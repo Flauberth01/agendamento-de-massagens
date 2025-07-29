@@ -115,7 +115,7 @@ export function BookingList({
       confirmado: { variant: 'default' as const, label: 'Confirmado' },
       cancelado: { variant: 'destructive' as const, label: 'Cancelado' },
       pendente: { variant: 'secondary' as const, label: 'Pendente' },
-      concluido: { variant: 'outline' as const, label: 'Concluído' }
+      realizado: { variant: 'outline' as const, label: 'Realizado' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente;
@@ -188,7 +188,7 @@ export function BookingList({
               <SelectItem value="pendente">Pendente</SelectItem>
               <SelectItem value="confirmado">Confirmado</SelectItem>
               <SelectItem value="cancelado">Cancelado</SelectItem>
-              <SelectItem value="concluido">Concluído</SelectItem>
+              <SelectItem value="realizado">Realizado</SelectItem>
             </SelectContent>
           </Select>
 
@@ -315,9 +315,9 @@ export function BookingList({
             </div>
             <div className="text-center">
               <div className="font-semibold">
-                {filteredBookings.filter(b => b.status === 'concluido').length}
+                {filteredBookings.filter(b => b.status === 'realizado').length}
               </div>
-              <div className="text-muted-foreground">Concluídos</div>
+              <div className="text-muted-foreground">Realizados</div>
             </div>
           </div>
         </div>

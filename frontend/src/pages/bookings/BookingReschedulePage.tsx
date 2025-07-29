@@ -265,7 +265,7 @@ export const BookingReschedulePage: React.FC = () => {
               <p className="text-lg font-medium">
                 {bookingData.status === 'agendado' ? 'Agendado' : 
                  bookingData.status === 'confirmado' ? 'Confirmado' : 
-                 bookingData.status === 'concluido' ? 'Concluído' : 
+                 bookingData.status === 'realizado' ? 'Realizado' : 
                  bookingData.status === 'cancelado' ? 'Cancelado' : 
                  bookingData.status === 'falta' ? 'Falta' : bookingData.status}
               </p>

@@ -25,7 +25,7 @@ interface TodaySession {
   }
   start_time: string
   end_time: string
-  status: 'agendado' | 'confirmado' | 'cancelado' | 'concluido' | 'falta'
+  status: 'agendado' | 'confirmado' | 'cancelado' | 'realizado' | 'falta'
 }
 
 interface PendingUser {
@@ -104,8 +104,8 @@ export const AttendantDashboardPage: React.FC = () => {
         return <Badge variant="secondary">Agendado</Badge>
       case 'confirmado':
         return <Badge variant="default">Confirmado</Badge>
-      case 'concluido':
-        return <Badge variant="default" className="bg-green-500">Concluído</Badge>
+      case 'realizado':
+        return <Badge variant="default" className="bg-green-500">Realizado</Badge>
       case 'falta':
         return <Badge variant="destructive">Falta</Badge>
       case 'cancelado':
@@ -229,21 +229,22 @@ export const AttendantDashboardPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(session.status)}
-                      {session.status === 'agendado' && (
+                      {/* Remover o botão "Confirmar" que confirma agendamentos */}
+                      {/* {session.status === 'agendado' && (
                         <Button
                           size="sm"
                           onClick={() => handleConfirmSession(session.id)}
                         >
                           Confirmar
                         </Button>
-                      )}
+                      )} */}
                       {session.status === 'confirmado' && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleMarkAttendance(session.id)}
                         >
-                          Marcar Presença
+                          Confirmar Presença
                         </Button>
                       )}
                     </div>

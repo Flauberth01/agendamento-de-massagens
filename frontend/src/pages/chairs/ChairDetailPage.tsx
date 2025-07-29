@@ -47,7 +47,7 @@ export default function ChairDetailPage() {
       confirmado: { label: 'Confirmado', className: 'bg-green-100 text-green-800' },
       pendente: { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
       cancelado: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
-      concluido: { label: 'Concluído', className: 'bg-purple-100 text-purple-800' },
+      realizado: { label: 'Realizado', className: 'bg-purple-100 text-purple-800' },
       falta: { label: 'Falta', className: 'bg-orange-100 text-orange-800' }
     };
 
@@ -142,7 +142,7 @@ export default function ChairDetailPage() {
   const confirmedBookings = bookings.filter(b => b.status === 'confirmado').length;
   const pendingBookings = bookings.filter(b => b.status === 'agendado').length;
   const cancelledBookings = bookings.filter(b => b.status === 'cancelado').length;
-  const completedBookings = bookings.filter(b => b.status === 'concluido').length;
+  const completedBookings = bookings.filter(b => b.status === 'realizado').length;
 
   return (
     <div className="container mx-auto p-6 space-y-6">

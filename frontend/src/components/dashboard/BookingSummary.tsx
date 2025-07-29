@@ -27,7 +27,7 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
     )
     
     const completed = bookings.filter(booking => 
-      booking.status === 'concluido'
+      booking.status === 'realizado'
     )
     
     const cancelled = bookings.filter(booking => 

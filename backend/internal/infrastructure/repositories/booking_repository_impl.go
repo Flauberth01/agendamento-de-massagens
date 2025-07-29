@@ -317,14 +317,9 @@ func (r *bookingRepositoryImpl) Cancel(id uint, cancelledBy uint, reason string)
 	}).Error
 }
 
-// Confirm confirma um agendamento
-func (r *bookingRepositoryImpl) Confirm(id uint, confirmedBy uint) error {
-	return r.db.Model(&entities.Booking{}).Where("id = ?", id).Update("status", "confirmado").Error
-}
-
-// Complete marca um agendamento como concluído
+// Complete marca um agendamento como realizado
 func (r *bookingRepositoryImpl) Complete(id uint, completedBy uint) error {
-	return r.db.Model(&entities.Booking{}).Where("id = ?", id).Update("status", "concluido").Error
+	return r.db.Model(&entities.Booking{}).Where("id = ?", id).Update("status", "realizado").Error
 }
 
 // MarkAsNoShow marca um agendamento como falta
@@ -382,11 +377,11 @@ func (r *bookingRepositoryImpl) GetBookingsByPeriod(startDate, endDate time.Time
 
 // GetOccupancyRate calcula taxa de ocupação de uma cadeira
 func (r *bookingRepositoryImpl) GetOccupancyRate(chairID uint, startDate, endDate time.Time) (float64, error) {
-	// Contar agendamentos concluídos no período
+	// Contar agendamentos realizados no período
 	var completedCount int64
 	err := r.db.Model(&entities.Booking{}).
 		Where("chair_id = ? AND status = ? AND start_time >= ? AND start_time <= ?",
-			chairID, "concluido", startDate, endDate).Count(&completedCount).Error
+			chairID, "realizado", startDate, endDate).Count(&completedCount).Error
 	if err != nil {
 		return 0, err
 	}

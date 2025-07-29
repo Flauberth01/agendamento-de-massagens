@@ -29,7 +29,7 @@ import { ptBR } from 'date-fns/locale'
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
   const { isAttendant, user, isAuthenticated } = useAuth()
-  const { useUserBookings, useCancelBooking, useMarkAttendance, useConfirmBooking } = useBookings()
+  const { useUserBookings, useCancelBooking, useMarkAttendance } = useBookings()
 
   // Verificar se usuário está autenticado
   if (!isAuthenticated) {
@@ -44,9 +44,7 @@ export const BookingListPage: React.FC = () => {
   const [chairFilter, setChairFilter] = useState<string>('')
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showAttendanceDialog, setShowAttendanceDialog] = useState(false)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
-  const [confirmedBookingId, setConfirmedBookingId] = useState<number | null>(null)
 
   // Buscar agendamentos do usuário (sem filtro de status para buscar todos)
   const { data: bookingsResponse, isLoading, error } = useUserBookings()
@@ -54,14 +52,18 @@ export const BookingListPage: React.FC = () => {
   // Mutações
   const cancelBookingMutation = useCancelBooking()
   const markAttendanceMutation = useMarkAttendance()
-  const confirmBookingMutation = useConfirmBooking()
 
   const bookings = bookingsResponse?.data || []
-  
 
-  
+  // Ordenar agendamentos por data de criação (mais recentes primeiro)
+  const sortedBookings = [...bookings].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime()
+    const dateB = new Date(b.created_at).getTime()
+    return dateB - dateA // Ordem decrescente (mais recente primeiro)
+  })
+
   // Aplicar filtros
-  const filteredBookings = bookings.filter(booking => {
+  const filteredBookings = sortedBookings.filter(booking => {
     // Filtro por termo de busca
     if (searchTerm && 
         !booking.chair?.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -98,8 +100,8 @@ export const BookingListPage: React.FC = () => {
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Agendado</Badge>
       case 'confirmado':
         return <Badge variant="default" className="bg-green-500 text-white font-medium">✓ Confirmado</Badge>
-      case 'concluido':
-        return <Badge variant="default" className="bg-green-500 text-white">Concluído</Badge>
+      case 'realizado':
+        return <Badge variant="default" className="bg-green-500 text-white">Realizado</Badge>
       case 'falta':
         return <Badge variant="destructive">Falta</Badge>
       case 'cancelado':
@@ -124,7 +126,12 @@ export const BookingListPage: React.FC = () => {
     const bookingTime = new Date(booking.start_time)
     const threeHoursBefore = new Date(bookingTime.getTime() - 3 * 60 * 60 * 1000)
     
-    // Atendentes e admins podem cancelar agendamentos
+    // Não pode cancelar se já foi marcada presença (realizado ou falta)
+    if (booking.status === 'realizado' || booking.status === 'falta') {
+      return false
+    }
+    
+    // Atendentes e admins podem cancelar agendamentos ativos
     // Usuários regulares só podem cancelar até 3 horas antes
     if (isAttendant || user?.role === 'admin') {
       return booking.status === 'agendado' || booking.status === 'confirmado'
@@ -137,6 +144,11 @@ export const BookingListPage: React.FC = () => {
     const now = new Date()
     const bookingTime = new Date(booking.start_time)
     
+    // Não pode reagendar se já foi marcada presença (realizado ou falta)
+    if (booking.status === 'realizado' || booking.status === 'falta') {
+      return false
+    }
+    
     // Pode reagendar se o agendamento está agendado e ainda não aconteceu
     // ou se aconteceu há menos de 2 horas (para permitir reagendamento de sessões recentes)
     const twoHoursAfter = new Date(bookingTime.getTime() + 2 * 60 * 60 * 1000)
@@ -145,18 +157,22 @@ export const BookingListPage: React.FC = () => {
   }
 
   const canConfirmPresence = (booking: Booking) => {
-    const now = new Date()
-    const bookingTime = new Date(booking.start_time)
+    // Apenas atendentes e admins podem confirmar presença
+    if (!(isAttendant || user?.role === 'admin')) {
+      return false
+    }
     
-    // Pode confirmar presença se o agendamento está confirmado e a sessão já começou
-    // (permite marcar presença mesmo após o horário da sessão)
-    return booking.status === 'confirmado' && now >= bookingTime
-  }
-
-  const canConfirmBooking = (booking: Booking) => {
-    // Atendentes e admins podem confirmar agendamentos
-    // E apenas agendamentos com status 'agendado' podem ser confirmados
-    return (isAttendant || user?.role === 'admin') && booking.status === 'agendado'
+    // Para agendamentos confirmados: pode confirmar presença mesmo para sessões futuras
+    if (booking.status === 'confirmado') {
+      return true
+    }
+    
+    // Para agendamentos agendados: atendentes e admins podem confirmar presença a qualquer momento
+    if (booking.status === 'agendado') {
+      return true
+    }
+    
+    return false
   }
 
   const isUpcoming = (booking: Booking) => {
@@ -180,15 +196,9 @@ export const BookingListPage: React.FC = () => {
     setShowAttendanceDialog(true)
   }
 
-  const handleConfirmBooking = (booking: Booking) => {
-    setSelectedBooking(booking)
-    setShowConfirmDialog(true)
-  }
-
   const handleNewBooking = () => {
     navigate('/bookings/create')
   }
-
 
   const handleCancelConfirm = async () => {
     if (!selectedBooking) return
@@ -206,37 +216,18 @@ export const BookingListPage: React.FC = () => {
   }
 
   const handleAttendanceConfirm = async () => {
-    if (!selectedBooking) return
+    if (!selectedBooking || !user) return
     
     try {
       await markAttendanceMutation.mutateAsync({ 
         id: selectedBooking.id, 
-        attended: true 
+        attended: true,
+        markedBy: user.id
       })
       setShowAttendanceDialog(false)
       setSelectedBooking(null)
     } catch (error) {
       console.error('Erro ao confirmar presença:', error)
-    }
-  }
-
-  const handleConfirmBookingConfirm = async () => {
-    if (!selectedBooking) return
-    
-    try {
-      await confirmBookingMutation.mutateAsync(selectedBooking.id)
-      setShowConfirmDialog(false)
-      setSelectedBooking(null)
-      
-      // Adicionar efeito visual de confirmação
-      setConfirmedBookingId(selectedBooking.id)
-      
-      // Remover o efeito após 3 segundos
-      setTimeout(() => {
-        setConfirmedBookingId(null)
-      }, 3000)
-    } catch (error) {
-      console.error('Erro ao confirmar agendamento:', error)
     }
   }
 
@@ -278,9 +269,10 @@ export const BookingListPage: React.FC = () => {
               <h3 className="text-sm font-medium text-green-800 mb-1">ℹ️ Status dos Agendamentos:</h3>
               <ul className="text-xs text-green-700 space-y-1">
                 <li>• <strong>Agendado:</strong> Aguardando confirmação do atendente</li>
-                <li>• <strong>Confirmado:</strong> Sessão confirmada - você receberá um email</li>
-                <li>• <strong>Concluído:</strong> Sessão realizada com sucesso</li>
+                <li>• <strong>Confirmado:</strong> Sessão confirmada - aguardando sua presença</li>
+                <li>• <strong>Realizado:</strong> Sessão realizada com sucesso</li>
                 <li>• <strong>Cancelado:</strong> Agendamento cancelado</li>
+                <li>• <strong>Falta:</strong> Não compareceu à sessão</li>
               </ul>
             </div>
           )}
@@ -293,8 +285,8 @@ export const BookingListPage: React.FC = () => {
         )}
       </div>
 
-      {/* Notificação de Confirmação */}
-      {confirmedBookingId && (
+      {/* Notificação de Confirmação - REMOVER pois não vamos mais confirmar agendamentos */}
+      {/* {confirmedBookingId && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
@@ -314,7 +306,7 @@ export const BookingListPage: React.FC = () => {
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Filtros */}
       <Card>
@@ -352,7 +344,7 @@ export const BookingListPage: React.FC = () => {
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="agendado">Agendado</SelectItem>
                   <SelectItem value="confirmado">Confirmado</SelectItem>
-                  <SelectItem value="concluido">Concluído</SelectItem>
+                  <SelectItem value="realizado">Realizado</SelectItem>
                   <SelectItem value="cancelado">Cancelado</SelectItem>
                   <SelectItem value="falta">Falta</SelectItem>
                 </SelectContent>
@@ -417,12 +409,8 @@ export const BookingListPage: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {filteredBookings.map((booking) => (
-                                 <div key={booking.id} className={`border rounded-lg p-4 hover:bg-gray-50 transition-colors ${
-                                   confirmedBookingId === booking.id 
-                                     ? 'ring-2 ring-green-500 bg-green-50' 
-                                     : ''
-                                 }`}>
-                   <div className="flex items-start gap-4">
+                <div key={booking.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start gap-4">
                      <div className="flex-1">
                        <div className="flex items-center gap-3 mb-3">
                          <Building className="h-5 w-5 text-blue-500" />
@@ -504,17 +492,6 @@ export const BookingListPage: React.FC = () => {
                            </Button>
                          )}
 
-                         {canConfirmBooking(booking) && (
-                           <Button
-                             size="sm"
-                             variant="outline"
-                             onClick={() => handleConfirmBooking(booking)}
-                             className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                           >
-                             <CheckCircle className="h-4 w-4 mr-1" />
-                             Confirmar
-                           </Button>
-                         )}
                        </div>
 
                        {canConfirmPresence(booking) && (
@@ -561,17 +538,6 @@ export const BookingListPage: React.FC = () => {
         variant="default"
       />
 
-      {/* Diálogo de Confirmação de Agendamento */}
-      <ConfirmDialog
-        isOpen={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
-        onConfirm={handleConfirmBookingConfirm}
-        title="Confirmar Agendamento"
-        message="Tem certeza que deseja confirmar este agendamento? Esta ação mudará o status para 'confirmado'."
-        confirmText="Sim, Confirmar"
-        cancelText="Cancelar"
-        variant="default"
-      />
     </div>
   )
 } 

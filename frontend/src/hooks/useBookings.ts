@@ -150,28 +150,13 @@ export const useBookings = () => {
     })
   }
 
-  // Confirmar agendamento (atendente)
-  const useConfirmBooking = () => {
-    return useMutation({
-      mutationFn: (id: number) => bookingService.confirmBooking(id),
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['all-bookings'] })
-        queryClient.invalidateQueries({ queryKey: ['today-bookings'] })
-        queryClient.invalidateQueries({ queryKey: ['booking-stats'] })
-        toast.success('Agendamento confirmado com sucesso!')
-      },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao confirmar agendamento')
-      },
-    })
-  }
-
   // Marcar presença (atendente)
   const useMarkAttendance = () => {
     return useMutation({
-      mutationFn: ({ id, attended }: { id: number; attended: boolean }) =>
-        bookingService.markAttendance(id, attended),
+      mutationFn: ({ id, attended, markedBy }: { id: number; attended: boolean; markedBy: number }) =>
+        bookingService.markAttendance(id, attended, markedBy),
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['user-bookings'] })
         queryClient.invalidateQueries({ queryKey: ['all-bookings'] })
         queryClient.invalidateQueries({ queryKey: ['today-bookings'] })
         queryClient.invalidateQueries({ queryKey: ['booking-stats'] })
@@ -194,7 +179,6 @@ export const useBookings = () => {
     useCreateBooking,
     useCancelBooking,
     useRescheduleBooking,
-    useConfirmBooking,
     useMarkAttendance,
   }
 } 

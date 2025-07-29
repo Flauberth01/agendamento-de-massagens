@@ -58,15 +58,9 @@ export const bookingService = {
     return response.data
   },
 
-  // Confirmar agendamento (atendente)
-  async confirmBooking(id: number): Promise<Booking> {
-    const response = await api.post(`/api/bookings/${id}/confirm`)
-    return response.data
-  },
-
   // Marcar presença (atendente)
-  async markAttendance(id: number, attended: boolean): Promise<Booking> {
-    const response = await api.patch(`/api/bookings/${id}/attendance`, { attended })
+  async markAttendance(id: number, attended: boolean, markedBy: number): Promise<Booking> {
+    const response = await api.post(`/api/bookings/${id}/attendance`, { attended, marked_by: markedBy })
     return response.data
   },
 
