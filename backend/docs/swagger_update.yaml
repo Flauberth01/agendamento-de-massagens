@@ -1,0 +1,350 @@
+# Atualizações necessárias para o Swagger
+
+## Endpoints faltantes identificados:
+
+### 1. Users
+- GET /users/check-cpf - Verificar CPF existente
+
+### 2. Bookings
+- GET /bookings/date/{date}/including-past - Agendamentos por data incluindo passados
+- GET /bookings/reschedule-options/{booking_id} - Opções de reagendamento
+- PUT /bookings/reschedule-datetime/{booking_id} - Reagendar data e horário
+
+### 3. Dashboard
+- GET /dashboard/operational - Dashboard operacional
+
+### 4. Availabilities
+- GET /availabilities/chair/{chair_id}/next-15-days - Próximos 15 dias disponíveis
+
+## DTOs faltantes:
+
+### Booking DTOs
+- RescheduleBookingRequest
+- RescheduleBookingResponse
+- GetRescheduleOptionsRequest
+- RescheduleOptionsResponse
+
+### User DTOs
+- CheckCPFRequest
+- CheckCPFResponse
+
+## Definições a adicionar:
+
+```yaml
+  dtos.RescheduleBookingRequest:
+    properties:
+      start_time:
+        type: string
+        format: date-time
+        description: Nova data e horário de início
+    required:
+    - start_time
+    type: object
+
+  dtos.RescheduleBookingResponse:
+    properties:
+      id:
+        type: integer
+      user_id:
+        type: integer
+      chair_id:
+        type: integer
+      start_time:
+        type: string
+        format: date-time
+      end_time:
+        type: string
+        format: date-time
+      status:
+        type: string
+      notes:
+        type: string
+      updated_at:
+        type: string
+        format: date-time
+    type: object
+
+  dtos.RescheduleOptionsResponse:
+    properties:
+      booking_id:
+        type: integer
+      current_booking:
+        $ref: '#/definitions/dtos.BookingResponse'
+      available_slots:
+        items:
+          type: string
+        type: array
+      date:
+        type: string
+      chair_id:
+        type: integer
+      chair_name:
+        type: string
+    type: object
+
+  dtos.CheckCPFResponse:
+    properties:
+      exists:
+        type: boolean
+        description: Indica se o CPF já está cadastrado
+    type: object
+```
+
+## Paths a adicionar:
+
+```yaml
+  /users/check-cpf:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se um CPF já está cadastrado no sistema
+      parameters:
+      - description: CPF a verificar
+        in: query
+        name: cpf
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: CPF verificado
+          schema:
+            $ref: '#/definitions/dtos.CheckCPFResponse'
+        "400":
+          description: CPF inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verificar CPF existente
+      tags:
+      - users
+
+  /bookings/date/{date}/including-past:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos de uma data específica incluindo passados (apenas atendentes e admins)
+      parameters:
+      - description: 'Data para buscar agendamentos (formato: YYYY-MM-DD)'
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos da data incluindo passados
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Formato de data inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Agendamentos por data incluindo passados
+      tags:
+      - bookings
+
+  /bookings/reschedule-options/{booking_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna opções disponíveis para reagendar um agendamento
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: booking_id
+        required: true
+        type: integer
+      - description: Data para buscar disponibilidades (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Opções de reagendamento
+          schema:
+            $ref: '#/definitions/dtos.RescheduleOptionsResponse'
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Opções de reagendamento
+      tags:
+      - bookings
+
+  /bookings/reschedule-datetime/{booking_id}:
+    put:
+      consumes:
+      - application/json
+      description: Reagenda apenas data e horário de um agendamento existente
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: booking_id
+        required: true
+        type: integer
+      - description: Dados para reagendamento
+        in: body
+        name: reschedule
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RescheduleBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Agendamento reagendado com sucesso
+          schema:
+            $ref: '#/definitions/dtos.RescheduleBookingResponse'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Reagendar data e horário
+      tags:
+      - bookings
+
+  /dashboard/operational:
+    get:
+      consumes:
+      - application/json
+      description: Retorna dados do dashboard operacional para atendentes e admins
+      parameters:
+      - default: hoje
+        description: 'Data para filtrar agendamentos (formato: YYYY-MM-DD)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dados do dashboard operacional
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado - apenas atendentes e admins
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Dashboard operacional
+      tags:
+      - dashboard
+
+  /availabilities/chair/{chair_id}/next-15-days:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os horários disponíveis para agendamento em uma cadeira específica para os próximos 15 dias
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: chair_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Horários disponíveis por data
+          schema:
+            additionalProperties:
+              items:
+                type: string
+              type: array
+            type: object
+        "400":
+          description: ID da cadeira inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Próximos 15 dias disponíveis
+      tags:
+      - availabilities
+```
