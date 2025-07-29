@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: agendamento_db
       POSTGRES_USER: the_user
-      POSTGRES_PASSWORD: agendamento_password
+      POSTGRES_PASSWORD: massagem2024@secure
     ports:
       - "5432:5432"
     volumes:
@@ -30,7 +30,7 @@ services:
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=the_user
-      - DB_PASSWORD=agendamento_password
+      - DB_PASSWORD=massagem2024@secure
       - DB_NAME=agendamento_db
       - DB_SSLMODE=disable
       - DB_TIMEZONE=America/Sao_Paulo

@@ -96,6 +96,12 @@ export const LoginPage: React.FC = () => {
                 <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <span className="text-sm text-red-700 font-medium">{error}</span>
+                  {error.includes('CPF ou senha inválidos') && (
+                    <div className="mt-3 text-xs text-red-600 space-y-1">
+                      <p>• Verifique se o CPF está correto</p>
+                      <p>• Verifique se a senha está correta</p>
+                    </div>
+                  )}
                   {error.includes('não foi aprovado') && (
                     <div className="mt-3 text-xs text-red-600 space-y-1">
                       <p>• Seu cadastro está sendo analisado</p>
@@ -182,16 +188,6 @@ export const LoginPage: React.FC = () => {
                 )}
               </Button>
             </form>
-
-            {/* Credenciais de Teste */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-700 font-medium mb-2">Credenciais de teste:</p>
-              <div className="space-y-1 text-xs text-blue-600">
-                <p><span className="font-medium">Admin:</span> 12345678909 / 123456</p>
-                <p><span className="font-medium">Atendente:</span> 98765432100 / 123456</p>
-                <p><span className="font-medium">Cliente:</span> 11144477735 / 123456</p>
-              </div>
-            </div>
 
             {/* Link para Registro */}
             <div className="mt-6 text-center">

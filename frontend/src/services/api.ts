@@ -99,7 +99,19 @@ api.interceptors.response.use(
 export const handleApiError = (error: any): ApiError => {
   if (error.response) {
     // Erro da API com resposta
-    const errorMessage = error.response.data?.error || error.response.data?.message || 'Erro na requisição';
+    let errorMessage = error.response.data?.error || error.response.data?.message || 'Erro na requisição';
+    
+    // Tratar especificamente erros de autenticação
+    if (error.response.status === 401) {
+      if (errorMessage.includes('CPF ou senha inválidos')) {
+        errorMessage = 'CPF ou senha inválidos';
+      } else if (errorMessage.includes('não foi aprovado')) {
+        // Manter a mensagem original para usuários não aprovados
+      } else {
+        errorMessage = 'Credenciais inválidas. Verifique seu CPF e senha.';
+      }
+    }
+    
     return {
       message: errorMessage,
       error: error.response.data?.error,

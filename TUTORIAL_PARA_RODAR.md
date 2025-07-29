@@ -1,80 +1,76 @@
-# 🚀 Tutorial Completo para Rodar o Sistema de Agendamento
+# 🚀 Tutorial para Rodar o Sistema de Agendamento
 
-Este tutorial irá guiá-lo através de todas as etapas necessárias para executar o sistema de agendamento localmente.
+Este tutorial fornece instruções detalhadas para executar o sistema de agendamento localmente.
 
-## 📋 Pré-requisitos
+## 📋 Índice
 
-### 🔧 Ferramentas Necessárias
+- [🔧 Pré-requisitos](#-pré-requisitos)
+- [📦 Instalação Inicial](#-instalação-inicial)
+- [🐳 Execução com Docker](#-execução-com-docker)
+- [💻 Execução Local](#-execução-local)
+- [✅ Verificação do Sistema](#-verificação-do-sistema)
+- [🧪 Executando Testes](#-executando-testes)
+- [🔧 Troubleshooting](#-troubleshooting)
+- [🛠️ Comandos Úteis](#️-comandos-úteis)
+- [📈 Próximos Passos](#-próximos-passos)
 
-1. **Git** - Para clonar o repositório
-   ```bash
-   # Verificar se o Git está instalado
-   git --version
-   ```
+---
 
-2. **Go 1.23.0+** - Para o backend
-   ```bash
-   # Verificar versão do Go
-   go version
-   ```
+## 🔧 Pré-requisitos
 
-3. **Node.js 18+** - Para o frontend
-   ```bash
-   # Verificar versão do Node.js
-   node --version
-   npm --version
-   ```
+### **Software Necessário**
+- **Docker** (versão 20.10+) e **Docker Compose** (versão 2.0+)
+- **Git** (versão 2.30+)
+- **Node.js** (versão 18+) - para execução local do frontend
+- **Go** (versão 1.21+) - para execução local do backend
+- **PostgreSQL** (versão 15+) - para execução local do banco
 
-4. **PostgreSQL 14+** - Banco de dados
-   ```bash
-   # Verificar se PostgreSQL está instalado
-   psql --version
-   ```
+### **Recursos do Sistema**
+- **RAM**: Mínimo 4GB (recomendado 8GB)
+- **Espaço**: Mínimo 2GB livres
+- **CPU**: Processador dual-core ou superior
 
-5. **Docker e Docker Compose** (Opcional, mas recomendado)
-   ```bash
-   # Verificar se Docker está instalado
-   docker --version
-   docker-compose --version
-   ```
+### **Portas Necessárias**
+- **8080**: API Backend
+- **3000**: Frontend React
+- **5432**: PostgreSQL
 
-## 🏗️ Configuração Inicial
+---
 
-### 1. Clone do Repositório
+## 📦 Instalação Inicial
 
+### **1. Clone o Repositório**
 ```bash
-# Clone o repositório
-git clone <URL_DO_REPOSITORIO>
+git clone https://github.com/seu-usuario/agendamento.git
 cd agendamento
-
-# Verificar estrutura do projeto
-ls -la
 ```
 
-### 2. Verificação da Estrutura
-
-Você deve ver a seguinte estrutura:
-```
-agendamento/
-├── backend/
-├── frontend/
-├── docker-compose.yml
-└── README.md
-```
-
-## 🐳 Opção 1: Execução com Docker (Recomendado)
-
-### Passo 1: Configuração do Docker
-
+### **2. Verifique a Estrutura**
 ```bash
-# Verificar se o Docker está rodando
-docker ps
-
-# Se não estiver rodando, inicie o Docker Desktop
+# Estrutura esperada
+ls -la
+# Deve mostrar:
+# - backend/
+# - frontend/
+# - docker-compose.yml
+# - README.md
 ```
 
-### Passo 2: Execução Completa
+### **3. Verifique as Configurações**
+```bash
+# Verifique se o docker-compose.yml existe
+cat docker-compose.yml
 
+# Verifique se os arquivos de configuração existem
+ls backend/env.example
+ls frontend/package.json
+```
+
+---
+
+## 🐳 Execução com Docker (Recomendado)
+
+### **1. Iniciar o Sistema**
 ```bash
 # Na raiz do projeto
 docker-compose up -d
@@ -83,429 +79,371 @@ docker-compose up -d
 docker-compose ps
 ```
 
-### Passo 3: Verificação dos Serviços
-
-Após alguns minutos, você deve ter acesso a:
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080
-- **Swagger UI**: http://localhost:8080/swagger/index.html
-- **PostgreSQL**: localhost:5432
-
-### Passo 4: Logs e Debug
-
+### **2. Verificar Logs**
 ```bash
-# Ver logs do backend
-docker-compose logs backend
+# Logs gerais
+docker-compose logs
 
-# Ver logs do frontend
-docker-compose logs frontend
-
-# Ver logs do banco de dados
+# Logs específicos
+docker-compose logs api
 docker-compose logs postgres
-
-# Ver todos os logs em tempo real
-docker-compose logs -f
 ```
 
-### Passo 5: Parar os Serviços
-
+### **3. Verificar Status dos Containers**
 ```bash
-# Parar todos os serviços
+# Status dos containers
+docker-compose ps
+
+# Deve mostrar:
+# - agendamento-postgres (healthy)
+# - agendamento-api (running)
+```
+
+### **4. Acessar o Sistema**
+- **API**: http://localhost:8080
+- **Swagger**: http://localhost:8080/swagger/index.html
+- **Frontend**: http://localhost:3000 (se configurado)
+
+### **5. Parar o Sistema**
+```bash
+# Parar todos os containers
 docker-compose down
 
-# Parar e remover volumes (cuidado: apaga dados)
+# Parar e remover volumes (cuidado!)
 docker-compose down -v
 ```
 
-## 💻 Opção 2: Execução Local
+---
 
-### 🔧 Configuração do Backend
+## 💻 Execução Local
 
-#### Passo 1: Configuração do Banco de Dados
+### **1. Configurar PostgreSQL Local**
 
+#### **Instalar PostgreSQL**
 ```bash
-# Instalar PostgreSQL (se não tiver)
-# Ubuntu/Debian:
-sudo apt-get install postgresql postgresql-contrib
+# Ubuntu/Debian
+sudo apt update
+sudo apt install postgresql postgresql-contrib
 
-# macOS:
+# macOS (com Homebrew)
 brew install postgresql
-
-# Windows:
-# Baixar do site oficial: https://www.postgresql.org/download/windows/
-
-# Iniciar PostgreSQL
-# Ubuntu/Debian:
-sudo systemctl start postgresql
-
-# macOS:
 brew services start postgresql
 
-# Criar banco de dados
+# Windows
+# Baixe e instale do site oficial: https://www.postgresql.org/download/windows/
+```
+
+#### **Configurar Banco de Dados**
+```bash
+# Acessar PostgreSQL
 sudo -u postgres psql
-CREATE DATABASE agendamento;
-CREATE USER agendamento_user WITH PASSWORD 'sua_senha_aqui';
-GRANT ALL PRIVILEGES ON DATABASE agendamento TO agendamento_user;
+
+# Criar usuário e banco
+CREATE USER the_user WITH PASSWORD 'massagem2024@secure';
+CREATE DATABASE agendamento_db OWNER the_user;
+GRANT ALL PRIVILEGES ON DATABASE agendamento_db TO the_user;
 \q
 ```
 
-#### Passo 2: Configuração do Backend
+### **2. Configurar Backend**
 
+#### **Criar Arquivo .env**
 ```bash
-# Entrar na pasta do backend
 cd backend
-
-# Copiar arquivo de exemplo de variáveis de ambiente
-cp .env.example .env
-
-# Editar o arquivo .env com suas configurações
-nano .env
-# ou
-code .env
+cp env.example .env
 ```
 
-#### Passo 3: Configuração do Arquivo .env
-
-Edite o arquivo `.env` com as seguintes configurações:
-
-```env
-# Database Configuration
-DATABASE_URL=postgresql://agendamento_user:sua_senha_aqui@localhost:5432/agendamento
+#### **Editar .env**
+```bash
+# Configurações para desenvolvimento local
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=agendamento_user
-DB_PASSWORD=sua_senha_aqui
-DB_NAME=agendamento
-
-# JWT Configuration
-JWT_SECRET=sua_chave_super_secreta_aqui_muito_longa_e_complexa
-JWT_EXPIRATION=24h
-
-# Server Configuration
-PORT=8080
-ENV=development
-
-# Email Configuration (Opcional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=seu_email@gmail.com
-SMTP_PASS=sua_senha_de_app
+DB_USER=the_user
+DB_PASSWORD=massagem2024@secure
+DB_NAME=agendamento_db
 ```
 
-#### Passo 4: Instalação de Dependências do Backend
-
+#### **Instalar Dependências e Executar**
 ```bash
-# Baixar dependências do Go
+# Instalar dependências
 go mod download
 
-# Verificar se tudo está correto
-go mod verify
-```
-
-#### Passo 5: Execução do Backend
-
-```bash
 # Executar o servidor
 go run cmd/server/main.go
-
-# Ou compilar e executar
-go build -o bin/server cmd/server/main.go
-./bin/server
 ```
 
-**Verificação**: Acesse http://localhost:8080/swagger/index.html para ver a documentação da API.
+### **3. Configurar Frontend**
 
-### 🎨 Configuração do Frontend
-
-#### Passo 1: Instalação de Dependências
-
+#### **Instalar Dependências**
 ```bash
-# Voltar para a raiz do projeto
-cd ..
-
-# Entrar na pasta do frontend
 cd frontend
-
-# Instalar dependências
 npm install
-
-# Verificar se tudo foi instalado corretamente
-npm list --depth=0
 ```
 
-#### Passo 2: Configuração do Frontend
-
+#### **Configurar Variáveis de Ambiente**
 ```bash
-# Criar arquivo de variáveis de ambiente
-touch .env
-
-# Editar o arquivo .env
-nano .env
-# ou
-code .env
+# Criar .env se necessário
+echo "VITE_API_URL=http://localhost:8080" > .env
 ```
 
-#### Passo 3: Configuração do Arquivo .env do Frontend
-
-```env
-# API Configuration
-VITE_API_URL=http://localhost:8080
-VITE_APP_NAME=Sistema de Agendamento
-
-# Development Configuration
-VITE_DEV_MODE=true
-```
-
-#### Passo 4: Execução do Frontend
-
+#### **Executar Frontend**
 ```bash
-# Executar em modo de desenvolvimento
 npm run dev
-
-# Ou executar com preview
-npm run preview
 ```
 
-**Verificação**: Acesse http://localhost:3000 para ver a aplicação.
+---
 
-## 🔍 Verificação do Sistema
+## ✅ Verificação do Sistema
 
-### 1. Verificação do Backend
-
+### **1. Verificar API**
 ```bash
-# Testar se a API está respondendo
+# Testar endpoint de saúde
 curl http://localhost:8080/health
 
-# Verificar documentação Swagger
-curl http://localhost:8080/swagger/doc.json
+# Verificar Swagger
+curl http://localhost:8080/swagger/index.html
 ```
 
-### 2. Verificação do Frontend
-
-- Acesse http://localhost:3000
-
-### 3. Verificação da Integração
-
-- Tente fazer login com um dos usuários padrão
-- Verifique se consegue navegar pelas páginas
-- Teste algumas funcionalidades básicas
-
-## 👥 Usuários de Teste
-
-### Administrador
-- **CPF:** 12345678909
-- **Senha:** 123456
-- **Perfil:** Administrador do sistema
-
-### Atendente
-- **CPF:** 98765432100
-- **Senha:** 123456
-- **Perfil:** Funcionário da recepção/atendimento
-
-### Usuário/Cliente
-- **CPF:** 11144477735
-- **Senha:** 123456
-- **Perfil:** Cliente do sistema
-
-## 🧪 Execução de Testes
-
-### Testes do Backend
-
+### **2. Verificar Banco de Dados**
 ```bash
-# Na pasta backend
+# Conectar ao banco
+docker-compose exec postgres psql -U the_user -d agendamento_db
+
+# Verificar tabelas
+\dt
+
+# Verificar dados de seed
+SELECT * FROM users LIMIT 5;
+```
+
+### **3. Verificar Logs**
+```bash
+# Logs da API
+docker-compose logs api
+
+# Logs do PostgreSQL
+docker-compose logs postgres
+```
+
+### **4. Testar Endpoints**
+```bash
+# Login de teste
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"cpf":"12345678909","password":"123456"}'
+```
+
+---
+
+## 🧪 Executando Testes
+
+### **Backend**
+```bash
 cd backend
 
 # Executar todos os testes
 go test ./...
 
-# Executar testes com verbose
-go test -v ./...
-
-# Executar testes com cobertura
-go test -cover ./...
-
-# Executar testes de um pacote específico
+# Executar testes específicos
 go test ./internal/application/usecases/...
+
+# Executar testes com coverage
+go test -cover ./...
+```
+
+### **Frontend**
+```bash
+cd frontend
+
+# Executar testes
+npm test
+
+# Executar testes com coverage
+npm run test:coverage
+```
+
+### **Testes de Integração**
+```bash
+cd backend
 
 # Executar testes de integração
 go test ./tests/integration/...
 ```
 
-### Testes do Frontend
+---
 
+## 🔧 Troubleshooting
+
+### **Problemas Comuns**
+
+#### **1. Container não inicia**
 ```bash
-# Na pasta frontend
-cd frontend
+# Verificar logs
+docker-compose logs
 
-# Verificar código com ESLint
-npm run lint
+# Verificar recursos
+docker system df
+docker system prune
 
-# Executar verificações de tipo TypeScript
-npx tsc --noEmit
+# Reiniciar containers
+docker-compose restart
 ```
 
-## 🐛 Troubleshooting
-
-### Problemas Comuns
-
-#### 1. Erro de Conexão com Banco de Dados
-
+#### **2. Banco de dados não conecta**
 ```bash
-# Verificar se PostgreSQL está rodando
-sudo systemctl status postgresql
+# Verificar se o PostgreSQL está rodando
+docker-compose ps postgres
 
-# Verificar se consegue conectar
-psql -h localhost -U agendamento_user -d agendamento
+# Verificar logs do banco
+docker-compose logs postgres
 
-# Verificar logs do backend
-tail -f backend/logs/app.log
+# Conectar manualmente
+docker-compose exec postgres psql -U the_user -d agendamento_db
 ```
 
-#### 2. Erro de Porta Já em Uso
-
+#### **3. API não responde**
 ```bash
-# Verificar quais processos estão usando a porta
-lsof -i :8080
-lsof -i :5173
+# Verificar se a API está rodando
+curl http://localhost:8080/health
 
-# Matar processo se necessário
-kill -9 <PID>
+# Verificar logs da API
+docker-compose logs api
+
+# Verificar variáveis de ambiente
+docker-compose exec api env | grep DB_
 ```
 
-#### 3. Erro de Dependências
-
+#### **4. Frontend não carrega**
 ```bash
-# Backend - Limpar cache do Go
-go clean -modcache
-go mod download
+# Verificar se o servidor está rodando
+curl http://localhost:3000
 
-# Frontend - Limpar cache do npm
-npm cache clean --force
-rm -rf node_modules package-lock.json
+# Verificar logs do frontend
+npm run dev
+
+# Verificar dependências
 npm install
 ```
 
-#### 4. Erro de CORS
+### **Soluções Específicas**
 
+#### **Erro de Porta em Uso**
 ```bash
-# Verificar se o backend está configurado corretamente
-# Verificar se a URL da API no frontend está correta
-# Verificar se o middleware CORS está ativo
+# Verificar portas em uso
+netstat -tulpn | grep :8080
+netstat -tulpn | grep :5432
+
+# Matar processo na porta
+sudo kill -9 $(lsof -t -i:8080)
 ```
 
-#### 5. Erro de JWT
-
+#### **Erro de Permissão**
 ```bash
-# Verificar se JWT_SECRET está configurado
-# Verificar se o token está sendo enviado corretamente
-# Verificar se o token não expirou
+# Corrigir permissões do Docker
+sudo chmod 666 /var/run/docker.sock
+
+# Reiniciar Docker
+sudo systemctl restart docker
 ```
 
-### Logs Úteis
-
-#### Backend
+#### **Erro de Memória**
 ```bash
-# Logs em tempo real
-tail -f backend/logs/app.log
+# Limpar recursos do Docker
+docker system prune -a
 
-# Logs de erro
-grep "ERROR" backend/logs/app.log
-
-# Logs de requisições
-grep "HTTP" backend/logs/app.log
+# Aumentar memória do Docker (Docker Desktop)
+# Settings > Resources > Memory
 ```
 
-#### Frontend
+---
+
+## 🛠️ Comandos Úteis
+
+### **Docker**
 ```bash
-# Logs do Vite
-npm run dev
-
-# Logs do navegador
-# Abrir DevTools (F12) e verificar Console
-```
-
-#### Docker
-```bash
-# Logs de todos os containers
-docker-compose logs
-
-# Logs de um container específico
-docker-compose logs backend
-docker-compose logs frontend
-docker-compose logs postgres
-
-# Logs em tempo real
-docker-compose logs -f
-```
-
-## 🔧 Comandos Úteis
-
-### Desenvolvimento
-
-```bash
-# Reiniciar apenas o backend
-docker-compose restart backend
-
-# Reiniciar apenas o frontend
-docker-compose restart frontend
-
-# Rebuild de um container
-docker-compose build backend
-docker-compose up -d backend
+# Ver containers
+docker ps
 
 # Ver logs em tempo real
-docker-compose logs -f backend
+docker-compose logs -f
+
+# Executar comando em container
+docker-compose exec api sh
+docker-compose exec postgres psql -U the_user -d agendamento_db
+
+# Backup do banco
+docker-compose exec postgres pg_dump -U the_user agendamento_db > backup.sql
+
+# Restaurar backup
+docker-compose exec -T postgres psql -U the_user -d agendamento_db < backup.sql
 ```
 
-### Debug
-
+### **Desenvolvimento**
 ```bash
-# Entrar no container do backend
-docker-compose exec backend sh
+# Rebuild containers
+docker-compose build
 
-# Entrar no container do frontend
-docker-compose exec frontend sh
+# Restart específico
+docker-compose restart api
 
-# Verificar variáveis de ambiente
-docker-compose exec backend env
+# Ver variáveis de ambiente
+docker-compose exec api env
 
-# Verificar arquivos de configuração
-docker-compose exec backend cat .env
+# Debug container
+docker-compose exec api sh
 ```
 
-### Limpeza
-
+### **Limpeza**
 ```bash
-# Parar todos os containers
+# Parar e remover containers
 docker-compose down
 
-# Parar e remover volumes
+# Remover volumes
 docker-compose down -v
 
-# Remover imagens não utilizadas
+# Limpar imagens não utilizadas
 docker image prune
 
 # Limpar tudo
 docker system prune -a
 ```
 
-## 📚 Próximos Passos
+---
 
-1. **Explorar a API**: Acesse http://localhost:8080/swagger/index.html
-2. **Testar Funcionalidades**: Use os usuários de teste para explorar o sistema
-3. **Desenvolver**: Faça alterações no código e veja as mudanças em tempo real
-4. **Debugar**: Use os logs e ferramentas de debug para resolver problemas
+## 📈 Próximos Passos
 
-## 🆘 Suporte
+### **Desenvolvimento**
+1. **Configurar IDE**: VSCode, GoLand, ou similar
+2. **Configurar Debug**: Configurar debugging para Go e React
+3. **Configurar Linting**: ESLint, golangci-lint
+4. **Configurar Pre-commit**: Hooks para qualidade de código
 
-Se você encontrar problemas:
+### **Produção**
+1. **Configurar HTTPS**: Certificados SSL
+2. **Configurar Backup**: Backup automático do banco
+3. **Configurar Monitoramento**: Logs, métricas, alertas
+4. **Configurar CI/CD**: Pipeline de deploy
 
-1. **Verifique os logs** usando os comandos acima
-2. **Consulte a documentação** no README.md
-3. **Verifique as issues** no repositório
-4. **Crie uma nova issue** se o problema persistir
+### **Segurança**
+1. **Alterar senhas padrão**: JWT_SECRET, DB_PASSWORD
+2. **Configurar firewall**: Regras de segurança
+3. **Configurar rate limiting**: Proteção contra ataques
+4. **Configurar CORS**: Política de origem cruzada
+
+### **Performance**
+2. **Configurar CDN**: Para assets estáticos
+4. **Configurar monitoring**: APM, logs centralizados
 
 ---
 
-**🎉 Parabéns!** Se você chegou até aqui, o sistema está rodando corretamente. Agora você pode começar a desenvolver e explorar todas as funcionalidades do sistema de agendamento :)
+### **Informações Úteis**
+- **Versão**: Sistema de Agendamento v1.0.0
+- **Autor**: [Flauberth Brito]
+- **Licença**: MIT
+- **Repositório**: https://github.com/seu-usuario/agendamento
+
+---
+
+**🎉 Parabéns! O sistema está rodando com sucesso!**
+
+Agora você pode acessar o sistema e começar a usar todas as funcionalidades. Para dúvidas ou problemas, consulte a documentação ou entre em contato com o suporte.
