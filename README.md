@@ -158,9 +158,8 @@ docker-compose up -d
 O projeto inclui um `docker-compose.yml` configurado com:
 
 - **Backend**: API Go na porta 8080
-- **Frontend**: React na porta 5173
+- **Frontend**: React na porta 3000
 - **PostgreSQL**: Banco de dados na porta 5432
-- **Redis**: Cache na porta 6379 (opcional)
 
 ### 💻 Desenvolvimento Local
 
