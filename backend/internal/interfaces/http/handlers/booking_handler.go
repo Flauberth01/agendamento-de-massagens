@@ -324,12 +324,15 @@ func (h *BookingHandler) ListBookings(c *gin.Context) {
 		}
 	}
 
-	// Parâmetro para incluir agendamentos passados (apenas para admins/atendentes)
-	if includePast := c.Query("include_past"); includePast == "true" {
-		// Verificar se é admin ou atendente
-		userClaims, exists := middleware.GetUserFromContext(c)
-		if exists && (userClaims.Role == "admin" || userClaims.Role == "atendente") {
-			filters["exclude_past"] = false
+	// Verificar se é admin ou atendente para incluir agendamentos passados
+	userClaims, exists := middleware.GetUserFromContext(c)
+	if exists && (userClaims.Role == "admin" || userClaims.Role == "atendente") {
+		// Para atendentes e admins, incluir agendamentos passados por padrão
+		// a menos que explicitamente solicitado para excluir
+		if includePast := c.Query("include_past"); includePast == "false" {
+			filters["exclude_past"] = true
+		} else {
+			filters["include_past"] = true
 		}
 	}
 

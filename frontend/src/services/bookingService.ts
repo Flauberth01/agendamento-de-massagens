@@ -32,6 +32,7 @@ export const bookingService = {
     // Definir limite padrão como 50 para garantir que agendamentos recentes apareçam
     const requestParams = {
       limit: 50, // Aumentar o limite para 50
+      include_past: true, // Incluir agendamentos passados para atendentes e admins
       ...params
     }
     const response = await api.get('/api/bookings', { params: requestParams })

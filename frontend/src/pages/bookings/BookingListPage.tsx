@@ -201,9 +201,11 @@ export const BookingListPage: React.FC = () => {
       return false
     }
     
-    // Só pode marcar falta em agendamentos agendados
+    // Só pode marcar falta em agendamentos agendados que já passaram
     if (booking.status === 'agendado') {
-      return true
+      const now = new Date()
+      const bookingTime = new Date(booking.start_time)
+      return bookingTime < now // Agendamento já passou
     }
     
     return false
