@@ -55,9 +55,9 @@ services:
       # Email - Mailtrap
       - SMTP_HOST=sandbox.smtp.mailtrap.io
       - SMTP_PORT=2525
-      - SMTP_USERNAME=4eb9b4bf7a6ca8
-      - SMTP_PASSWORD=2024d182336c71
-      - FROM_EMAIL=flauberth12@gmail.com
+      - SMTP_USERNAME=your-email@gmail.com
+      - SMTP_PASSWORD=your-app-password
+      - FROM_EMAIL=your-email@gmail.com
       - FROM_NAME=Sistema de Agendamento
     ports:
       - "8080:8080"

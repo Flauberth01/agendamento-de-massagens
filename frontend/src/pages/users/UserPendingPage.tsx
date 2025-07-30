@@ -36,9 +36,10 @@ export const UserPendingPage: React.FC = () => {
   const approveMutation = useMutation({
     mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
       userService.approveUser(userId, data),
-    onSuccess: (updatedUser) => {
+    onSuccess: (response) => {
+      const userName = response.user?.name || 'Usuário'
       toast.success('Usuário aprovado com sucesso!', {
-        description: `${updatedUser.name} foi aprovado no sistema.`
+        description: `${userName} foi aprovado no sistema.`
       })
       queryClient.invalidateQueries({ queryKey: ['users', 'pending'] })
       queryClient.invalidateQueries({ queryKey: ['users'] })
@@ -54,10 +55,11 @@ export const UserPendingPage: React.FC = () => {
   // Mutação para rejeitar usuário
   const rejectMutation = useMutation({
     mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
-      userService.approveUser(userId, data),
-    onSuccess: (updatedUser) => {
+      userService.rejectUser(userId, data),
+    onSuccess: (response) => {
+      const userName = response.user?.name || 'Usuário'
       toast.success('Usuário rejeitado', {
-        description: `${updatedUser.name} foi rejeitado no sistema.`
+        description: `${userName} foi rejeitado no sistema.`
       })
       queryClient.invalidateQueries({ queryKey: ['users', 'pending'] })
       queryClient.invalidateQueries({ queryKey: ['users'] })

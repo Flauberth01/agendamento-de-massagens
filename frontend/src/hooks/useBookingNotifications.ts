@@ -72,7 +72,7 @@ export const useBookingNotifications = ({ bookings, onShowReminder }: UseBooking
     const bookingTime = new Date(booking.start_time)
     const threeHoursBefore = addHours(bookingTime, -3)
     
-    return booking.status === 'agendado' && isAfter(now, threeHoursBefore)
+    return booking.status === 'agendado' && isBefore(now, threeHoursBefore)
   }
 
   const getCancellationDeadline = (booking: Booking): Date => {

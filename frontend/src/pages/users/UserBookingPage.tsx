@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { format, addDays, startOfDay, isBefore } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { formatTimeUntilBooking, canCancelBooking } from '../../utils/formatters'
 import { bookingService } from '../../services/bookingService'
 import { chairService } from '../../services/chairService'
 import { availabilityService } from '../../services/availabilityService'
@@ -130,7 +131,7 @@ export const UserBookingPage: React.FC = () => {
 
   // Verificar se o usuário já tem um agendamento ativo
   const activeBooking = userBookingsList.find(booking => 
-    booking.status === 'agendado' || booking.status === 'confirmado'
+    booking.status === 'agendado' || booking.status === 'presenca_confirmada'
   )
 
   // Verificar se há agendamento para cancelar na URL
@@ -229,9 +230,13 @@ export const UserBookingPage: React.FC = () => {
                   <div className="text-sm text-muted-foreground">{activeBooking.chair?.location}</div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600">
+              <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
                 <Clock className="h-4 w-4" />
                 <span>{formatDate(activeBooking.start_time)} às {formatTime(activeBooking.start_time)}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-blue-700 font-medium">
+                <Calendar className="h-4 w-4" />
+                <span>{formatTimeUntilBooking(activeBooking.start_time)}</span>
               </div>
             </div>
             <div className="flex gap-3 justify-center mt-4">
@@ -243,14 +248,25 @@ export const UserBookingPage: React.FC = () => {
                 <ArrowLeft className="h-4 w-4" />
                 Voltar ao Dashboard
               </Button>
-              <Button 
-                variant="outline"
-                onClick={() => handleConfirmCancellation()}
-                className="border-red-200 text-red-700 hover:bg-red-50"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Cancelar Agendamento
-              </Button>
+              {canCancelBooking(activeBooking.start_time, activeBooking.status) ? (
+                <Button 
+                  variant="outline"
+                  onClick={() => handleConfirmCancellation()}
+                  className="border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Cancelar Agendamento
+                </Button>
+              ) : (
+                <div className="text-center">
+                  <div className="text-sm text-orange-600 font-medium mb-1">
+                    ⏰ Cancelamento não disponível
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Só é possível cancelar até 3 horas antes do agendamento
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : (

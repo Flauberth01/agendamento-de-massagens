@@ -218,3 +218,48 @@ export const formatName = (name: string): string => {
   
   return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
 }; 
+
+// Formatação de tempo restante até agendamento
+export const formatTimeUntilBooking = (bookingTime: Date | string): string => {
+  const now = new Date()
+  const bookingDate = typeof bookingTime === 'string' ? new Date(bookingTime) : bookingTime
+  const diffInMs = bookingDate.getTime() - now.getTime()
+  
+  if (diffInMs <= 0) {
+    return 'Agendamento já passou'
+  }
+  
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  const remainingMinutes = diffInMinutes % 60
+  
+  if (diffInHours > 0) {
+    if (remainingMinutes > 0) {
+      return `Faltam ${diffInHours}h${remainingMinutes}min`
+    } else {
+      return `Faltam ${diffInHours}h`
+    }
+  } else {
+    return `Faltam ${diffInMinutes}min`
+  }
+}
+
+// Verificar se pode cancelar agendamento (até 3 horas antes)
+export const canCancelBooking = (bookingTime: Date | string, status: string): boolean => {
+  if (status !== 'agendado') return false
+  
+  const now = new Date()
+  const bookingDate = typeof bookingTime === 'string' ? new Date(bookingTime) : bookingTime
+  const threeHoursBefore = new Date(bookingDate.getTime() - 3 * 60 * 60 * 1000)
+  
+  return now < threeHoursBefore
+}
+
+// Obter tempo restante em minutos
+export const getTimeUntilBookingInMinutes = (bookingTime: Date | string): number => {
+  const now = new Date()
+  const bookingDate = typeof bookingTime === 'string' ? new Date(bookingTime) : bookingTime
+  const diffInMs = bookingDate.getTime() - now.getTime()
+  
+  return Math.floor(diffInMs / (1000 * 60))
+} 

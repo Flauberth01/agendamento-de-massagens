@@ -57,13 +57,13 @@ export const userService = {
   },
 
   // Aprovar usuário (admin/atendente)
-  async approveUser(id: number, data: UserApprovalRequest): Promise<User> {
+  async approveUser(id: number, data: UserApprovalRequest): Promise<{ message: string; user: User }> {
     const response = await api.post(`/api/users/${id}/approve`, data)
     return response.data
   },
 
   // Rejeitar usuário (admin/atendente)
-  async rejectUser(id: number, data: UserRejectionRequest): Promise<User> {
+  async rejectUser(id: number, data: UserRejectionRequest): Promise<{ message: string; user: User }> {
     const response = await api.post(`/api/users/${id}/reject`, data)
     return response.data
   },

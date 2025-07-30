@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { formatTimeUntilBooking, canCancelBooking } from '../../utils/formatters'
 
 
 
@@ -225,20 +226,35 @@ export const UserDashboardPage: React.FC = () => {
                       <Clock className="h-4 w-4 text-blue-600" />
                       <span className="font-medium">{formatDateTime(nextBooking.start_time)}</span>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-blue-700">{formatTimeUntilBooking(nextBooking.start_time)}</span>
+                    </div>
                   </div>
 
                   {/* Botão de cancelar apenas para agendamentos agendados */}
                   {nextBooking.status === 'agendado' && (
                     <div className="mt-4 pt-4 border-t border-blue-200">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleCancelBooking(nextBooking.id)}
-                        className="w-full border-red-200 text-red-700 hover:bg-red-50"
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Cancelar Agendamento
-                      </Button>
+                      {canCancelBooking(nextBooking.start_time, nextBooking.status) ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleCancelBooking(nextBooking.id)}
+                          className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Cancelar Agendamento
+                        </Button>
+                      ) : (
+                        <div className="text-center py-3">
+                          <div className="text-sm text-orange-600 font-medium mb-1">
+                            ⏰ Cancelamento não disponível
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Só é possível cancelar até 3 horas antes do agendamento
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -25,6 +25,7 @@ import {
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { formatTimeUntilBooking } from '../../utils/formatters'
 
 export const BookingListPage: React.FC = () => {
   const navigate = useNavigate()
@@ -567,6 +568,18 @@ export const BookingListPage: React.FC = () => {
                            <div className="mt-1">{getStatusBadge(booking.status)}</div>
                          </div>
                        </div>
+                       
+                       {/* Tempo restante para agendamentos futuros */}
+                       {isUpcoming(booking) && (
+                         <div className="mb-3 p-2 bg-blue-50 rounded-md">
+                           <div className="flex items-center gap-2">
+                             <Clock className="h-4 w-4 text-blue-600" />
+                             <span className="text-sm font-medium text-blue-700">
+                               {formatTimeUntilBooking(booking.start_time)}
+                             </span>
+                           </div>
+                         </div>
+                       )}
 
                        {booking.notes && (
                          <div className="mt-3">

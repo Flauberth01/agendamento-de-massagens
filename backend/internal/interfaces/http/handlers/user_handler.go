@@ -269,10 +269,38 @@ func (h *UserHandler) ApproveUser(c *gin.Context) {
 		return
 	}
 
+	// Buscar usuário atualizado para retornar na resposta
+	updatedUser, err := h.userUseCase.GetUserByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuário atualizado"})
+		return
+	}
+
 	// Log de aprovação
 	h.auditLogUseCase.LogUserAction(currentUser.ID, entities.ActionApprove, entities.ResourceUser, uint(id), "Usuário aprovado: "+targetUser.Name+" ("+targetUser.CPF+")", c.ClientIP(), c.GetHeader("User-Agent"))
 
-	c.JSON(http.StatusOK, gin.H{"message": "Usuário aprovado com sucesso"})
+	// Retornar dados do usuário aprovado
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Usuário aprovado com sucesso",
+		"user": gin.H{
+			"id":             updatedUser.ID,
+			"name":           updatedUser.Name,
+			"email":          updatedUser.Email,
+			"cpf":            updatedUser.CPF,
+			"phone":          updatedUser.Phone,
+			"role":           updatedUser.Role,
+			"requested_role": updatedUser.RequestedRole,
+			"status":         updatedUser.Status,
+			"function":       updatedUser.Function,
+			"position":       updatedUser.Position,
+			"registration":   updatedUser.Registration,
+			"sector":         updatedUser.Sector,
+			"gender":         updatedUser.Gender,
+			"created_at":     updatedUser.CreatedAt,
+			"updated_at":     updatedUser.UpdatedAt,
+			"last_login":     updatedUser.LastLogin,
+		},
+	})
 }
 
 // RejectUser rejeita um usuário
@@ -340,10 +368,38 @@ func (h *UserHandler) RejectUser(c *gin.Context) {
 		return
 	}
 
+	// Buscar usuário atualizado para retornar na resposta
+	updatedUser, err := h.userUseCase.GetUserByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar usuário atualizado"})
+		return
+	}
+
 	// Log de rejeição
 	h.auditLogUseCase.LogUserAction(currentUser.ID, entities.ActionReject, entities.ResourceUser, uint(id), "Usuário rejeitado: "+targetUser.Name+" ("+targetUser.CPF+"). Motivo: "+reason, c.ClientIP(), c.GetHeader("User-Agent"))
 
-	c.JSON(http.StatusOK, gin.H{"message": "Usuário rejeitado com sucesso"})
+	// Retornar dados do usuário rejeitado
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Usuário rejeitado com sucesso",
+		"user": gin.H{
+			"id":             updatedUser.ID,
+			"name":           updatedUser.Name,
+			"email":          updatedUser.Email,
+			"cpf":            updatedUser.CPF,
+			"phone":          updatedUser.Phone,
+			"role":           updatedUser.Role,
+			"requested_role": updatedUser.RequestedRole,
+			"status":         updatedUser.Status,
+			"function":       updatedUser.Function,
+			"position":       updatedUser.Position,
+			"registration":   updatedUser.Registration,
+			"sector":         updatedUser.Sector,
+			"gender":         updatedUser.Gender,
+			"created_at":     updatedUser.CreatedAt,
+			"updated_at":     updatedUser.UpdatedAt,
+			"last_login":     updatedUser.LastLogin,
+		},
+	})
 }
 
 // CreateUser cria um novo usuário

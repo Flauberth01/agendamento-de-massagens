@@ -207,4 +207,60 @@ export const CancellationWarning: React.FC<CancellationWarningProps> = ({
       </AlertDescription>
     </Alert>
   )
+}
+
+interface CancellationRulesProps {
+  bookingTime: Date | string
+  status: string
+}
+
+export const CancellationRules: React.FC<CancellationRulesProps> = ({
+  bookingTime,
+  status
+}) => {
+  const now = new Date()
+  const bookingDate = typeof bookingTime === 'string' ? new Date(bookingTime) : bookingTime
+  const threeHoursBefore = new Date(bookingDate.getTime() - 3 * 60 * 60 * 1000)
+  const canCancel = status === 'agendado' && now < threeHoursBefore
+  
+  if (status !== 'agendado') {
+    return null
+  }
+  
+  if (canCancel) {
+    return (
+      <Alert className="border-l-4 border-l-blue-500">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Cancelamento Disponível</AlertTitle>
+        <AlertDescription>
+          Você pode cancelar este agendamento até {threeHoursBefore.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </AlertDescription>
+      </Alert>
+    )
+  }
+  
+  return (
+    <Alert variant="destructive" className="border-l-4 border-l-red-500">
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>Cancelamento Não Disponível</AlertTitle>
+      <AlertDescription>
+        <p>
+          Este agendamento não pode mais ser cancelado. As regras permitem cancelamento apenas até 3 horas antes do horário marcado.
+        </p>
+        <p className="mt-2 text-sm">
+          <strong>Prazo para cancelamento:</strong> {threeHoursBefore.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </p>
+      </AlertDescription>
+    </Alert>
+  )
 } 

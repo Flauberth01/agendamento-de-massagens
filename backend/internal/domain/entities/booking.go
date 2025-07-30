@@ -80,8 +80,9 @@ func (b *Booking) IsPresenceConfirmed() bool {
 // CanBeCancelled verifica se o agendamento pode ser cancelado
 func (b *Booking) CanBeCancelled() bool {
 	// Pode ser cancelado até 3 horas antes do horário
-	minCancelTime := time.Now().Add(3 * time.Hour)
-	return b.IsActive() && b.StartTime.After(minCancelTime)
+	now := time.Now()
+	threeHoursBefore := b.StartTime.Add(-3 * time.Hour)
+	return b.IsActive() && now.Before(threeHoursBefore)
 }
 
 // Cancel cancela o agendamento
