@@ -48,7 +48,6 @@ export const BookingListPage: React.FC = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [showAttendanceDialog, setShowAttendanceDialog] = useState(false)
   const [showNoShowDialog, setShowNoShowDialog] = useState(false)
-  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   // Buscar agendamentos do usuário (sem filtro de status para buscar todos)

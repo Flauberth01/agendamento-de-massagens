@@ -17,7 +17,6 @@ import {
   Menu,
   Home,
   Calendar,
-  Plus,
   Users,
   UserCheck,
   Clock

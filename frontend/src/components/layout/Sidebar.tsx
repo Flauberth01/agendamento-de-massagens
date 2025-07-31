@@ -5,7 +5,6 @@ import { cn } from '@/utils/cn'
 import { 
   Home,
   Calendar,
-  Plus,
   Users,
   UserCheck,
   Clock

@@ -18,7 +18,7 @@ import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
-import type { User, UserApprovalRequest } from '../../types/user'
+import type { User, UserApprovalRequest, UserRejectionRequest } from '../../types/user'
 
 export const UserPendingPage: React.FC = () => {
   const queryClient = useQueryClient()
@@ -54,7 +54,7 @@ export const UserPendingPage: React.FC = () => {
 
   // Mutação para rejeitar usuário
   const rejectMutation = useMutation({
-    mutationFn: ({ userId, data }: { userId: number; data: UserApprovalRequest }) =>
+    mutationFn: ({ userId, data }: { userId: number; data: UserRejectionRequest }) =>
       userService.rejectUser(userId, data),
     onSuccess: (response) => {
       const userName = response.user?.name || 'Usuário'
@@ -82,7 +82,7 @@ export const UserPendingPage: React.FC = () => {
   const handleRejectUser = (userId: number) => {
     rejectMutation.mutate({
       userId,
-      data: { status: 'reprovado' }
+      data: { status: 'reprovado', reason: 'Usuário rejeitado pelo administrador' }
     })
   }
 

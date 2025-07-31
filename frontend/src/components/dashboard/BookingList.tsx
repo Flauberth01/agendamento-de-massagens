@@ -111,17 +111,17 @@ export function BookingList({
   }, [bookings, searchTerm, statusFilter, dateFilter, sortBy]);
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      agendado: { variant: 'secondary' as const, label: 'Agendado' },
-      presenca_confirmada: { variant: 'default' as const, label: 'Presença Confirmada', className: 'bg-orange-500 text-white' },
-      cancelado: { variant: 'destructive' as const, label: 'Cancelado' },
-      pendente: { variant: 'secondary' as const, label: 'Pendente' },
-      realizado: { variant: 'outline' as const, label: 'Realizado' },
-      falta: { variant: 'destructive' as const, label: 'Falta' }
+    const statusConfig: Record<string, { variant: 'secondary' | 'default' | 'destructive' | 'outline'; label: string; className?: string }> = {
+      agendado: { variant: 'secondary', label: 'Agendado' },
+      presenca_confirmada: { variant: 'default', label: 'Presença Confirmada', className: 'bg-orange-500 text-white' },
+      cancelado: { variant: 'destructive', label: 'Cancelado' },
+      pendente: { variant: 'secondary', label: 'Pendente' },
+      realizado: { variant: 'outline', label: 'Realizado' },
+      falta: { variant: 'destructive', label: 'Falta' }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente;
-    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+    const config = statusConfig[status] || statusConfig.pendente;
+    return <Badge variant={config.variant} className={config.className || ''}>{config.label}</Badge>;
   };
 
   const canEdit = (booking: Booking) => {
@@ -327,7 +327,7 @@ export function BookingList({
             </div>
             <div className="text-center">
               <div className="font-semibold">
-                {filteredBookings.filter(b => b.status === 'confirmado').length}
+                {filteredBookings.filter(b => b.status === 'presenca_confirmada').length}
               </div>
               <div className="text-muted-foreground">Confirmados</div>
             </div>

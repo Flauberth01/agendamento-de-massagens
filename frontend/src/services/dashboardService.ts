@@ -32,7 +32,7 @@ export interface Session {
   }
   start_time: string
   end_time: string
-  status: 'agendado' | 'confirmado' | 'cancelado' | 'concluido' | 'falta'
+  status: 'agendado' | 'presenca_confirmada' | 'cancelado' | 'realizado' | 'falta'
 }
 
 export interface PendingUser {

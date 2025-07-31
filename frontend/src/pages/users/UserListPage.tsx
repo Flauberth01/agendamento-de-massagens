@@ -244,12 +244,10 @@ export const UserListPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm">
-                          <div>{formatDate(user.created_at)}</div>
-                          {user.last_login && (
-                            <div className="text-muted-foreground">
-                              Último login: {formatDateTime(user.last_login)}
-                            </div>
-                          )}
+                          <div>{formatDate(new Date(user.created_at))}</div>
+                          <div className="text-sm text-gray-600">
+                            Último login: {user.last_login ? formatDateTime(new Date(user.last_login)) : 'Nunca'}
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">

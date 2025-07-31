@@ -396,7 +396,7 @@ func (uc *BookingUseCase) RescheduleBooking(bookingID uint, newStartTime time.Ti
 	}
 
 	// Verificar se pode ser reagendado (não pode estar concluído ou cancelado)
-	if booking.Status == "concluido" || booking.Status == "cancelado" {
+	if booking.Status == "realizado" || booking.Status == "cancelado" {
 		return errors.New("não é possível reagendar um agendamento concluído ou cancelado")
 	}
 
@@ -420,6 +420,11 @@ func (uc *BookingUseCase) RescheduleBooking(bookingID uint, newStartTime time.Ti
 	// Verificar se o novo horário está no futuro
 	if newStartTime.Before(time.Now()) {
 		return errors.New("não é possível reagendar para um horário no passado")
+	}
+
+	// Verificar se não está tentando reagendar para o mesmo horário
+	if newStartTime.Equal(booking.StartTime) && newChairID == booking.ChairID {
+		return errors.New("não é possível reagendar para o mesmo horário e cadeira")
 	}
 
 	// Verificar disponibilidade no novo horário
@@ -574,6 +579,11 @@ func (uc *BookingUseCase) RescheduleBookingDateTime(bookingID uint, newStartTime
 		return errors.New("não é possível reagendar para um horário no passado")
 	}
 
+	// Verificar se não está tentando reagendar para o mesmo horário
+	if newStartTime.Equal(booking.StartTime) {
+		return errors.New("não é possível reagendar para o mesmo horário")
+	}
+
 	// Calcular novo horário de fim (30 minutos após o início)
 	newEndTime := newStartTime.Add(30 * time.Minute)
 
@@ -652,7 +662,7 @@ func (uc *BookingUseCase) GetSystemStats() (map[string]interface{}, error) {
 	attendedCount := int64(0)
 	cancelledCount := int64(0)
 	for _, booking := range recentBookings {
-		if booking.Status == "concluido" {
+		if booking.Status == "realizado" {
 			attendedCount++
 		} else if booking.Status == "cancelado" {
 			cancelledCount++
@@ -708,7 +718,7 @@ func (uc *BookingUseCase) GetAttendantStats() (map[string]interface{}, error) {
 	confirmedSessions := int64(0)
 	pendingSessions := int64(0)
 	for _, booking := range todayBookings {
-		if booking.Status == "confirmado" {
+		if booking.Status == "presenca_confirmada" {
 			confirmedSessions++
 		} else if booking.Status == "agendado" {
 			pendingSessions++
@@ -727,7 +737,7 @@ func (uc *BookingUseCase) GetAttendantStats() (map[string]interface{}, error) {
 	noShows := int64(0)
 
 	for _, booking := range recentBookings {
-		if booking.Status == "concluido" {
+		if booking.Status == "realizado" {
 			attendedSessions++
 		} else if booking.Status == "falta" {
 			noShows++
@@ -770,7 +780,7 @@ func (uc *BookingUseCase) GetUserStats(userID uint) (map[string]interface{}, err
 	now := time.Now()
 	for _, booking := range userBookings {
 		switch booking.Status {
-		case "concluido":
+		case "realizado":
 			completed++
 		case "cancelado":
 			cancelled++

@@ -235,11 +235,11 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 
 	for _, booking := range bookings {
 		switch booking.Status {
-		case "concluido":
+		case "realizado":
 			completedSessions++
 		case "cancelado":
 			cancelledSessions++
-		case "confirmado":
+		case "presenca_confirmada":
 			confirmedSessions++
 		}
 	}
@@ -293,7 +293,7 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 		for _, booking := range bookings {
 			if booking.ChairID == chair["chair_id"] {
 				switch booking.Status {
-				case "concluido":
+				case "realizado":
 					completedSessions++
 				case "cancelado":
 					cancelledSessions++
@@ -389,11 +389,11 @@ func (h *DashboardHandler) calculateDayIndicators(bookings []*entities.Booking) 
 
 	for _, booking := range bookings {
 		switch booking.Status {
-		case "confirmado":
+		case "presenca_confirmada":
 			confirmedBookings++
 		case "cancelado":
 			cancelledBookings++
-		case "concluido":
+		case "realizado":
 			completedBookings++
 		}
 	}

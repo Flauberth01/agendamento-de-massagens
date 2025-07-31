@@ -139,10 +139,10 @@ export default function ChairDetailPage() {
 
   // Calcular estatísticas dos agendamentos
   const totalBookings = bookings.length;
-  const confirmedBookings = bookings.filter(b => b.status === 'confirmado').length;
+  const confirmedBookings = bookings.filter(b => b.status === 'presenca_confirmada').length;
   const pendingBookings = bookings.filter(b => b.status === 'agendado').length;
   const cancelledBookings = bookings.filter(b => b.status === 'cancelado').length;
-  const completedBookings = bookings.filter(b => b.status === 'realizado').length;
+              const completedBookings = bookings.filter(b => b.status === 'realizado').length;
 
   return (
     <div className="container mx-auto p-6 space-y-6">

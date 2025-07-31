@@ -4,24 +4,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
-import { 
-  User as UserIcon, 
-  ArrowLeft, 
-  Mail, 
-  Phone, 
-  Building,
-  Shield,
-  CheckCircle,
-  XCircle,
-  Clock,
-  IdCard,
-  Loader2
-} from 'lucide-react'
+import { ArrowLeft, Mail, Phone, Building, Shield, CheckCircle, XCircle, IdCard, Loader2, User as UserIcon, Clock } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
-import type { User } from '../../types/user'
 
 export const UserDetailPage: React.FC = () => {
   const navigate = useNavigate()

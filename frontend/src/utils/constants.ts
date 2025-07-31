@@ -22,9 +22,9 @@ export const USER_STATUS = {
 // Status de agendamento
 export const BOOKING_STATUS = {
   AGENDADO: 'agendado',
-  CONFIRMADO: 'confirmado',
+  PRESENCA_CONFIRMADA: 'presenca_confirmada',
   CANCELADO: 'cancelado',
-  CONCLUIDO: 'concluido',
+  REALIZADO: 'realizado',
   FALTA: 'falta',
 } as const;
 
@@ -91,9 +91,9 @@ export const NOTIFICATION_CONFIG = {
 // Configurações de cores para status
 export const STATUS_COLORS = {
   [BOOKING_STATUS.AGENDADO]: 'bg-blue-100 text-blue-800',
-  [BOOKING_STATUS.CONFIRMADO]: 'bg-green-100 text-green-800',
+  [BOOKING_STATUS.PRESENCA_CONFIRMADA]: 'bg-green-100 text-green-800',
   [BOOKING_STATUS.CANCELADO]: 'bg-red-100 text-red-800',
-  [BOOKING_STATUS.CONCLUIDO]: 'bg-purple-100 text-purple-800',
+  [BOOKING_STATUS.REALIZADO]: 'bg-purple-100 text-purple-800',
   [BOOKING_STATUS.FALTA]: 'bg-orange-100 text-orange-800',
   [USER_STATUS.PENDENTE]: 'bg-yellow-100 text-yellow-800',
   [USER_STATUS.APROVADO]: 'bg-green-100 text-green-800',
@@ -105,9 +105,9 @@ export const STATUS_COLORS = {
 // Configurações de ícones para status
 export const STATUS_ICONS = {
   [BOOKING_STATUS.AGENDADO]: 'calendar',
-  [BOOKING_STATUS.CONFIRMADO]: 'check-circle',
+  [BOOKING_STATUS.PRESENCA_CONFIRMADA]: 'check-circle',
   [BOOKING_STATUS.CANCELADO]: 'x-circle',
-  [BOOKING_STATUS.CONCLUIDO]: 'check-square',
+  [BOOKING_STATUS.REALIZADO]: 'check-square',
   [BOOKING_STATUS.FALTA]: 'alert-circle',
   [USER_STATUS.PENDENTE]: 'clock',
   [USER_STATUS.APROVADO]: 'check-circle',

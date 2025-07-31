@@ -354,12 +354,25 @@ func (uc *AvailabilityUseCase) validateTimeRange(startTime, endTime string) erro
 	}
 
 	// Verificar se horário de fim é posterior ao de início
-	if !endParsed.After(startParsed) {
+	// Caso especial: quando endTime é 00:00, consideramos que é do dia seguinte
+	if endTime == "00:00" {
+		// Para horários que terminam à meia-noite, sempre consideramos válidos
+		// pois representam o final do dia
+	} else if !endParsed.After(startParsed) {
 		return errors.New("horário de fim deve ser posterior ao horário de início")
 	}
 
 	// Verificar se a duração é múltipla de 30 minutos
-	duration := endParsed.Sub(startParsed)
+	var duration time.Duration
+	if endTime == "00:00" {
+		// Para horários que terminam à meia-noite, calcular duração considerando o dia seguinte
+		endTimeNextDay, _ := time.Parse("15:04", "00:00")
+		endTimeNextDay = endTimeNextDay.Add(24 * time.Hour) // 00:00 do dia seguinte
+		duration = endTimeNextDay.Sub(startParsed)
+	} else {
+		duration = endParsed.Sub(startParsed)
+	}
+
 	if duration.Minutes() < 30 || int(duration.Minutes())%30 != 0 {
 		return errors.New("a duração deve ser múltipla de 30 minutos")
 	}

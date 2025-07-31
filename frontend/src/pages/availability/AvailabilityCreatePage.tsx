@@ -34,25 +34,32 @@ const DAYS_OF_WEEK = [
 
 // Gerar horários em blocos de 30 minutos das 08:00 às 00:00
 const generateTimeSlots = () => {
-  const slots = []
+  const slots: Array<{ value: string; label: string }> = []
   for (let hour = 8; hour <= 23; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-      const nextTime = minute === 30 
-        ? `${(hour + 1).toString().padStart(2, '0')}:00`
-        : `${hour.toString().padStart(2, '0')}:30`
+      let nextTime: string
       
-      slots.push({
-        value: time,
-        label: `${time} às ${nextTime}`
-      })
+      if (hour === 23 && minute === 30) {
+        // Último slot: 23:30 às 00:00
+        nextTime = '00:00'
+      } else if (minute === 30) {
+        // Meia hora: HH:30 às (HH+1):00
+        nextTime = `${(hour + 1).toString().padStart(2, '0')}:00`
+      } else {
+        // Hora cheia: HH:00 às HH:30
+        nextTime = `${hour.toString().padStart(2, '0')}:30`
+      }
+      
+      // Verificar se o slot já não existe para evitar duplicatas
+      if (!slots.some(slot => slot.value === time)) {
+        slots.push({
+          value: time,
+          label: `${time} às ${nextTime}`
+        })
+      }
     }
   }
-  // Adicionar o último slot das 23:30 às 00:00
-  slots.push({
-    value: '23:30',
-    label: '23:30 às 00:00'
-  })
   return slots
 }
 

@@ -16,13 +16,12 @@ import {
   MapPin,
   User,
   CalendarDays,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { formatTimeUntilBooking, canCancelBooking } from '../../utils/formatters'
-
-
 
 interface UserStats {
   totalBookings: number
@@ -45,6 +44,22 @@ export const UserDashboardPage: React.FC = () => {
 
   const bookings = userBookings?.data || []
 
+  // Função para verificar se um agendamento já passou
+  const isBookingPassed = (startTime: string | Date) => {
+    const bookingTime = typeof startTime === 'string' ? new Date(startTime) : startTime
+    const now = new Date()
+    return bookingTime < now
+  }
+
+  // Função para verificar se o usuário pode fazer novo agendamento
+  const canMakeNewBooking = () => {
+    const confirmedBookings = bookings.filter(b => b.status === 'presenca_confirmada')
+    const passedConfirmedBookings = confirmedBookings.filter(b => isBookingPassed(b.start_time))
+    
+    // Se tem agendamentos confirmados que já passaram, pode fazer novo agendamento
+    return passedConfirmedBookings.length > 0
+  }
+
   // Calcular estatísticas
   const stats: UserStats = {
     totalBookings: bookings.length,
@@ -53,9 +68,9 @@ export const UserDashboardPage: React.FC = () => {
     activeBookings: bookings.filter(b => b.status === 'agendado' || b.status === 'presenca_confirmada').length
   }
 
-  // Próximo agendamento
+  // Próximo agendamento (apenas futuros)
   const nextBooking = bookings
-    .filter(b => b.status === 'agendado' || b.status === 'presenca_confirmada')
+    .filter(b => (b.status === 'agendado' || b.status === 'presenca_confirmada') && !isBookingPassed(b.start_time))
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())[0]
 
   // Histórico recente (últimos 3)
@@ -199,14 +214,17 @@ export const UserDashboardPage: React.FC = () => {
                   <Sparkles className="h-10 w-10 text-blue-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Nenhum agendamento futuro
+                  {canMakeNewBooking() ? 'Sessão já realizada' : 'Nenhum agendamento futuro'}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Que tal agendar sua primeira sessão de massagem?
+                  {canMakeNewBooking() 
+                    ? 'Sua sessão confirmada já foi realizada. Você pode agendar uma nova sessão!'
+                    : 'Que tal agendar sua primeira sessão de massagem?'
+                  }
                 </p>
                 <Button onClick={handleNewBooking} size="lg" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
                   <Plus className="h-5 w-5 mr-2" />
-                  Agendar Primeira Sessão
+                  {canMakeNewBooking() ? 'Agendar Nova Sessão' : 'Agendar Primeira Sessão'}
                 </Button>
               </div>
             ) : (
@@ -255,6 +273,24 @@ export const UserDashboardPage: React.FC = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Aviso para agendamentos confirmados que já passaram */}
+                  {nextBooking.status === 'presenca_confirmada' && isBookingPassed(nextBooking.start_time) && (
+                    <div className="mt-4 pt-4 border-t border-orange-200">
+                      <div className="flex items-center gap-2 text-sm text-orange-600 mb-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <span className="font-medium">Agendamento já passou</span>
+                      </div>
+                      <Button 
+                        onClick={handleNewBooking}
+                        size="sm" 
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agendar Nova Sessão
+                      </Button>
                     </div>
                   )}
                 </div>

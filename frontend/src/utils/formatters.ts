@@ -128,9 +128,9 @@ export const formatUserStatus = (status: string): string => {
 export const formatBookingStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
     agendado: 'Agendado',
-    confirmado: 'Confirmado',
+    presenca_confirmada: 'Presença Confirmada',
     cancelado: 'Cancelado',
-    concluido: 'Concluído',
+    realizado: 'Realizado',
     falta: 'Falta',
   };
   return statusMap[status] || status;
