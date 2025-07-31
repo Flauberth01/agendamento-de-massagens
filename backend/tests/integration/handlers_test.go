@@ -196,3 +196,91 @@ func TestJSONMarshaling(t *testing.T) {
 	assert.Equal(t, user.Name, unmarshaledUser["name"])
 	assert.Equal(t, user.Email, unmarshaledUser["email"])
 }
+
+// TestBookingEntityMethods testa os métodos da entidade Booking
+func TestBookingEntityMethods(t *testing.T) {
+	testData := fixtures.NewTestData()
+
+	// Teste agendamento ativo
+	booking := testData.ValidBooking()
+	assert.True(t, booking.IsActive())
+	assert.False(t, booking.IsCancelled())
+	assert.False(t, booking.IsCompleted())
+	assert.False(t, booking.IsPast())
+	assert.True(t, booking.IsFuture())
+
+	// Teste agendamento cancelado
+	cancelledBooking := testData.ValidBooking()
+	cancelledBooking.Status = "cancelado"
+	assert.False(t, cancelledBooking.IsActive())
+	assert.True(t, cancelledBooking.IsCancelled())
+
+	// Teste agendamento concluído
+	completedBooking := testData.ValidBooking()
+	completedBooking.Status = "realizado"
+	assert.False(t, completedBooking.IsActive())
+	assert.True(t, completedBooking.IsCompleted())
+}
+
+// TestChairEntityMethods testa os métodos da entidade Chair
+func TestChairEntityMethods(t *testing.T) {
+	testData := fixtures.NewTestData()
+
+	// Teste cadeira ativa
+	chair := testData.ValidChair()
+	assert.True(t, chair.IsActive())
+	assert.True(t, chair.IsAvailable())
+
+	// Teste cadeira inativa
+	inactiveChair := testData.ValidChair()
+	inactiveChair.Status = "inativa"
+	assert.False(t, inactiveChair.IsActive())
+	assert.False(t, inactiveChair.IsAvailable())
+}
+
+// TestAvailabilityEntityMethods testa os métodos da entidade Availability
+func TestAvailabilityEntityMethods(t *testing.T) {
+	testData := fixtures.NewTestData()
+
+	// Teste disponibilidade válida
+	availability := testData.ValidAvailability()
+	assert.True(t, availability.IsActive)
+	assert.Equal(t, "Segunda", availability.GetDayOfWeekName())
+
+	// Teste slots de tempo
+	slots, err := availability.GetTimeSlots()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, slots)
+	assert.Contains(t, slots, "09:00")
+	assert.Contains(t, slots, "09:30")
+
+	// Teste disponibilidade inativa
+	inactiveAvailability := testData.ValidAvailability()
+	inactiveAvailability.IsActive = false
+	assert.False(t, inactiveAvailability.IsActive)
+}
+
+// TestEntityLists testa as listas de entidades
+func TestEntityLists(t *testing.T) {
+	testData := fixtures.NewTestData()
+
+	// Teste lista de agendamentos
+	bookingList := testData.BookingList()
+	assert.Len(t, bookingList, 2)
+	assert.True(t, bookingList[0].IsActive())
+	assert.True(t, bookingList[1].IsPresenceConfirmed())
+
+	// Teste lista de cadeiras
+	chairList := testData.ChairList()
+	assert.Len(t, chairList, 3)
+	assert.True(t, chairList[0].IsActive())
+	assert.True(t, chairList[1].IsActive())
+	assert.False(t, chairList[2].IsActive())
+
+	// Teste lista de disponibilidades
+	availabilityList := testData.AvailabilityList()
+	assert.Len(t, availabilityList, 3)
+	assert.True(t, availabilityList[0].IsActive)
+	assert.True(t, availabilityList[1].IsActive)
+	assert.False(t, availabilityList[2].IsActive)
+}

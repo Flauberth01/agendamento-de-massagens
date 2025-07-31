@@ -141,3 +141,160 @@ func (td *TestData) InvalidLoginRequest() *dtos.LoginRequest {
 		Password: "",
 	}
 }
+
+// ValidBooking retorna uma entidade Booking válida
+func (td *TestData) ValidBooking() *entities.Booking {
+	now := time.Now()
+	startTime := now.Add(time.Hour)
+	endTime := startTime.Add(30 * time.Minute)
+
+	return &entities.Booking{
+		ID:        1,
+		UserID:    1,
+		ChairID:   1,
+		StartTime: startTime,
+		EndTime:   endTime,
+		Status:    "agendado",
+		Notes:     "Teste de agendamento",
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
+// ValidChair retorna uma entidade Chair válida
+func (td *TestData) ValidChair() *entities.Chair {
+	now := time.Now()
+
+	return &entities.Chair{
+		ID:          1,
+		Name:        "Cadeira Teste",
+		Description: "Cadeira para testes",
+		Location:    "Sala 101",
+		Status:      "ativa",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+}
+
+// ValidAvailability retorna uma entidade Availability válida
+func (td *TestData) ValidAvailability() *entities.Availability {
+	now := time.Now()
+
+	return &entities.Availability{
+		ID:        1,
+		ChairID:   1,
+		DayOfWeek: 1, // Segunda-feira
+		StartTime: "09:00",
+		EndTime:   "17:00",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
+// BookingList retorna uma lista de agendamentos para testes
+func (td *TestData) BookingList() []*entities.Booking {
+	now := time.Now()
+	startTime1 := now.Add(time.Hour)
+	endTime1 := startTime1.Add(30 * time.Minute)
+	startTime2 := now.Add(2 * time.Hour)
+	endTime2 := startTime2.Add(30 * time.Minute)
+
+	return []*entities.Booking{
+		{
+			ID:        1,
+			UserID:    1,
+			ChairID:   1,
+			StartTime: startTime1,
+			EndTime:   endTime1,
+			Status:    "agendado",
+			Notes:     "Primeiro agendamento",
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		{
+			ID:        2,
+			UserID:    2,
+			ChairID:   1,
+			StartTime: startTime2,
+			EndTime:   endTime2,
+			Status:    "presenca_confirmada",
+			Notes:     "Segundo agendamento",
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+	}
+}
+
+// ChairList retorna uma lista de cadeiras para testes
+func (td *TestData) ChairList() []*entities.Chair {
+	now := time.Now()
+
+	return []*entities.Chair{
+		{
+			ID:          1,
+			Name:        "Cadeira 1",
+			Description: "Primeira cadeira",
+			Location:    "Sala 101",
+			Status:      "ativa",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		},
+		{
+			ID:          2,
+			Name:        "Cadeira 2",
+			Description: "Segunda cadeira",
+			Location:    "Sala 102",
+			Status:      "ativa",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		},
+		{
+			ID:          3,
+			Name:        "Cadeira 3",
+			Description: "Terceira cadeira",
+			Location:    "Sala 103",
+			Status:      "inativa",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		},
+	}
+}
+
+// AvailabilityList retorna uma lista de disponibilidades para testes
+func (td *TestData) AvailabilityList() []*entities.Availability {
+	now := time.Now()
+
+	return []*entities.Availability{
+		{
+			ID:        1,
+			ChairID:   1,
+			DayOfWeek: 1, // Segunda-feira
+			StartTime: "09:00",
+			EndTime:   "17:00",
+			IsActive:  true,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		{
+			ID:        2,
+			ChairID:   1,
+			DayOfWeek: 2, // Terça-feira
+			StartTime: "08:00",
+			EndTime:   "16:00",
+			IsActive:  true,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		{
+			ID:        3,
+			ChairID:   2,
+			DayOfWeek: 1, // Segunda-feira
+			StartTime: "10:00",
+			EndTime:   "18:00",
+			IsActive:  false,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+	}
+}

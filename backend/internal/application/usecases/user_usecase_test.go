@@ -274,6 +274,11 @@ func (m *MockNotificationService) SendBookingReminder(booking interface{}) error
 	return args.Error(0)
 }
 
+func (m *MockNotificationService) SendRoleChangeNotification(user interface{}, newRole string) error {
+	args := m.Called(user, newRole)
+	return args.Error(0)
+}
+
 // MockPasswordHasher é um mock do hasher de senhas
 type MockPasswordHasher struct {
 	mock.Mock
