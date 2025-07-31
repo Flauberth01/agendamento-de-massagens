@@ -28,7 +28,7 @@ export const useChairs = () => {
       queryFn: () => chairService.getAvailableChairs({
         date: new Date().toISOString().split('T')[0],
         startTime: '09:00',
-        endTime: '18:00'
+        endTime: '00:00'
       }),
       staleTime: 2 * 60 * 1000, // 2 minutos
     });

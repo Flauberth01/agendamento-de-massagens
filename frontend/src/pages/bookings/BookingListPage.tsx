@@ -149,6 +149,11 @@ export const BookingListPage: React.FC = () => {
       return false
     }
     
+    // Não pode cancelar se o agendamento já passou
+    if (bookingTime < now) {
+      return false
+    }
+    
     // Atendentes e admins podem cancelar agendamentos ativos
     // Usuários regulares só podem cancelar até 3 horas antes
     if (isAttendant || user?.role === 'admin') {
@@ -174,6 +179,11 @@ export const BookingListPage: React.FC = () => {
     
     // Não pode reagendar se já foi cancelado
     if (booking.status === 'cancelado') {
+      return false
+    }
+    
+    // Não pode reagendar se o agendamento já passou
+    if (bookingTime < now) {
       return false
     }
     

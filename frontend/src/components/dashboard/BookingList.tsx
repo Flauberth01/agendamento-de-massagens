@@ -123,6 +123,14 @@ export function BookingList({
   };
 
   const canEdit = (booking: Booking) => {
+    const now = new Date()
+    const bookingTime = new Date(booking.start_time)
+    
+    // Não pode editar se o agendamento já passou
+    if (bookingTime < now) {
+      return false
+    }
+    
     if (userRole === 'admin') return true;
     if (userRole === 'atendente') return true;
     if (userRole === 'usuario') return booking.user.id === 1; // Assumindo que o usuário logado tem ID 1
@@ -130,6 +138,14 @@ export function BookingList({
   };
 
   const canDelete = (booking: Booking) => {
+    const now = new Date()
+    const bookingTime = new Date(booking.start_time)
+    
+    // Não pode deletar se o agendamento já passou
+    if (bookingTime < now) {
+      return false
+    }
+    
     if (userRole === 'admin') return true;
     if (userRole === 'atendente') return true;
     if (userRole === 'usuario') return booking.user.id === 1 && booking.status === 'agendado';

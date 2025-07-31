@@ -32,10 +32,10 @@ const DAYS_OF_WEEK = [
   { value: 6, label: 'Sábado', short: 'Sáb' }
 ]
 
-// Gerar horários em blocos de 30 minutos das 08:00 às 18:00
+// Gerar horários em blocos de 30 minutos das 08:00 às 00:00
 const generateTimeSlots = () => {
   const slots = []
-  for (let hour = 8; hour <= 18; hour++) {
+  for (let hour = 8; hour <= 23; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
       const nextTime = minute === 30 
@@ -48,6 +48,11 @@ const generateTimeSlots = () => {
       })
     }
   }
+  // Adicionar o último slot das 23:30 às 00:00
+  slots.push({
+    value: '23:30',
+    label: '23:30 às 00:00'
+  })
   return slots
 }
 
@@ -98,7 +103,7 @@ export const AvailabilityCreatePage: React.FC = () => {
     }
   })
 
-  const chairs = chairsResponse?.chairs || []
+  const chairs = chairsResponse?.chairs?.filter((chair: any) => chair.status === 'ativa') || []
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({

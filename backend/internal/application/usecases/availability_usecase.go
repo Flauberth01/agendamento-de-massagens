@@ -48,6 +48,11 @@ func (uc *AvailabilityUseCase) CreateAvailability(availability *entities.Availab
 		return fmt.Errorf("cadeira não encontrada: %w", err)
 	}
 
+	// Verificar se cadeira está ativa
+	if !chair.IsActive() {
+		return errors.New("não é possível criar disponibilidade para uma cadeira inativa")
+	}
+
 	// Validar horários
 	if timeRangeErr := uc.validateTimeRange(availability.StartTime, availability.EndTime); timeRangeErr != nil {
 		return err
@@ -345,7 +350,7 @@ func (uc *AvailabilityUseCase) validateTimeRange(startTime, endTime string) erro
 
 	endParsed, err := time.Parse("15:04", endTime)
 	if err != nil {
-		return errors.New("horário de fim inválido. Use o formato HH:MM (exemplo: 17:00)")
+		return errors.New("horário de fim inválido. Use o formato HH:MM (exemplo: 00:00)")
 	}
 
 	// Verificar se horário de fim é posterior ao de início
@@ -368,6 +373,11 @@ func (uc *AvailabilityUseCase) CreateMultipleAvailabilities(chairID uint, select
 	chair, err := uc.chairRepo.GetByID(chairID)
 	if err != nil {
 		return nil, fmt.Errorf("cadeira não encontrada: %w", err)
+	}
+
+	// Verificar se cadeira está ativa
+	if !chair.IsActive() {
+		return nil, errors.New("não é possível criar disponibilidade para uma cadeira inativa")
 	}
 
 	// Validar dias da semana
