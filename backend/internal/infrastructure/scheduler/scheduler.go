@@ -63,7 +63,7 @@ func (s *Scheduler) runDailyReminders() {
 
 // runMarkCompletedSessions executa marcação automática de sessões como realizado
 func (s *Scheduler) runMarkCompletedSessions() {
-	ticker := time.NewTicker(1 * time.Hour) // Verifica a cada hora
+	ticker := time.NewTicker(30 * time.Minute) // Verifica a cada 30 minutos
 	defer ticker.Stop()
 
 	for {

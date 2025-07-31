@@ -397,7 +397,12 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 
 	// Preparar dados das sessões de hoje
 	todaySessions := make([]gin.H, 0)
+	// Usar timezone fixo para Brasília (GMT-3)
+	loc := time.FixedZone("BRT", -3*60*60)
 	for _, booking := range bookings {
+		startTimeLocal := booking.StartTime.In(loc)
+		endTimeLocal := booking.EndTime.In(loc)
+
 		session := gin.H{
 			"id": booking.ID,
 			"user": gin.H{
@@ -408,8 +413,8 @@ func (h *DashboardHandler) GetOperationalDashboard(c *gin.Context) {
 				"name":     booking.Chair.Name,
 				"location": booking.Chair.Location,
 			},
-			"start_time": booking.StartTime.Format("15:04"),
-			"end_time":   booking.EndTime.Format("15:04"),
+			"start_time": startTimeLocal.Format("15:04"),
+			"end_time":   endTimeLocal.Format("15:04"),
 			"status":     booking.Status,
 		}
 		todaySessions = append(todaySessions, session)

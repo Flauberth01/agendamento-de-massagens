@@ -113,13 +113,15 @@ export function BookingList({
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       agendado: { variant: 'secondary' as const, label: 'Agendado' },
+      presenca_confirmada: { variant: 'default' as const, label: 'Presença Confirmada', className: 'bg-orange-500 text-white' },
       cancelado: { variant: 'destructive' as const, label: 'Cancelado' },
       pendente: { variant: 'secondary' as const, label: 'Pendente' },
-      realizado: { variant: 'outline' as const, label: 'Realizado' }
+      realizado: { variant: 'outline' as const, label: 'Realizado' },
+      falta: { variant: 'destructive' as const, label: 'Falta' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   const canEdit = (booking: Booking) => {

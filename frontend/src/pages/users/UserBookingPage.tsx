@@ -192,8 +192,19 @@ export const UserBookingPage: React.FC = () => {
   }
 
   const formatTime = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    return format(dateObj, 'HH:mm', { locale: ptBR })
+    try {
+      // Se for uma string no formato HH:MM (ex: "09:00"), retornar diretamente
+      if (typeof date === 'string' && /^\d{2}:\d{2}$/.test(date)) {
+        return date
+      }
+      
+      // Se for uma data completa, formatar
+      const dateObj = typeof date === 'string' ? new Date(date) : date
+      return format(dateObj, 'HH:mm', { locale: ptBR })
+    } catch (error) {
+      console.error('Erro ao formatar horário:', date, error)
+      return typeof date === 'string' ? date : 'Horário inválido'
+    }
   }
 
   const formatDate = (date: Date | string) => {

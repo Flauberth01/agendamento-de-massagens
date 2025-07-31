@@ -16,6 +16,8 @@ import {
   TrendingUp,
   TrendingDown
 } from 'lucide-react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { dashboardService } from '../../services/dashboardService'
 import { handleApiError } from '../../services/api'
 
@@ -31,7 +33,7 @@ interface Session {
   }
   start_time: string
   end_time: string
-  status: 'agendado' | 'cancelado' | 'realizado' | 'falta'
+  status: 'agendado' | 'cancelado' | 'realizado' | 'falta' | 'confirmado' | 'concluido' | 'presenca_confirmada'
 }
 
 interface PendingUser {
@@ -69,7 +71,7 @@ export const OperationalDashboardPage: React.FC = () => {
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ['operational-dashboard'],
     queryFn: dashboardService.getOperationalDashboard,
-    staleTime: 2 * 60 * 1000, // 2 minutos
+    staleTime: 0, // No cache to ensure fresh data
     refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
   })
 
@@ -87,10 +89,32 @@ export const OperationalDashboardPage: React.FC = () => {
   const pendingUsers: PendingUser[] = dashboardData?.pendingUsers || []
   const chairOccupancy: ChairOccupancy[] = dashboardData?.chairOccupancy || []
 
+
+
+
+
+  const formatTime = (dateTime: Date | string) => {
+    try {
+      // Se for uma string no formato HH:MM (ex: "09:00"), retornar diretamente
+      if (typeof dateTime === 'string' && /^\d{2}:\d{2}$/.test(dateTime)) {
+        return dateTime
+      }
+      
+      // Se for uma data completa, formatar
+      const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime
+      return format(date, 'HH:mm', { locale: ptBR })
+    } catch (error) {
+      console.error('Erro ao formatar horário:', dateTime, error)
+      return typeof dateTime === 'string' ? dateTime : 'Horário inválido'
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'agendado':
         return <Badge variant="secondary">Agendado</Badge>
+      case 'presenca_confirmada':
+        return <Badge variant="default" className="bg-orange-500 text-white">Presença Confirmada</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500">Realizado</Badge>
       case 'falta':
@@ -211,7 +235,7 @@ export const OperationalDashboardPage: React.FC = () => {
                     <div className="flex-1">
                       <div className="font-medium">{session.user.name}</div>
                       <div className="text-sm text-gray-600">
-                        {session.chair.name} • {session.start_time} - {session.end_time}
+                        {session.chair.name} • {formatTime(session.start_time)} - {formatTime(session.end_time)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

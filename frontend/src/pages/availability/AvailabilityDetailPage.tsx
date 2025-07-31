@@ -73,6 +73,15 @@ export const AvailabilityDetailPage: React.FC = () => {
     )
   }
 
+  const formatTime = (time: string) => {
+    try {
+      // Para horários no formato HH:MM, não precisamos criar um Date completo
+      return time
+    } catch (error) {
+      return 'Horário inválido'
+    }
+  }
+
   const formatDate = (date: Date | string) => {
     try {
       const dateObj = typeof date === 'string' ? new Date(date) : date
@@ -202,7 +211,7 @@ export const AvailabilityDetailPage: React.FC = () => {
               <span className="font-medium">
                 {availability.start_time && availability.end_time ? (
                   <span className="font-mono bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
-                    {availability.start_time} - {availability.end_time}
+                    {formatTime(availability.start_time)} - {formatTime(availability.end_time)}
                   </span>
                 ) : (
                   'N/A'

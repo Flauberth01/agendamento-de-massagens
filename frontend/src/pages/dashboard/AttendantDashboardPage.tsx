@@ -13,6 +13,8 @@ import {
   UserX,
   Loader2
 } from 'lucide-react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 interface TodaySession {
   id: number
@@ -98,10 +100,28 @@ export const AttendantDashboardPage: React.FC = () => {
     }, 1000)
   }, [])
 
+  const formatTime = (dateTime: Date | string) => {
+    try {
+      // Se for uma string no formato HH:MM (ex: "09:00"), retornar diretamente
+      if (typeof dateTime === 'string' && /^\d{2}:\d{2}$/.test(dateTime)) {
+        return dateTime
+      }
+      
+      // Se for uma data completa, formatar
+      const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime
+      return format(date, 'HH:mm', { locale: ptBR })
+    } catch (error) {
+      console.error('Erro ao formatar horário:', dateTime, error)
+      return typeof dateTime === 'string' ? dateTime : 'Horário inválido'
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'agendado':
         return <Badge variant="secondary">Agendado</Badge>
+      case 'presenca_confirmada':
+        return <Badge variant="default" className="bg-orange-500 text-white">Presença Confirmada</Badge>
       case 'realizado':
         return <Badge variant="default" className="bg-green-500">Realizado</Badge>
       case 'falta':
@@ -222,7 +242,7 @@ export const AttendantDashboardPage: React.FC = () => {
                     <div className="flex-1">
                       <div className="font-medium">{session.user.name}</div>
                       <div className="text-sm text-gray-600">
-                        {session.chair.name} • {session.start_time} - {session.end_time}
+                        {session.chair.name} • {formatTime(session.start_time)} - {formatTime(session.end_time)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
