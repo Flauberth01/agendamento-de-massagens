@@ -1,5 +1,32 @@
 basePath: /api
 definitions:
+  dtos.BookingResponse:
+    properties:
+      chair:
+        $ref: '#/definitions/dtos.ChairResponse'
+      chair_id:
+        type: integer
+      created_at:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      notes:
+        type: string
+      start_time:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/dtos.UserResponse'
+        description: Relacionamentos
+      user_id:
+        type: integer
+    type: object
   dtos.ChairResponse:
     properties:
       created_at:
@@ -34,6 +61,37 @@ definitions:
       start_time:
         type: string
     type: object
+  dtos.CreateBookingRequest:
+    properties:
+      chair_id:
+        type: integer
+      notes:
+        type: string
+      start_time:
+        type: string
+    required:
+    - chair_id
+    - start_time
+    type: object
+  dtos.CreateBookingResponse:
+    properties:
+      chair_id:
+        type: integer
+      created_at:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      notes:
+        type: string
+      start_time:
+        type: string
+      status:
+        type: string
+      user_id:
+        type: integer
+    type: object
   dtos.CreateChairRequest:
     properties:
       description:
@@ -44,7 +102,7 @@ definitions:
         minLength: 2
         type: string
       name:
-        maxLength: 60
+        maxLength: 100
         minLength: 2
         type: string
       status:
@@ -194,6 +252,86 @@ definitions:
       status:
         type: string
     type: object
+  dtos.RescheduleBookingRequest:
+    properties:
+      start_time:
+        type: string
+    required:
+    - start_time
+    type: object
+  dtos.RescheduleBookingResponse:
+    properties:
+      chair_id:
+        type: integer
+      end_time:
+        type: string
+      id:
+        type: integer
+      notes:
+        type: string
+      start_time:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  dtos.RescheduleOptionsResponse:
+    properties:
+      available_slots:
+        items:
+          type: string
+        type: array
+      booking_id:
+        type: integer
+      chair_id:
+        type: integer
+      chair_name:
+        type: string
+      current_booking:
+        $ref: '#/definitions/dtos.BookingResponse'
+      date:
+        type: string
+    type: object
+  dtos.UserResponse:
+    properties:
+      birth_date:
+        type: string
+      cpf:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      function:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      last_login:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+      registration:
+        type: string
+      requested_role:
+        type: string
+      role:
+        type: string
+      sector:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
   entities.Availability:
     properties:
       chair:
@@ -250,9 +388,9 @@ definitions:
       status:
         enum:
         - agendado
-        - confirmado
+        - presenca_confirmada
         - cancelado
-        - concluido
+        - realizado
         - falta
         type: string
       updated_at:
@@ -694,6 +832,445 @@ paths:
       summary: Buscar log de auditoria
       tags:
       - audit-logs
+  /audit-logs/action/{action}:
+    get:
+      consumes:
+      - application/json
+      description: Lista logs de auditoria filtrados por uma ação específica
+      parameters:
+      - description: 'Ação para filtrar (ex: CREATE, UPDATE, DELETE, LOGIN)'
+        in: path
+        name: action
+        required: true
+        type: string
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de logs de auditoria por ação
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ação obrigatória
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Logs de auditoria por ação
+      tags:
+      - audit-logs
+  /audit-logs/activity/recent:
+    get:
+      consumes:
+      - application/json
+      description: Lista as atividades mais recentes do sistema
+      parameters:
+      - default: 10
+        description: Limite de registros
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de atividades recentes
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Atividade recente
+      tags:
+      - audit-logs
+  /audit-logs/activity/system:
+    get:
+      consumes:
+      - application/json
+      description: Lista as atividades do sistema (ações automáticas)
+      parameters:
+      - default: 10
+        description: Limite de registros
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de atividades do sistema
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Atividade do sistema
+      tags:
+      - audit-logs
+  /audit-logs/activity/user/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Lista as atividades de um usuário específico
+      parameters:
+      - description: ID do usuário
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - default: 10
+        description: Limite de registros
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de atividades do usuário
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ID do usuário inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Atividade de usuário
+      tags:
+      - audit-logs
+  /audit-logs/cleanup:
+    delete:
+      consumes:
+      - application/json
+      description: Remove logs de auditoria mais antigos que o período especificado
+      parameters:
+      - default: 90
+        description: Dias de retenção
+        in: query
+        name: retention_days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logs antigos removidos com sucesso
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Dias de retenção inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Limpar logs antigos
+      tags:
+      - audit-logs
+  /audit-logs/date-range:
+    get:
+      consumes:
+      - application/json
+      description: Lista logs de auditoria filtrados por um período específico
+      parameters:
+      - description: 'Data de início (formato: YYYY-MM-DD)'
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: 'Data de fim (formato: YYYY-MM-DD)'
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de logs de auditoria por período
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Datas obrigatórias ou formato inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Logs de auditoria por período
+      tags:
+      - audit-logs
+  /audit-logs/reports/active-users:
+    get:
+      consumes:
+      - application/json
+      description: Lista os usuários mais ativos em um período específico
+      parameters:
+      - description: 'Data de início (formato: YYYY-MM-DD)'
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: 'Data de fim (formato: YYYY-MM-DD)'
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - default: 10
+        description: Limite de registros
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de usuários mais ativos
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Datas obrigatórias ou formato inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Usuários mais ativos
+      tags:
+      - audit-logs
+  /audit-logs/reports/common-actions:
+    get:
+      consumes:
+      - application/json
+      description: Lista as ações mais comuns em um período específico
+      parameters:
+      - description: 'Data de início (formato: YYYY-MM-DD)'
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: 'Data de fim (formato: YYYY-MM-DD)'
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - default: 10
+        description: Limite de registros
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de ações mais comuns
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Datas obrigatórias ou formato inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Ações mais comuns
+      tags:
+      - audit-logs
+  /audit-logs/resource/{resource}:
+    get:
+      consumes:
+      - application/json
+      description: Lista logs de auditoria filtrados por um recurso específico
+      parameters:
+      - description: 'Recurso para filtrar (ex: USER, BOOKING, CHAIR, AVAILABILITY)'
+        in: path
+        name: resource
+        required: true
+        type: string
+      - default: 10
+        description: Limite de registros por página
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de logs de auditoria por recurso
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Recurso obrigatório
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Logs de auditoria por recurso
+      tags:
+      - audit-logs
+  /audit-logs/stats:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas gerais dos logs de auditoria
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estatísticas de auditoria
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Estatísticas de auditoria
+      tags:
+      - audit-logs
   /audit-logs/user/{user_id}:
     get:
       consumes:
@@ -1128,6 +1705,88 @@ paths:
       summary: Criar múltiplas disponibilidades
       tags:
       - availabilities
+  /availabilities/chair/{chair_id}/available-slots:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os horários disponíveis para agendamento em uma cadeira
+        específica em uma data
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: chair_id
+        required: true
+        type: integer
+      - description: 'Data para buscar horários (formato: YYYY-MM-DD)'
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Horários disponíveis
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar horários disponíveis
+      tags:
+      - availabilities
+  /availabilities/chair/{chair_id}/next-15-days:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os horários disponíveis para agendamento em uma cadeira
+        específica para os próximos 15 dias
+      parameters:
+      - description: ID da cadeira
+        in: path
+        name: chair_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Horários disponíveis por data
+          schema:
+            additionalProperties:
+              items:
+                type: string
+              type: array
+            type: object
+        "400":
+          description: ID da cadeira inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar horários disponíveis para próximos 15 dias
+      tags:
+      - availabilities
   /bookings:
     get:
       consumes:
@@ -1192,21 +1851,21 @@ paths:
     post:
       consumes:
       - application/json
-      description: Cria um novo agendamento para uma cadeira de massagem
+      description: Cria um novo agendamento de massagem
       parameters:
       - description: Dados do agendamento
         in: body
         name: booking
         required: true
         schema:
-          $ref: '#/definitions/entities.Booking'
+          $ref: '#/definitions/dtos.CreateBookingRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Agendamento criado com sucesso
           schema:
-            $ref: '#/definitions/entities.Booking'
+            $ref: '#/definitions/dtos.CreateBookingResponse'
         "400":
           description: Dados inválidos
           schema:
@@ -1418,55 +2077,6 @@ paths:
       summary: Cancelar agendamento
       tags:
       - bookings
-  /bookings/{id}/confirm:
-    patch:
-      consumes:
-      - application/json
-      description: Confirma um agendamento pendente (apenas para atendentes/admins)
-      parameters:
-      - description: ID do agendamento
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Agendamento confirmado com sucesso
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Dados inválidos
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Token inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Sem permissão
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Agendamento não encontrado
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - Bearer: []
-      summary: Confirmar agendamento
-      tags:
-      - bookings
   /bookings/{id}/reschedule:
     put:
       consumes:
@@ -1641,6 +2251,142 @@ paths:
       security:
       - Bearer: []
       summary: Agendamentos por data
+      tags:
+      - bookings
+  /bookings/date/{date}/including-past:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos de uma data específica incluindo passados (apenas
+        admins)
+      parameters:
+      - description: 'Data para buscar agendamentos (formato: YYYY-MM-DD)'
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos da data incluindo passados
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Formato de data inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Sem permissão
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Agendamentos por data (incluindo passados)
+      tags:
+      - bookings
+  /bookings/reschedule-datetime/{booking_id}:
+    put:
+      consumes:
+      - application/json
+      description: Reagenda apenas a data e horário de um agendamento existente
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: booking_id
+        required: true
+        type: integer
+      - description: Dados para reagendamento
+        in: body
+        name: reschedule
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RescheduleBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Agendamento reagendado com sucesso
+          schema:
+            $ref: '#/definitions/dtos.RescheduleBookingResponse'
+        "400":
+          description: Dados inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Reagendar data e horário
+      tags:
+      - bookings
+  /bookings/reschedule-options/{booking_id}:
+    get:
+      consumes:
+      - application/json
+      description: Busca horários disponíveis para reagendar um agendamento específico
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: booking_id
+        required: true
+        type: integer
+      - description: Data para buscar disponibilidades (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Opções de reagendamento
+          schema:
+            $ref: '#/definitions/dtos.RescheduleOptionsResponse'
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Buscar opções de reagendamento
       tags:
       - bookings
   /bookings/stats:
@@ -2021,49 +2767,6 @@ paths:
       security:
       - Bearer: []
       summary: Buscar disponibilidades de uma cadeira
-      tags:
-      - availabilities
-  /chairs/{chair_id}/available-slots:
-    get:
-      consumes:
-      - application/json
-      description: Retorna os horários disponíveis para agendamento em uma cadeira
-        específica em uma data
-      parameters:
-      - description: ID da cadeira
-        in: path
-        name: chair_id
-        required: true
-        type: integer
-      - description: 'Data para buscar horários (formato: YYYY-MM-DD)'
-        in: query
-        name: date
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Lista de horários disponíveis
-          schema:
-            items:
-              type: string
-            type: array
-        "400":
-          description: Parâmetros inválidos
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Token inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - Bearer: []
-      summary: Buscar horários disponíveis
       tags:
       - availabilities
   /chairs/{id}:
@@ -2470,6 +3173,48 @@ paths:
       security:
       - Bearer: []
       summary: Ocupação das cadeiras
+      tags:
+      - dashboard
+  /dashboard/operational:
+    get:
+      consumes:
+      - application/json
+      description: Retorna dados do dashboard operacional para administradores e atendentes
+      parameters:
+      - default: hoje
+        description: 'Data para filtrar agendamentos (formato: YYYY-MM-DD)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dados do dashboard operacional
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Parâmetros inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Token inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Acesso negado - apenas atendentes e admins
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Dashboard operacional unificado
       tags:
       - dashboard
   /dashboard/pending-approvals:
@@ -2936,6 +3681,41 @@ paths:
       security:
       - Bearer: []
       summary: Rejeitar usuário
+      tags:
+      - users
+  /users/check-cpf:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se um CPF já está cadastrado no sistema
+      parameters:
+      - description: CPF a verificar
+        in: query
+        name: cpf
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: CPF existe ou não
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: CPF inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Erro interno do servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verificar CPF existente
       tags:
       - users
   /users/pending:

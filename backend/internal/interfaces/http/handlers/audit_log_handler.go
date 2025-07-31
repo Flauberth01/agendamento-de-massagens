@@ -189,6 +189,19 @@ func (h *AuditLogHandler) GetUserAuditLogs(c *gin.Context) {
 }
 
 // GetAuditLogsByAction busca logs de auditoria por ação
+// @Summary Logs de auditoria por ação
+// @Description Lista logs de auditoria filtrados por uma ação específica
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param action path string true "Ação para filtrar (ex: CREATE, UPDATE, DELETE, LOGIN)"
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de logs de auditoria por ação"
+// @Failure 400 {object} map[string]string "Ação obrigatória"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /audit-logs/action/{action} [get]
 func (h *AuditLogHandler) GetAuditLogsByAction(c *gin.Context) {
 	action := c.Param("action")
 	if action == "" {
@@ -227,6 +240,19 @@ func (h *AuditLogHandler) GetAuditLogsByAction(c *gin.Context) {
 }
 
 // GetAuditLogsByResource busca logs de auditoria por recurso
+// @Summary Logs de auditoria por recurso
+// @Description Lista logs de auditoria filtrados por um recurso específico
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param resource path string true "Recurso para filtrar (ex: USER, BOOKING, CHAIR, AVAILABILITY)"
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de logs de auditoria por recurso"
+// @Failure 400 {object} map[string]string "Recurso obrigatório"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /audit-logs/resource/{resource} [get]
 func (h *AuditLogHandler) GetAuditLogsByResource(c *gin.Context) {
 	resource := c.Param("resource")
 	if resource == "" {
@@ -265,6 +291,20 @@ func (h *AuditLogHandler) GetAuditLogsByResource(c *gin.Context) {
 }
 
 // GetAuditLogsByDateRange busca logs de auditoria por período
+// @Summary Logs de auditoria por período
+// @Description Lista logs de auditoria filtrados por um período específico
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param start_date query string true "Data de início (formato: YYYY-MM-DD)"
+// @Param end_date query string true "Data de fim (formato: YYYY-MM-DD)"
+// @Param limit query int false "Limite de registros por página" default(10)
+// @Param offset query int false "Offset para paginação" default(0)
+// @Success 200 {object} map[string]interface{} "Lista de logs de auditoria por período"
+// @Failure 400 {object} map[string]string "Datas obrigatórias ou formato inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Router /audit-logs/date-range [get]
 func (h *AuditLogHandler) GetAuditLogsByDateRange(c *gin.Context) {
 	startDateParam := c.Query("start_date")
 	endDateParam := c.Query("end_date")
@@ -317,6 +357,17 @@ func (h *AuditLogHandler) GetAuditLogsByDateRange(c *gin.Context) {
 }
 
 // GetRecentActivity busca atividade recente
+// @Summary Atividade recente
+// @Description Lista as atividades mais recentes do sistema
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros" default(10)
+// @Success 200 {object} map[string]interface{} "Lista de atividades recentes"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /audit-logs/activity/recent [get]
 func (h *AuditLogHandler) GetRecentActivity(c *gin.Context) {
 	limitParam := c.DefaultQuery("limit", "10")
 	limit, err := strconv.Atoi(limitParam)
@@ -334,6 +385,19 @@ func (h *AuditLogHandler) GetRecentActivity(c *gin.Context) {
 }
 
 // GetUserActivity busca atividade de um usuário
+// @Summary Atividade de usuário
+// @Description Lista as atividades de um usuário específico
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param user_id path int true "ID do usuário"
+// @Param limit query int false "Limite de registros" default(10)
+// @Success 200 {object} map[string]interface{} "Lista de atividades do usuário"
+// @Failure 400 {object} map[string]string "ID do usuário inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /audit-logs/activity/user/{user_id} [get]
 func (h *AuditLogHandler) GetUserActivity(c *gin.Context) {
 	userIDParam := c.Param("user_id")
 	userID, err := strconv.ParseUint(userIDParam, 10, 32)
@@ -358,6 +422,17 @@ func (h *AuditLogHandler) GetUserActivity(c *gin.Context) {
 }
 
 // GetSystemActivity busca atividade do sistema
+// @Summary Atividade do sistema
+// @Description Lista as atividades do sistema (ações automáticas)
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param limit query int false "Limite de registros" default(10)
+// @Success 200 {object} map[string]interface{} "Lista de atividades do sistema"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /audit-logs/activity/system [get]
 func (h *AuditLogHandler) GetSystemActivity(c *gin.Context) {
 	limitParam := c.DefaultQuery("limit", "10")
 	limit, err := strconv.Atoi(limitParam)
@@ -375,6 +450,20 @@ func (h *AuditLogHandler) GetSystemActivity(c *gin.Context) {
 }
 
 // GetMostActiveUsers busca usuários mais ativos
+// @Summary Usuários mais ativos
+// @Description Lista os usuários mais ativos em um período específico
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param start_date query string true "Data de início (formato: YYYY-MM-DD)"
+// @Param end_date query string true "Data de fim (formato: YYYY-MM-DD)"
+// @Param limit query int false "Limite de registros" default(10)
+// @Success 200 {object} map[string]interface{} "Lista de usuários mais ativos"
+// @Failure 400 {object} map[string]string "Datas obrigatórias ou formato inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /audit-logs/reports/active-users [get]
 func (h *AuditLogHandler) GetMostActiveUsers(c *gin.Context) {
 	startDateParam := c.Query("start_date")
 	endDateParam := c.Query("end_date")
@@ -412,6 +501,20 @@ func (h *AuditLogHandler) GetMostActiveUsers(c *gin.Context) {
 }
 
 // GetMostCommonActions busca ações mais comuns
+// @Summary Ações mais comuns
+// @Description Lista as ações mais comuns em um período específico
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param start_date query string true "Data de início (formato: YYYY-MM-DD)"
+// @Param end_date query string true "Data de fim (formato: YYYY-MM-DD)"
+// @Param limit query int false "Limite de registros" default(10)
+// @Success 200 {object} map[string]interface{} "Lista de ações mais comuns"
+// @Failure 400 {object} map[string]string "Datas obrigatórias ou formato inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /audit-logs/reports/common-actions [get]
 func (h *AuditLogHandler) GetMostCommonActions(c *gin.Context) {
 	startDateParam := c.Query("start_date")
 	endDateParam := c.Query("end_date")
@@ -449,6 +552,16 @@ func (h *AuditLogHandler) GetMostCommonActions(c *gin.Context) {
 }
 
 // GetAuditStats retorna estatísticas de auditoria
+// @Summary Estatísticas de auditoria
+// @Description Retorna estatísticas gerais dos logs de auditoria
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Success 200 {object} map[string]interface{} "Estatísticas de auditoria"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /audit-logs/stats [get]
 func (h *AuditLogHandler) GetAuditStats(c *gin.Context) {
 	stats, err := h.auditLogUseCase.GetAuditStats()
 	if err != nil {
@@ -460,6 +573,18 @@ func (h *AuditLogHandler) GetAuditStats(c *gin.Context) {
 }
 
 // CleanupOldLogs limpa logs antigos
+// @Summary Limpar logs antigos
+// @Description Remove logs de auditoria mais antigos que o período especificado
+// @Tags audit-logs
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param retention_days query int false "Dias de retenção" default(90)
+// @Success 200 {object} map[string]string "Logs antigos removidos com sucesso"
+// @Failure 400 {object} map[string]string "Dias de retenção inválido"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 500 {object} map[string]string "Erro interno do servidor"
+// @Router /audit-logs/cleanup [delete]
 func (h *AuditLogHandler) CleanupOldLogs(c *gin.Context) {
 	retentionDaysParam := c.DefaultQuery("retention_days", "90")
 	retentionDays, err := strconv.Atoi(retentionDaysParam)

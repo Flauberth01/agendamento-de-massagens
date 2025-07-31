@@ -193,6 +193,13 @@ func main() {
 	}
 
 	// Rota de health check
+	// @Summary Health check do sistema
+	// @Description Verifica se o sistema está funcionando corretamente
+	// @Tags system
+	// @Accept json
+	// @Produce json
+	// @Success 200 {object} map[string]interface{} "Status do sistema"
+	// @Router /health [get]
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
@@ -201,6 +208,13 @@ func main() {
 	})
 
 	// Rota do Swagger
+	// @Summary Documentação Swagger
+	// @Description Interface de documentação da API
+	// @Tags system
+	// @Accept json
+	// @Produce json
+	// @Success 200 {object} map[string]interface{} "Interface do Swagger"
+	// @Router /swagger/*any [get]
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Inicializar scheduler para lembretes
