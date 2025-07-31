@@ -52,7 +52,7 @@ export const MinimalLayout: React.FC<MinimalLayoutProps> = ({
   const navigationItems = [
     {
       label: 'Dashboard',
-      href: isAdmin ? '/admin/dashboard' : isAttendant ? '/attendant/dashboard' : '/dashboard',
+      href: isAdmin ? '/dashboard/operational' : isAttendant ? '/dashboard/operational' : '/dashboard',
       icon: Home,
       show: true
     },

@@ -13,8 +13,6 @@ import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { RegisterStep2Page } from './pages/auth/RegisterStep2Page'
 import { UserDashboardPage } from './pages/dashboard/UserDashboardPage'
-import { AttendantDashboardPage } from './pages/dashboard/AttendantDashboardPage'
-import { AdminDashboardPage } from './pages/dashboard/AdminDashboardPage'
 import { OperationalDashboardPage } from './pages/dashboard/OperationalDashboardPage'
 import { BookingCreatePage } from './pages/bookings/BookingCreatePage'
 import { BookingListPage } from './pages/bookings/BookingListPage'
@@ -49,7 +47,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    console.log('ProtectedRoute - Usuário sem permissão, redirecionando para dashboard')
+    console.log('ProtectedRoute - Usuário sem permissão, redirecionando para dashboard apropriado')
     console.log('ProtectedRoute - User role:', user.role)
     console.log('ProtectedRoute - Allowed roles:', allowedRoles)
     console.log('ProtectedRoute - Role check:', allowedRoles.includes(user.role))
@@ -58,9 +56,9 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
       case 'usuario':
         return <Navigate to="/dashboard" replace />
       case 'atendente':
-        return <Navigate to="/dashboard/attendant" replace />
+        return <Navigate to="/dashboard/operational" replace />
       case 'admin':
-        return <Navigate to="/dashboard/admin" replace />
+        return <Navigate to="/dashboard/operational" replace />
       default:
         return <Navigate to="/login" replace />
     }
@@ -83,9 +81,9 @@ const DashboardRoute = () => {
     case 'usuario':
       return <Navigate to="/dashboard" replace />
     case 'atendente':
-      return <Navigate to="/dashboard/attendant" replace />
+      return <Navigate to="/dashboard/operational" replace />
     case 'admin':
-      return <Navigate to="/dashboard/admin" replace />
+      return <Navigate to="/dashboard/operational" replace />
     default:
       return <Navigate to="/login" replace />
   }
@@ -126,21 +124,14 @@ function App() {
 
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['usuario']}>
                 <DashboardLayout variant="minimal">
                   <UserDashboardPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/attendant" element={
+            <Route path="/dashboard/operational" element={
               <ProtectedRoute allowedRoles={['atendente', 'admin']}>
-                <DashboardLayout>
-                  <OperationalDashboardPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/admin" element={
-              <ProtectedRoute allowedRoles={['admin']}>
                 <DashboardLayout>
                   <OperationalDashboardPage />
                 </DashboardLayout>

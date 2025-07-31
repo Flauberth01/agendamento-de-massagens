@@ -16,11 +16,11 @@ func SetupDashboardRoutes(router *gin.RouterGroup, dashboardHandler *handlers.Da
 		// Dashboard operacional unificado (para admin e atendente)
 		dashboard.GET("/operational", middleware.AdminOrAttendantMiddleware(), dashboardHandler.GetOperationalDashboard)
 
-		// Dashboard para atendentes e admins
-		dashboard.GET("/attendant", middleware.AdminOrAttendantMiddleware(), dashboardHandler.GetAttendantDashboard)
+		// Dashboard para atendentes e admins (REDUNDANTE - usar /operational)
+		// dashboard.GET("/attendant", middleware.AdminOrAttendantMiddleware(), dashboardHandler.GetAttendantDashboard)
 
-		// Dashboard para administradores
-		dashboard.GET("/admin", middleware.AdminOnlyMiddleware(), dashboardHandler.GetAdminDashboard)
+		// Dashboard para administradores (REDUNDANTE - usar /operational)
+		// dashboard.GET("/admin", middleware.AdminOnlyMiddleware(), dashboardHandler.GetAdminDashboard)
 
 		// Sessões por data (atendentes e admins)
 		dashboard.GET("/sessions/date/:date", middleware.AdminOrAttendantMiddleware(), dashboardHandler.GetSessionsByDate)

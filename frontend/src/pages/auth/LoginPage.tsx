@@ -26,10 +26,10 @@ export const LoginPage: React.FC = () => {
     if (isAuthenticated && user) {
       switch (user.role) {
         case 'admin':
-          navigate('/dashboard/admin', { replace: true })
+          navigate('/dashboard/operational', { replace: true })
           break
         case 'atendente':
-          navigate('/dashboard/attendant', { replace: true })
+          navigate('/dashboard/operational', { replace: true })
           break
         case 'usuario':
         default:

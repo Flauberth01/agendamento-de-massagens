@@ -68,16 +68,6 @@ export interface RecentActivity {
   user?: string
 }
 
-export interface AttendantDashboardData {
-  todaySessions: number
-  confirmedSessions: number
-  pendingSessions: number
-  pendingApprovals: number
-  todayBookings: any[]
-  pendingUsers: any[]
-  chairOccupancy: any[]
-}
-
 export const dashboardService = {
   // Dashboard operacional unificado (para admin e atendente)
   async getOperationalDashboard(): Promise<OperationalDashboardData> {
@@ -91,12 +81,6 @@ export const dashboardService = {
     recentActivity: RecentActivity[]
   }> {
     const response = await api.get('/api/dashboard/admin')
-    return response.data
-  },
-
-  // Dashboard do atendente
-  async getAttendantDashboard(): Promise<AttendantDashboardData> {
-    const response = await api.get('/api/dashboard/attendant')
     return response.data
   },
 

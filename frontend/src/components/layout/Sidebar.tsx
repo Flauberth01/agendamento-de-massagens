@@ -24,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
     // Dashboard
     {
       label: 'Dashboard',
-      href: isAdmin ? '/admin/dashboard' : isAttendant ? '/attendant/dashboard' : '/dashboard',
+      href: isAdmin ? '/dashboard/operational' : isAttendant ? '/dashboard/operational' : '/dashboard',
       icon: Home,
       show: true
     },
