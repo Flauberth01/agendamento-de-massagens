@@ -322,3 +322,117 @@ func (uc *UserUseCase) CheckCPFExists(cpf string) (bool, error) {
 
 	return exists, nil
 }
+
+// ChangeUserRole altera o role de um usuário (apenas admin pode fazer isso)
+func (uc *UserUseCase) ChangeUserRole(userID, changedBy uint, newRole string) error {
+	uc.logger.Info("Iniciando alteração de role de usuário", map[string]interface{}{
+		"user_id":    userID,
+		"new_role":   newRole,
+		"changed_by": changedBy,
+	})
+
+	// Validar role
+	validRoles := []string{"usuario", "atendente", "admin"}
+	isValidRole := false
+	for _, role := range validRoles {
+		if role == newRole {
+			isValidRole = true
+			break
+		}
+	}
+	if !isValidRole {
+		uc.logger.Error("Role inválido", errors.New("role inválido"), map[string]interface{}{
+			"user_id":  userID,
+			"new_role": newRole,
+		})
+		return errors.New("role inválido. Use: usuario, atendente ou admin")
+	}
+
+	// Buscar usuário que está sendo alterado
+	user, err := uc.userRepo.GetByID(userID)
+	if err != nil {
+		uc.logger.Error("Usuário não encontrado", err, map[string]interface{}{
+			"user_id": userID,
+		})
+		return fmt.Errorf("usuário não encontrado: %w", err)
+	}
+
+	// Verificar se o usuário está aprovado
+	if !user.IsApproved() {
+		uc.logger.Warn("Tentativa de alterar role de usuário não aprovado", map[string]interface{}{
+			"user_id": userID,
+			"status":  user.Status,
+		})
+		return errors.New("não é possível alterar role de usuário não aprovado")
+	}
+
+	// Verificar se não está tentando alterar o próprio role
+	if userID == changedBy {
+		uc.logger.Warn("Tentativa de alterar próprio role", map[string]interface{}{
+			"user_id": userID,
+		})
+		return errors.New("não é possível alterar o próprio role")
+	}
+
+	// Buscar usuário que está fazendo a alteração
+	changer, err := uc.userRepo.GetByID(changedBy)
+	if err != nil {
+		uc.logger.Error("Usuário que está alterando não encontrado", err, map[string]interface{}{
+			"changed_by": changedBy,
+		})
+		return fmt.Errorf("usuário que está alterando não encontrado: %w", err)
+	}
+
+	// Verificar se quem está alterando é admin
+	if !changer.IsAdmin() {
+		uc.logger.Warn("Tentativa de alterar role sem permissão", map[string]interface{}{
+			"changed_by":   changedBy,
+			"changer_role": changer.Role,
+		})
+		return errors.New("apenas administradores podem alterar roles de usuários")
+	}
+
+	// Verificar se não está tentando alterar outro admin
+	if user.IsAdmin() && !changer.IsAdmin() {
+		uc.logger.Warn("Tentativa de alterar role de admin sem permissão", map[string]interface{}{
+			"user_id":    userID,
+			"changed_by": changedBy,
+		})
+		return errors.New("não é possível alterar role de outro administrador")
+	}
+
+	// Alterar role
+	if err := uc.userRepo.ChangeRole(userID, newRole, changedBy); err != nil {
+		uc.logger.Error("Erro ao alterar role no repositório", err, map[string]interface{}{
+			"user_id":  userID,
+			"new_role": newRole,
+		})
+		return fmt.Errorf("erro ao alterar role: %w", err)
+	}
+
+	// Log de auditoria
+	auditLog := entities.NewAuditLog(&changedBy, entities.ActionUpdate, entities.ResourceUser, &userID)
+	auditLog.SetDescription(fmt.Sprintf("Role do usuário %s alterado de %s para %s por %s",
+		user.Name, user.Role, newRole, changer.Name))
+	uc.auditRepo.Create(auditLog)
+
+	// Enviar notificação por email (não bloquear se falhar)
+	go func() {
+		if err := uc.notificationRepo.SendRoleChangeNotification(user, newRole); err != nil {
+			uc.logger.Error("Erro ao enviar notificação de alteração de role", err, map[string]interface{}{
+				"user_id":  user.ID,
+				"email":    user.Email,
+				"new_role": newRole,
+			})
+		}
+	}()
+
+	uc.logger.Info("Role de usuário alterado com sucesso", map[string]interface{}{
+		"user_id":    userID,
+		"old_role":   user.Role,
+		"new_role":   newRole,
+		"changed_by": changedBy,
+	})
+
+	return nil
+}

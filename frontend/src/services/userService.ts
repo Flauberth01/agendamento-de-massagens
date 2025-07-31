@@ -68,6 +68,12 @@ export const userService = {
     return response.data
   },
 
+  // Alterar role de usuário (apenas admin)
+  async changeUserRole(id: number, role: string): Promise<{ message: string; data: { user_id: number; new_role: string } }> {
+    const response = await api.put(`/api/users/${id}/role`, { role })
+    return response.data
+  },
+
   // Buscar usuários pendentes de aprovação
   async getPendingUsers(): Promise<User[]> {
     const response = await api.get('/api/users/pending')

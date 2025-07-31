@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -15,20 +16,28 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Loader2
+  Loader2,
+  Shield,
+  ShieldCheck,
+  ShieldX
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { userService } from '../../services/userService'
 import { handleApiError } from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 import type { User } from '../../types/user'
 
 
 export const UserListPage: React.FC = () => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { isAdmin } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [roleFilter, setRoleFilter] = useState<string>('all')
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showRoleDialog, setShowRoleDialog] = useState(false)
 
 
   // Buscar usuários
@@ -44,6 +53,25 @@ export const UserListPage: React.FC = () => {
 
 
   const users = usersResponse?.data || []
+
+  // Mutação para alterar role
+  const changeRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
+      return userService.changeUserRole(userId, role)
+    },
+    onSuccess: () => {
+      toast.success('Role alterado com sucesso!')
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      setShowRoleDialog(false)
+      setSelectedUser(null)
+    },
+    onError: (error) => {
+      const apiError = handleApiError(error)
+      toast.error('Erro ao alterar role', {
+        description: apiError.message
+      })
+    }
+  })
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -75,6 +103,25 @@ export const UserListPage: React.FC = () => {
 
   const handleViewUser = (userId: number) => {
     navigate(`/users/${userId}`)
+  }
+
+  const handleChangeRole = (user: User) => {
+    setSelectedUser(user)
+    setShowRoleDialog(true)
+  }
+
+  const handleConfirmRoleChange = (newRole: string) => {
+    if (!selectedUser) return
+    
+    changeRoleMutation.mutate({
+      userId: selectedUser.id,
+      role: newRole
+    })
+  }
+
+  const handleCancelRoleChange = () => {
+    setShowRoleDialog(false)
+    setSelectedUser(null)
   }
 
   const formatDate = (date: Date) => {
@@ -260,6 +307,16 @@ export const UserListPage: React.FC = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+                          {isAdmin && user.status === 'aprovado' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleChangeRole(user)}
+                              title="Alterar permissão"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -270,6 +327,84 @@ export const UserListPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Diálogo de Alteração de Role */}
+      {showRoleDialog && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-semibold">Alterar Permissão</h3>
+            </div>
+            
+            <p className="text-muted-foreground mb-4">
+              Alterar permissão do usuário <strong>{selectedUser.name}</strong> 
+              (atual: <span className="font-medium">{selectedUser.role}</span>)
+            </p>
+
+            <div className="space-y-3 mb-6">
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  variant={selectedUser.role === 'usuario' ? 'default' : 'outline'}
+                  onClick={() => handleConfirmRoleChange('usuario')}
+                  disabled={changeRoleMutation.isPending}
+                  className="justify-start"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Usuário
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    Acesso básico ao sistema
+                  </span>
+                </Button>
+                
+                <Button
+                  variant={selectedUser.role === 'atendente' ? 'default' : 'outline'}
+                  onClick={() => handleConfirmRoleChange('atendente')}
+                  disabled={changeRoleMutation.isPending}
+                  className="justify-start"
+                >
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Atendente
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    Pode gerenciar agendamentos
+                  </span>
+                </Button>
+                
+                <Button
+                  variant={selectedUser.role === 'admin' ? 'default' : 'outline'}
+                  onClick={() => handleConfirmRoleChange('admin')}
+                  disabled={changeRoleMutation.isPending}
+                  className="justify-start"
+                >
+                  <ShieldX className="h-4 w-4 mr-2" />
+                  Administrador
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    Acesso completo ao sistema
+                  </span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCancelRoleChange}
+                disabled={changeRoleMutation.isPending}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              
+              {changeRoleMutation.isPending && (
+                <Button disabled className="flex-1">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Alterando...
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

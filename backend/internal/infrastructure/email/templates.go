@@ -354,3 +354,52 @@ func PrepareTemplateData(user *entities.User, booking *entities.Booking, chair *
 
 	return data
 }
+
+// GetRoleChangeNotificationTemplate retorna o template de notificação de alteração de role
+func GetRoleChangeNotificationTemplate() *EmailTemplate {
+	return &EmailTemplate{
+		Subject: "Alteração de Permissão - Sistema de agendamento de cadeiras de massagem",
+		HTML: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Alteração de Permissão</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2c5aa0;">Permissão Alterada</h2>
+        
+        <p>Olá <strong>{{.User.Name}}</strong>,</p>
+        
+        <p>Informamos que suas permissões no sistema foram alteradas.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #2c5aa0;">Nova Permissão:</h3>
+            <p><strong>{{.Reason}}</strong></p>
+        </div>
+        
+        <p>Com essa alteração, você terá acesso a diferentes funcionalidades do sistema conforme sua nova permissão.</p>
+        
+        <p>Em caso de dúvidas, entre em contato com a administração.</p>
+        
+        <p>Atenciosamente,<br>Equipe de agendamento</p>
+    </div>
+</body>
+</html>`,
+		Text: `
+Olá {{.User.Name}},
+
+Informamos que suas permissões no sistema foram alteradas.
+
+Nova Permissão: {{.Reason}}
+
+Com essa alteração, você terá acesso a diferentes funcionalidades do sistema conforme sua nova permissão.
+
+Em caso de dúvidas, entre em contato com a administração.
+
+Atenciosamente,
+Equipe de agendamento
+`,
+	}
+}

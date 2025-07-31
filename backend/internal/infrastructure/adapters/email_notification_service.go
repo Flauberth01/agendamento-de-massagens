@@ -69,3 +69,11 @@ func (e *EmailNotificationService) SendBookingReminder(booking interface{}) erro
 	}
 	return nil
 }
+
+// SendRoleChangeNotification envia notificação de alteração de role
+func (e *EmailNotificationService) SendRoleChangeNotification(user interface{}, newRole string) error {
+	if u, ok := user.(*entities.User); ok {
+		return e.emailRepo.SendRoleChangeNotification(u, newRole)
+	}
+	return nil
+}

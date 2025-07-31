@@ -32,6 +32,7 @@ func SetupUserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler)
 			adminOnly.POST("", userHandler.CreateUser)
 			adminOnly.PUT("/:id", userHandler.UpdateUser)
 			adminOnly.DELETE("/:id", userHandler.DeleteUser)
+			adminOnly.PUT("/:id/role", userHandler.ChangeUserRole) // Alterar role de usuário
 		}
 	}
 }

@@ -19,4 +19,7 @@ type NotificationService interface {
 
 	// SendBookingReminder envia lembrete de agendamento
 	SendBookingReminder(booking interface{}) error
+
+	// SendRoleChangeNotification envia notificação de alteração de role
+	SendRoleChangeNotification(user interface{}, newRole string) error
 }

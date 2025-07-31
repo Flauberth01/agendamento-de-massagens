@@ -540,3 +540,56 @@ func (h *UserHandler) CheckCPFExists(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"exists": exists})
 }
+
+// ChangeUserRole altera o role de um usuário
+// @Summary Alterar role de usuário
+// @Description Altera o role de um usuário (apenas admin pode fazer isso)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ID do usuário"
+// @Param role body map[string]string true "Novo role do usuário"
+// @Success 200 {object} map[string]string "Role alterado com sucesso"
+// @Failure 400 {object} map[string]string "Dados inválidos"
+// @Failure 401 {object} map[string]string "Token inválido"
+// @Failure 403 {object} map[string]string "Sem permissão"
+// @Failure 404 {object} map[string]string "Usuário não encontrado"
+// @Router /users/{id}/role [put]
+func (h *UserHandler) ChangeUserRole(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	var request struct {
+		Role string `json:"role" binding:"required"`
+	}
+	if bindErr := c.ShouldBindJSON(&request); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + bindErr.Error()})
+		return
+	}
+
+	// Obter userID do contexto de autenticação
+	userID, exists := middleware.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
+
+	err = h.userUseCase.ChangeUserRole(uint(id), userID, request.Role)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Role alterado com sucesso",
+		"data": gin.H{
+			"user_id":  id,
+			"new_role": request.Role,
+		},
+	})
+}
