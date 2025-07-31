@@ -88,26 +88,6 @@ export const OperationalDashboardPage: React.FC = () => {
   const pendingUsers: PendingUser[] = dashboardData?.pendingUsers || []
   const chairOccupancy: ChairOccupancy[] = dashboardData?.chairOccupancy || []
 
-  // Filtrar apenas sessões que são realmente do dia atual
-  const filteredTodaySessions = todaySessions.filter(session => {
-    try {
-      // Se start_time já é uma string de horário (HH:MM), considerar como do dia atual
-      if (typeof session.start_time === 'string' && /^\d{2}:\d{2}$/.test(session.start_time)) {
-        return true
-      }
-      
-      // Se start_time é uma data completa, verificar se é do dia atual
-      const sessionDate = new Date(session.start_time)
-      const today = new Date()
-      
-      return sessionDate.toDateString() === today.toDateString()
-    } catch (error) {
-      // Se não conseguir processar a data, incluir por segurança
-      return true
-    }
-  })
-
-
   const formatTime = (dateTime: Date | string) => {
     try {
       // Se for uma string no formato HH:MM (ex: "09:00"), retornar diretamente
@@ -241,11 +221,11 @@ export const OperationalDashboardPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredTodaySessions.length === 0 ? (
+            {todaySessions.length === 0 ? (
               <p className="text-center text-gray-500 py-4">Nenhuma sessão agendada para hoje</p>
             ) : (
               <div className="space-y-3">
-                {filteredTodaySessions.map((session) => (
+                {todaySessions.map((session) => (
                   <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="font-medium">{session.user.name}</div>

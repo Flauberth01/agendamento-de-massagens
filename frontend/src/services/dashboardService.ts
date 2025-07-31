@@ -71,7 +71,9 @@ export interface RecentActivity {
 export const dashboardService = {
   // Dashboard operacional unificado (para admin e atendente)
   async getOperationalDashboard(): Promise<OperationalDashboardData> {
-    const response = await api.get('/api/dashboard/operational')
+    // Garantir que sempre busque as sessões de hoje
+    const today = new Date().toISOString().split('T')[0] // Formato YYYY-MM-DD
+    const response = await api.get(`/api/dashboard/operational?date=${today}`)
     return response.data
   },
 
